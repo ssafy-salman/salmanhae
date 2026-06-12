@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Noto Sans KR', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+@layer components {
+  .layer-btn {
+    @apply flex items-center gap-1.5 border px-3 py-1.5 rounded-full text-xs shadow-sm transition;
+  }
+
+  .map-feature {
+    @apply absolute z-20 w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-white/95 rounded-full flex items-center justify-center border shadow-sm text-xs;
+  }
+
+  .form-label {
+    @apply block text-xs font-black text-slate-700 mb-1;
+  }
+
+  .form-input {
+    @apply w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand;
+  }
+}
+
+.glow-safe-path { filter: drop-shadow(0 0 6px #10b981); }
+.glow-cctv { filter: drop-shadow(0 0 3px #3b82f6); }
+.glow-lamp { filter: drop-shadow(0 0 5px #eab308); }
+
+.crime-danger-zone {
+  fill: #ef4444;
+  fill-opacity: 0.16;
+  stroke: #dc2626;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+@keyframes pulse-path {
+  0%, 100% { opacity: 0.68; stroke-width: 4; }
+  50% { opacity: 1; stroke-width: 6; }
+}
+
+.animate-pulse-path { animation: pulse-path 2s infinite ease-in-out; }
+
+.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
