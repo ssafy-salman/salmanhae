@@ -31,7 +31,7 @@ jobs:
           GITLAB_REPOSITORY_URL="https://${GITLAB_HOST}/${GITLAB_GROUP_PATH}/${GITLAB_PROJECT_NAME}.git"
 
           git remote add gitlab-salmanhae "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPOSITORY_URL#https://}"
-          git push --force gitlab-salmanhae HEAD:${GITLAB_TARGET_BRANCH}
+          git push gitlab-salmanhae HEAD:${GITLAB_TARGET_BRANCH}
 
   sync-artifact:
     name: Sync artifact folder to GitLab Artifact
@@ -61,4 +61,4 @@ jobs:
           GITLAB_REPOSITORY_URL="https://${GITLAB_HOST}/${GITLAB_GROUP_PATH}/${GITLAB_PROJECT_NAME}.git"
 
           git remote add gitlab-artifact "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPOSITORY_URL#https://}"
-          git push --force gitlab-artifact artifact-sync:${GITLAB_TARGET_BRANCH}
+          git push gitlab-artifact artifact-sync:${GITLAB_TARGET_BRANCH}
