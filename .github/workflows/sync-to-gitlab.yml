@@ -1,0 +1,64 @@
+name: Sync monorepo to GitLab
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  sync-monorepo:
+    name: Sync full monorepo to GitLab Salmanhae
+    runs-on: ubuntu-latest
+
+    env:
+      GITLAB_HOST: lab.ssafy.com
+      GITLAB_GROUP_PATH: s15/a10/project/finalproject/team3
+      GITLAB_PROJECT_NAME: salmanhae
+      GITLAB_TARGET_BRANCH: master
+
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push full monorepo to GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          GITLAB_REPOSITORY_URL="https://${GITLAB_HOST}/${GITLAB_GROUP_PATH}/${GITLAB_PROJECT_NAME}.git"
+
+          git remote add gitlab-salmanhae "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPOSITORY_URL#https://}"
+          git push --force gitlab-salmanhae HEAD:${GITLAB_TARGET_BRANCH}
+
+  sync-artifact:
+    name: Sync artifact folder to GitLab Artifact
+    runs-on: ubuntu-latest
+
+    env:
+      GITLAB_HOST: lab.ssafy.com
+      GITLAB_GROUP_PATH: s15/a10/project/finalproject/team3
+      GITLAB_PROJECT_NAME: artifact
+      GITLAB_TARGET_BRANCH: master
+      ARTIFACT_DIR: artifact
+
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split artifact folder
+        run: |
+          git subtree split --prefix=${ARTIFACT_DIR} -b artifact-sync
+
+      - name: Push artifact folder to GitLab Artifact
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          GITLAB_REPOSITORY_URL="https://${GITLAB_HOST}/${GITLAB_GROUP_PATH}/${GITLAB_PROJECT_NAME}.git"
+
+          git remote add gitlab-artifact "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPOSITORY_URL#https://}"
+          git push --force gitlab-artifact artifact-sync:${GITLAB_TARGET_BRANCH}
