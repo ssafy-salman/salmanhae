@@ -1,4 +1,4 @@
-# BATCH_INGESTION: 살만해
+# 09. BATCH_INGESTION
 
 ## 배치가 필요한 이유
 

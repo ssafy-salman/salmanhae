@@ -1,4 +1,4 @@
-# ARCHITECTURE: 살만해
+# 02. ARCHITECTURE
 
 ## 전체 시스템 흐름
 

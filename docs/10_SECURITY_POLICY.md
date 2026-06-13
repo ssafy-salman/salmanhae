@@ -1,4 +1,4 @@
-# SECURITY_POLICY: 살만해
+# 10. SECURITY_POLICY
 
 ## 기본 방향
 

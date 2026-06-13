@@ -1,4 +1,4 @@
-# Architecture Decision Records
+# 03. ADR
 
 ### ADR-001: AI 백엔드를 Spring Boot와 분리하여 Python FastAPI로 운영
 **결정**: LangGraph + Claude API를 담당하는 Python FastAPI 서버를 별도 Cloud Run 서비스로 분리한다.  

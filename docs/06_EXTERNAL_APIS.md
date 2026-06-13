@@ -1,4 +1,4 @@
-# EXTERNAL_APIS: 살만해
+# 06. EXTERNAL_APIS
 
 ## API 사용 원칙
 

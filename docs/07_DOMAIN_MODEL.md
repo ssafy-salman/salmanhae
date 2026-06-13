@@ -1,4 +1,4 @@
-# DOMAIN_MODEL: 살만해
+# 07. DOMAIN_MODEL
 
 ## 모델 요약
 

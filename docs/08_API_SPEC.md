@@ -1,4 +1,4 @@
-# API_SPEC: 살만해
+# 08. API_SPEC
 
 ## 공통 규칙
 

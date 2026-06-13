@@ -1,4 +1,4 @@
-# GIT_GUIDE: 살만해
+# 05. GIT_GUIDE
 
 ## 브랜치 전략
 
@@ -188,9 +188,9 @@ closes #이슈번호    ← 수동 PR만 해당. Phase PR은 이슈 없음
 
 ```
 이 파일들을 먼저 읽어줘:
-- docs/PRD.md
-- docs/ARCHITECTURE.md
-- docs/ADR.md
+- docs/01_PRD.md
+- docs/02_ARCHITECTURE.md
+- docs/03_ADR.md
 그 다음 [작업 내용] 구현해줘.
 ```
 

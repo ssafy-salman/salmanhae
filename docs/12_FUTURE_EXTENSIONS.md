@@ -1,4 +1,4 @@
-# FUTURE_EXTENSIONS: 살만해
+# 12. FUTURE_EXTENSIONS
 
 ## 등기부등본 AI 분석
 

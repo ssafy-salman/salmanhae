@@ -52,19 +52,5 @@ cd backend-ai && uvicorn app.main:app --reload  # 개발 서버
 cd backend-ai && pytest tests/                  # 테스트
 ```
 
-## 문서 위치
-
-| 문서 | 경로 |
-|------|------|
-| 서비스 목표·기능 범위 | docs/01_PRD.md |
-| 시스템 아키텍처·디렉토리 구조 | docs/02_ARCHITECTURE.md |
-| 기술 결정 기록 | docs/03_ADR.md |
-| UI 가이드·안티패턴 | docs/04_UI_GUIDE.md |
-| Git·협업 컨벤션 | docs/05_GIT_GUIDE.md |
-| 외부 API 목록 | docs/06_EXTERNAL_APIS.md |
-| 데이터 모델 | docs/07_DOMAIN_MODEL.md |
-| REST API 명세 | docs/08_API_SPEC.md |
-| 배치·데이터 수집 | docs/09_BATCH_INGESTION.md |
-| 보안 정책 | docs/10_SECURITY_POLICY.md |
-| 개발 순서 (로드맵) | docs/11_ROADMAP.md |
-| 확장 기능 계획 | docs/12_FUTURE_EXTENSIONS.md |
+## 문서
+`docs/` 폴더에 01~12 번호 순서로 정렬되어 있습니다.
