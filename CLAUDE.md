@@ -61,10 +61,10 @@ cd backend-ai && pytest tests/                  # 테스트
 | 기술 결정 기록 | docs/ADR.md |
 | UI 가이드·안티패턴 | docs/UI_GUIDE.md |
 | Git·협업 컨벤션 | docs/GIT_GUIDE.md |
-| 외부 API 목록 | docs/reference/external-apis.md |
-| 데이터 모델 | docs/reference/domain-model.md |
-| REST API 명세 | docs/reference/api-spec.md |
-| 배치·데이터 수집 | docs/reference/batch-ingestion.md |
-| 보안 정책 | docs/reference/security-policy.md |
-| 개발 순서 (로드맵) | docs/reference/roadmap.md |
-| 확장 기능 계획 | docs/reference/future-extensions.md |
+| 외부 API 목록 | docs/EXTERNAL_APIS.md |
+| 데이터 모델 | docs/DOMAIN_MODEL.md |
+| REST API 명세 | docs/API_SPEC.md |
+| 배치·데이터 수집 | docs/BATCH_INGESTION.md |
+| 보안 정책 | docs/SECURITY_POLICY.md |
+| 개발 순서 (로드맵) | docs/ROADMAP.md |
+| 확장 기능 계획 | docs/FUTURE_EXTENSIONS.md |
