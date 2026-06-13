@@ -21,17 +21,17 @@
 - 공공 API 데이터(실거래가, 안전시설)는 배치로 수집 후 DB에 저장하고, 클라이언트 요청 시에는 DB만 조회한다.
 - pgvector 유사도 검색은 FastAPI(backend-ai)에서만 수행한다.
 - Frontend는 Spring Boot REST API만 직접 호출한다.
-- 데이터 모델 변경 시 docs/05_domain_model.md를 함께 업데이트한다.
+- 데이터 모델 변경 시 docs/07_DOMAIN_MODEL.md를 함께 업데이트한다.
 - 안전 점수 계산은 배치에서 사전 계산하여 property_score_stat에 저장한다.
 
 ## 개발 프로세스
 
 - CRITICAL: 새 기능 구현 시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성한다 (TDD).
-- CRITICAL: 커밋 메시지는 `type(scope): 한글 설명 (#이슈번호)` 형식을 따른다 (docs/12_git_convention.md 참고).
+- CRITICAL: 커밋 메시지는 `type(scope): 한글 설명 (#이슈번호)` 형식을 따른다 (docs/05_GIT_GUIDE.md 참고).
 - CRITICAL: execute.py 자동 커밋에는 `[ai]` suffix를 붙인다. 수동 커밋에는 붙이지 않는다.
 - Phase 브랜치명: `phase/{N}-{slug}` (execute.py가 자동 생성).
 - feature/fix/refactor 브랜치는 develop으로 merge하고, develop → main은 Merge commit 사용.
-- API 응답 형식 변경 시 docs/06_rest_api_spec.md를 반드시 업데이트한다.
+- API 응답 형식 변경 시 docs/08_API_SPEC.md를 반드시 업데이트한다.
 - MVP 제외 기능(커뮤니티, 실매물 중개, HUG 정밀판정, 등기부등본 AI)은 구현하지 않는다.
 
 ## 명령어

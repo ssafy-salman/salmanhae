@@ -7,11 +7,11 @@
 ### 1단계: 문서 읽기
 다음 파일을 전부 읽어 프로젝트 컨텍스트를 파악합니다.
 - `CLAUDE.md` — 기술 스택, 아키텍처 규칙, 개발 프로세스
-- `docs/PRD.md` — 핵심 기능, MVP 제외 사항
-- `docs/ARCHITECTURE.md` — 디렉토리 구조, 패턴, 데이터 흐름
-- `docs/ADR.md` — 기술 결정 및 트레이드오프
-- `docs/UI_GUIDE.md` — 색상, 컴포넌트 패턴, 안티패턴
-- `docs/09_development_roadmap.md` — 개발 순서 (단계별 상세)
+- `docs/01_PRD.md` — 핵심 기능, MVP 제외 사항
+- `docs/02_ARCHITECTURE.md` — 디렉토리 구조, 패턴, 데이터 흐름
+- `docs/03_ADR.md` — 기술 결정 및 트레이드오프
+- `docs/04_UI_GUIDE.md` — 색상, 컴포넌트 패턴, 안티패턴
+- `docs/11_ROADMAP.md` — 개발 순서 (단계별 상세)
 
 ### 2단계: 사용자와 논의
 문서를 읽은 뒤 사용자에게 다음을 확인합니다.
@@ -68,7 +68,7 @@ Phase 파일 생성 완료 후 사용자에게 확인:
 
 ## 준수 사항
 
-- MVP 제외 사항(`docs/PRD.md`)에 있는 기능은 Phase에 포함하지 않는다.
+- MVP 제외 사항(`docs/01_PRD.md`)에 있는 기능은 Phase에 포함하지 않는다.
 - 각 Phase는 CLAUDE.md의 CRITICAL 규칙을 명시적으로 확인한다.
 - API 키 관련 작업이 있으면 반드시 환경변수 처리를 Phase에 포함한다.
 - 테스트 작성을 별도 Phase로 두지 않고 구현 Phase 내에 포함한다 (TDD).
