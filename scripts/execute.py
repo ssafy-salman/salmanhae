@@ -14,7 +14,6 @@ phases/<task-name>/phase{N}-{slug}.md 파일을 순서대로 실행합니다.
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -57,28 +56,87 @@ def load_status(phase_path: Path) -> dict:
     return {"status": STATUS_PENDING}
 
 
-def save_status(phase_path: Path, status: str, detail: str = ""):
+def save_status(phase_path: Path, status: str, detail: str = "", issue_number: int = 0):
     sf = status_file(phase_path)
     sf.write_text(json.dumps({
         "status": status,
         "phase": phase_path.name,
+        "issue_number": issue_number,
         "timestamp": datetime.now().isoformat(),
         "detail": detail,
     }, ensure_ascii=False, indent=2))
 
 
-def run_phase(phase_path: Path, task_name: str) -> tuple[str, str]:
-    """Claude headless 모드로 Phase를 실행하고 (status, detail)을 반환."""
+def create_issue(phase_num: str, phase_stem: str, task_name: str) -> int:
+    """GitHub 이슈를 생성하고 이슈 번호를 반환한다. 실패 시 0 반환."""
+    slug = re.sub(r"^phase\d+-", "", phase_stem)
+    title = f"[Phase {phase_num}] {slug.replace('-', ' ')}"
+    body = (
+        f"## Phase {phase_num} — {slug}\n\n"
+        f"Task: `{task_name}`\n\n"
+        f"Harness execute.py가 자동 생성한 이슈입니다.\n"
+        f"Phase 파일: `phases/{task_name}/phase{phase_num}-{slug}.md`"
+    )
+    result = subprocess.run(
+        [
+            "gh", "issue", "create",
+            "--title", title,
+            "--body", body,
+            "--label", "ai-generated",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return 0
+    # gh 출력 마지막 줄이 이슈 URL
+    url = result.stdout.strip().splitlines()[-1]
+    match = re.search(r"/issues/(\d+)$", url)
+    return int(match.group(1)) if match else 0
+
+
+def create_pr(branch_name: str, phase_num: str, phase_stem: str, issue_number: int) -> str:
+    """PR을 생성하고 PR URL을 반환한다."""
+    slug = re.sub(r"^phase\d+-", "", phase_stem)
+    title = f"[Phase {phase_num}] {slug.replace('-', ' ')} [ai]"
+    closes = f"closes #{issue_number}" if issue_number else ""
+    body = (
+        f"## 변경 내용\n"
+        f"Phase {phase_num} Harness 자동 구현\n\n"
+        f"## 연결 이슈\n"
+        f"{closes}\n\n"
+        f"## 테스트\n"
+        f"- [ ] 단위 테스트 통과\n"
+        f"- [ ] 로컬 동작 확인\n"
+    )
+    subprocess.run(["git", "push", "-u", "origin", branch_name], capture_output=True, check=False)
+    result = subprocess.run(
+        [
+            "gh", "pr", "create",
+            "--title", title,
+            "--body", body,
+            "--label", "ai-generated",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout.strip().splitlines()[-1] if result.returncode == 0 else ""
+
+
+def run_phase(phase_path: Path, task_name: str) -> tuple[str, str, int]:
+    """Claude headless 모드로 Phase를 실행하고 (status, detail, elapsed)을 반환."""
     phase_content = phase_path.read_text(encoding="utf-8")
     phase_num = re.search(r"phase(\d+)", phase_path.name).group(1)
     branch_name = f"phase/{phase_num}-{re.sub(r'^phase\d+-', '', phase_path.stem)}"
 
+    # GitHub 이슈 생성
+    issue_number = create_issue(phase_num, phase_path.stem, task_name)
+    issue_tag = f" (#{issue_number})" if issue_number else ""
+
     # Phase 브랜치 생성
-    subprocess.run(
-        ["git", "checkout", "-b", branch_name],
-        capture_output=True,
-        check=False,
-    )
+    subprocess.run(["git", "checkout", "-b", branch_name], capture_output=True, check=False)
 
     prompt = f"""당신은 살만해 프로젝트의 AI 에이전트입니다.
 
@@ -100,7 +158,6 @@ def run_phase(phase_path: Path, task_name: str) -> tuple[str, str]:
         timeout=600,
     )
     elapsed = int(time.time() - start)
-
     output = result.stdout + result.stderr
 
     # 상태 파싱
@@ -109,16 +166,22 @@ def run_phase(phase_path: Path, task_name: str) -> tuple[str, str]:
     elif result.returncode != 0 or "STATUS: error" in output:
         status = STATUS_ERROR
     else:
-        status = STATUS_COMPLETED  # 명시적 STATUS 없으면 성공으로 간주
+        status = STATUS_COMPLETED
 
     if status == STATUS_COMPLETED:
-        # 자동 커밋
-        phase_title = phase_path.stem.replace("-", " ").replace("phase", "Phase")
-        commit_msg = f"feat: {phase_title} 완료 [ai]"
+        slug = re.sub(r"^phase\d+-", "", phase_path.stem)
+        commit_msg = f"feat: phase {phase_num} {slug.replace('-', ' ')}{issue_tag} [ai]"
         subprocess.run(["git", "add", "-A"], check=False)
         subprocess.run(["git", "commit", "-m", commit_msg], check=False)
 
-    return status, output[-500:] if len(output) > 500 else output, elapsed
+        # PR 생성
+        pr_url = create_pr(branch_name, phase_num, phase_path.stem, issue_number)
+        if pr_url:
+            print(f"\n  PR: {pr_url}", flush=True)
+
+    detail = output[-500:] if len(output) > 500 else output
+    save_status(phase_path, status, detail, issue_number)
+    return status, detail, elapsed
 
 
 def print_header(task_name: str, phases: list[Path], pending_count: int):
@@ -139,8 +202,7 @@ def main():
 
     phases = load_phases(args.task)
     statuses = [load_status(p) for p in phases]
-    pending = [p for p, s in zip(phases, statuses)
-               if s["status"] == STATUS_PENDING]
+    pending = [p for p, s in zip(phases, statuses) if s["status"] == STATUS_PENDING]
 
     if args.dry_run:
         print_header(args.task, phases, len(pending))
@@ -160,7 +222,8 @@ def main():
 
         st = load_status(phase)
         if st["status"] == STATUS_COMPLETED:
-            print(f"  ✓  Phase {phase_num}: {phase.stem} [이미 완료]")
+            issue_tag = f" (#{st.get('issue_number')})" if st.get("issue_number") else ""
+            print(f"  ✓  Phase {phase_num}: {phase.stem}{issue_tag} [이미 완료]")
             success_count += 1
             continue
 
@@ -170,10 +233,10 @@ def main():
             status, detail, elapsed = run_phase(phase, args.task)
         except subprocess.TimeoutExpired:
             status, detail, elapsed = STATUS_ERROR, "타임아웃 (600s 초과)", 600
+            save_status(phase, status, detail)
         except Exception as e:
             status, detail, elapsed = STATUS_ERROR, str(e), 0
-
-        save_status(phase, status, detail)
+            save_status(phase, status, detail)
 
         if status == STATUS_COMPLETED:
             print(f" [{elapsed}s] ✓")

@@ -98,15 +98,15 @@ test(be): PropertyService 단위 테스트 추가 (#9)
 | 영역 | `frontend` `backend` `backend-ai` `db` |
 | 기능 | `F-1` ~ `F-8` |
 | 우선순위 | `priority-high` `priority-mid` `priority-low` |
+| AI 자동 | `ai-generated` |
 
 ### 이슈 제목
 
-사람이 여는 이슈만 작성한다. Phase 작업은 execute.py가 PR로 대신한다.
-
 ```
-[FEAT][F-N] 설명
-[BUG][F-N] 설명
-[CHORE] 설명
+[FEAT][F-N] 설명        ← 수동
+[BUG][F-N] 설명         ← 수동
+[CHORE] 설명            ← 수동
+[Phase N] {slug}        ← execute.py 자동 생성 (ai-generated 라벨)
 ```
 
 ### 이슈 본문 템플릿
@@ -160,9 +160,11 @@ closes #이슈번호    ← 수동 PR만 해당. Phase PR은 이슈 없음
    → AI가 docs/ 읽고 Phase 계획 제안 → 승인
 2. phases/{task}/ 에 Phase 파일 생성됨
 3. python3 scripts/execute.py {task-name}
+   → Phase마다 GitHub 이슈 자동 생성 (ai-generated 라벨)
    → phase/* 브랜치 자동 생성
    → Claude 헤드리스 모드로 Phase 순차 실행
-   → Phase 완료 시 커밋 생성 ([ai] suffix)
+   → Phase 완료 시 커밋 생성 (#이슈번호 포함, [ai] suffix)
+   → PR 자동 생성 (closes #이슈번호)
 4. Phase PR → 상대방 approve → develop merge
 ```
 
