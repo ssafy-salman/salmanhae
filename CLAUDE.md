@@ -56,17 +56,15 @@ cd backend-ai && pytest tests/                  # 테스트
 
 | 문서 | 경로 |
 |------|------|
-| 서비스 방향·기술 스택 | docs/01_project_direction.md |
-| MVP 기능 범위 | docs/02_mvp_scope.md |
-| 외부 API 목록 | docs/03_external_apis.md |
-| 시스템 아키텍처 | docs/04_backend_architecture.md |
-| 데이터 모델 | docs/05_domain_model.md |
-| REST API 명세 | docs/06_rest_api_spec.md |
-| 배치·데이터 수집 | docs/07_batch_ingestion.md |
-| 보안 정책 | docs/08_security_policy.md |
-| 개발 순서 | docs/09_development_roadmap.md |
-| Git 컨벤션 | docs/12_git_convention.md |
-| 하네스 PRD | docs/PRD.md |
-| 하네스 아키텍처 | docs/ARCHITECTURE.md |
-| 하네스 ADR | docs/ADR.md |
-| UI 가이드 | docs/UI_GUIDE.md |
+| 서비스 목표·기능 범위 | docs/PRD.md |
+| 시스템 아키텍처·디렉토리 구조 | docs/ARCHITECTURE.md |
+| 기술 결정 기록 | docs/ADR.md |
+| UI 가이드·안티패턴 | docs/UI_GUIDE.md |
+| Git·협업 컨벤션 | docs/GIT_GUIDE.md |
+| 외부 API 목록 | docs/reference/external-apis.md |
+| 데이터 모델 | docs/reference/domain-model.md |
+| REST API 명세 | docs/reference/api-spec.md |
+| 배치·데이터 수집 | docs/reference/batch-ingestion.md |
+| 보안 정책 | docs/reference/security-policy.md |
+| 개발 순서 (로드맵) | docs/reference/roadmap.md |
+| 확장 기능 계획 | docs/reference/future-extensions.md |
