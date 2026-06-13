@@ -120,7 +120,7 @@ test(be): PropertyService 단위 테스트 추가 (#9)
 - [ ] 세부 항목 2
 
 ## 참고
-- 관련 문서: docs/API_SPEC.md
+- 관련 문서: docs/08_API_SPEC.md
 ```
 
 ---
@@ -146,7 +146,7 @@ closes #이슈번호    ← 수동 PR만 해당. Phase PR은 이슈 없음
 ## 테스트
 - [ ] 단위 테스트 통과
 - [ ] 로컬 동작 확인
-- [ ] API 응답 형식 확인 (docs/API_SPEC.md)
+- [ ] API 응답 형식 확인 (docs/08_API_SPEC.md)
 ```
 
 ---
