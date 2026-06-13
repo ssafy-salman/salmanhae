@@ -1,4 +1,4 @@
-# 03. 외부 API 정리
+# EXTERNAL_APIS: 살만해
 
 ## API 사용 원칙
 
