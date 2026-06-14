@@ -1,4 +1,4 @@
-# 06. REST API 명세
+# 08. API_SPEC
 
 ## 공통 규칙
 

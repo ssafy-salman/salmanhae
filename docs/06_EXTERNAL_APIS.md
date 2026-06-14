@@ -1,4 +1,4 @@
-# 03. 외부 API 정리
+# 06. EXTERNAL_APIS
 
 ## API 사용 원칙
 

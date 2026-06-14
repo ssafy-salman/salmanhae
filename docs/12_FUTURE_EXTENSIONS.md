@@ -1,4 +1,4 @@
-# 10. 추후 확장 기능
+# 12. FUTURE_EXTENSIONS
 
 ## 등기부등본 AI 분석
 
