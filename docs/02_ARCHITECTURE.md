@@ -32,13 +32,14 @@ salmanhae/
 │       ├── api/           # Axios 클라이언트 + API 함수
 │       └── utils/         # 순수 유틸리티 함수
 ├── backend/           # Spring Boot 3 (Cloud Run)
-│   └── src/main/java/
+│   └── src/main/java/com/ssafy/salman/
+│       ├── config/        # Security, CORS, Swagger, Beans
 │       ├── controller/    # REST 엔드포인트 (입력 검증·위임만)
-│       ├── service/       # 비즈니스 로직 (모든 로직 여기)
-│       ├── dao/           # MyBatis Mapper 인터페이스
-│       ├── domain/        # DTO, Enum, VO
-│       ├── batch/         # Spring Scheduler 배치 작업
-│       └── config/        # Security, CORS, Beans
+│       ├── model/
+│       │   ├── dao/       # MyBatis DAO 인터페이스 + Impl
+│       │   └── dto/       # 요청/응답 데이터 객체
+│       ├── service/       # 비즈니스 로직 인터페이스 + Impl
+│       └── batch/         # Spring Scheduler 배치 작업
 └── backend-ai/        # Python FastAPI + LangGraph (Cloud Run)
     └── app/
         ├── api/           # FastAPI 라우터
