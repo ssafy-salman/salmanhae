@@ -35,9 +35,8 @@ salmanhae/
 │   └── src/main/java/
 │       ├── controller/    # REST 엔드포인트 (입력 검증·위임만)
 │       ├── service/       # 비즈니스 로직 (모든 로직 여기)
-│       ├── repository/    # JPA Repository
-│       ├── domain/        # Entity, Enum, VO
-│       ├── dto/           # 요청/응답 DTO
+│       ├── dao/           # MyBatis Mapper 인터페이스
+│       ├── domain/        # DTO, Enum, VO
 │       ├── batch/         # Spring Scheduler 배치 작업
 │       └── config/        # Security, CORS, Beans
 └── backend-ai/        # Python FastAPI + LangGraph (Cloud Run)
@@ -117,7 +116,7 @@ Spring Scheduler
 
 | 패턴 | 적용 위치 |
 |------|----------|
-| Controller → Service → Repository | Spring Boot 전 도메인 |
+| Controller → Service → DAO (MyBatis) | Spring Boot 전 도메인 |
 | LangGraph State Machine | AI 에이전트 의도 분류 → 툴 선택 → 응답 생성 |
 | Pinia Store per Feature | Frontend (map, chat, auth, wishlist) |
 | Axios Interceptor | JWT 자동 첨부, 401 처리 |
