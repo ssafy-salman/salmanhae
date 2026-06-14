@@ -99,7 +99,7 @@ def create_issue(phase_num: str, phase_stem: str, task_name: str) -> int:
 def create_pr(branch_name: str, phase_num: str, phase_stem: str, issue_number: int) -> str:
     """PR을 생성하고 PR URL을 반환한다."""
     slug = re.sub(r"^phase\d+-", "", phase_stem)
-    title = f"[Phase {phase_num}] {slug.replace('-', ' ')} [ai]"
+    title = f"[Phase {phase_num}] {slug.replace('-', ' ')}"
     closes = f"closes #{issue_number}" if issue_number else ""
     body = (
         f"## 변경 내용\n"
@@ -170,7 +170,7 @@ def run_phase(phase_path: Path, task_name: str) -> tuple[str, str, int]:
 
     if status == STATUS_COMPLETED:
         slug = re.sub(r"^phase\d+-", "", phase_path.stem)
-        commit_msg = f"feat: phase {phase_num} {slug.replace('-', ' ')}{issue_tag} [ai]"
+        commit_msg = f"feat: phase {phase_num} {slug.replace('-', ' ')}{issue_tag}"
         subprocess.run(["git", "add", "-A"], check=False)
         subprocess.run(["git", "commit", "-m", commit_msg], check=False)
 

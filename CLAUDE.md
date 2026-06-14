@@ -28,7 +28,6 @@
 
 - CRITICAL: 새 기능 구현 시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성한다 (TDD).
 - CRITICAL: 커밋 메시지는 `type(scope): 한글 설명 (#이슈번호)` 형식을 따른다 (docs/05_GIT_GUIDE.md 참고).
-- CRITICAL: execute.py 자동 커밋에는 `[ai]` suffix를 붙인다. 수동 커밋에는 붙이지 않는다.
 - Phase 브랜치명: `phase/{N}-{slug}` (execute.py가 자동 생성).
 - feature/fix/refactor 브랜치는 develop으로 merge하고, develop → main은 Merge commit 사용.
 - API 응답 형식 변경 시 docs/08_API_SPEC.md를 반드시 업데이트한다.

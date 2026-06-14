@@ -42,8 +42,7 @@ docs/{slug}
 ## 커밋 메시지
 
 ```
-type(scope): 한글 설명 (#이슈번호)        ← 수동 커밋
-type(scope): 한글 설명 (#이슈번호) [ai]   ← execute.py 자동 커밋
+type(scope): 한글 설명 (#이슈번호)
 ```
 
 이슈 번호는 항상 포함한다. execute.py가 Phase 커밋에 자동 삽입한다.
@@ -75,16 +74,6 @@ type(scope): 한글 설명 (#이슈번호) [ai]   ← execute.py 자동 커밋
 | `wishlist` | 찜하기 |
 | `db` | DB 스키마/마이그레이션 |
 | `batch` | 배치/공공데이터 수집 |
-
-### `[ai]` 태그
-
-execute.py가 Phase 완료 후 자동 생성하는 커밋에만 붙인다. 수동 커밋에는 붙이지 않는다.
-
-```
-feat(fe): 지도 컴포넌트 초기 구현 (#12) [ai]
-fix(fe): 마커 팝업 z-index 수정 (#8)
-test(be): PropertyService 단위 테스트 추가 (#9)
-```
 
 ---
 
