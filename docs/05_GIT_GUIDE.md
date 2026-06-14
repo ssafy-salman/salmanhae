@@ -30,9 +30,9 @@ docs/{slug}
 
 | 방향 | 방식 |
 |------|------|
-| `phase/*` → `develop` | Squash merge |
-| `feature/*` → `develop` | Squash merge |
-| `fix/*` → `develop` | Squash merge |
+| `phase/*` → `develop` |  Merge commit |
+| `feature/*` → `develop` | Merge commit |
+| `fix/*` → `develop` | Merge commit |
 | `develop` → `main` | Merge commit |
 
 셀프 머지 금지 — Phase PR 포함 상대방 approve 후 merge.
