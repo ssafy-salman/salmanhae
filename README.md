@@ -99,7 +99,7 @@ git checkout -b feature/1-property-api
 git commit -m "feat(be): 매물 조회 API 구현 (#이슈번호)"
 ```
 
-**4. PR 생성 → 상대방 approve → develop merge (Squash)**
+**4. PR 생성 → 상대방 approve → develop merge (Merge Commit)**
 
 ---
 
@@ -144,7 +144,7 @@ feat(ai): LangGraph 의도분류 구현 (#12)
 ### 규칙
 
 - 셀프 머지 금지 — 내 PR은 상대방이 approve해야 merge
-- develop merge는 **Squash**, develop → main은 **Merge commit**
+- merge는 모두 **Merge commit**
 - 이슈 번호 항상 포함 — 커밋 메시지에 `(#N)` 필수
 
 ---
