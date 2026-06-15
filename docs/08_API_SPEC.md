@@ -99,6 +99,8 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 | `minDeposit` | — | 최소 보증금 (원) |
 | `maxDeposit` | — | 최대 보증금 (원) |
 
+네이버부동산 크롤링 후 DB에 저장된 매물을 지도 범위와 필터 조건으로 조회합니다.
+
 **Response**
 ```json
 {
@@ -120,6 +122,99 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
       }
     ],
     "totalCount": 1
+  },
+  "message": "OK"
+}
+```
+
+---
+
+## Map View API
+
+### 지도 줌 레벨별 표시 데이터 조회
+```http
+GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
+```
+
+프론트는 네이버지도 SDK의 현재 bounds와 zoom을 전달하고, 백엔드는 줌 레벨에 맞춰 지역 평균 또는 매물/클러스터 데이터를 반환합니다.
+
+**Query Params**
+
+| 파라미터 | 필수 | 설명 |
+| --- | --- | --- |
+| `west` | ✅ | 서쪽 경도 |
+| `east` | ✅ | 동쪽 경도 |
+| `south` | ✅ | 남쪽 위도 |
+| `north` | ✅ | 북쪽 위도 |
+| `zoom` | ✅ | 네이버지도 현재 zoom |
+| `transactionType` | — | `MONTHLY_RENT` / `JEONSE` / `SALE` |
+| `propertyType` | — | `ONE_ROOM` / `OFFICETEL` / `APARTMENT` / `VILLA` / `MULTI_FAMILY` |
+| `clusterThreshold` | — | 매물 클러스터링 기준 수. 기본값은 서버 설정 사용 |
+
+**표시 모드**
+
+| mode | 지도 범위 | 반환 데이터 |
+| --- | --- | --- |
+| `SIDO_AVG` | 시/도 수준 | 시/도 실거래가 평균 |
+| `SIGUNGU_AVG` | 시/군/구 수준 | 시/군/구 실거래가 평균 |
+| `EUPMYEONDONG_AVG` | 읍/면/동 수준 | 읍/면/동 실거래가 평균 |
+| `PROPERTY_MARKER` | 상세 확대 | 개별 매물 또는 원형 클러스터 |
+
+**지역 평균 Response**
+```json
+{
+  "data": {
+    "mode": "SIGUNGU_AVG",
+    "items": [
+      {
+        "type": "REGION_AVG",
+        "regionLevel": "SIGUNGU",
+        "regionCode": "11620",
+        "regionName": "관악구",
+        "avgDeposit": 98000000,
+        "avgMonthlyRent": 620000,
+        "avgSalePrice": 720000000,
+        "transactionCount": 1240,
+        "latitude": 37.478406,
+        "longitude": 126.951613
+      }
+    ],
+    "totalCount": 1
+  },
+  "message": "OK"
+}
+```
+
+**상세 확대 Response**
+```json
+{
+  "data": {
+    "mode": "PROPERTY_MARKER",
+    "items": [
+      {
+        "type": "PROPERTY",
+        "id": 1,
+        "buildingName": "대학동 그린빌",
+        "transactionType": "MONTHLY_RENT",
+        "deposit": 10000000,
+        "monthlyRent": 550000,
+        "areaM2": 22.5,
+        "latitude": 37.470123,
+        "longitude": 126.936456,
+        "safetyScore": 78
+      },
+      {
+        "type": "CLUSTER",
+        "clusterId": "cluster-37.471-126.938",
+        "count": 42,
+        "latitude": 37.47102,
+        "longitude": 126.93811,
+        "radiusM": 180,
+        "avgDeposit": 12000000,
+        "avgMonthlyRent": 580000
+      }
+    ],
+    "totalCount": 2
   },
   "message": "OK"
 }

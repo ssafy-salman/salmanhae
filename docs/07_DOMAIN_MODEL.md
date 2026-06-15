@@ -4,10 +4,11 @@
 
 | 모델 | 역할 |
 | --- | --- |
-| `Property` | 지도에 표시할 더미 매물 기본 정보 |
+| `Property` | 네이버부동산 크롤링 후 지도에 표시할 매물 기본 정보 |
 | `TransactionHistory` | 국토교통부 실거래가 (전월세 + 매매 8종) |
 | `SafetyFacility` | CCTV, 비상벨, 보안등, 치안시설 좌표 |
 | `PropertyScoreStat` | 매물별 안전·가격 점수 사전 계산 통계 |
+| `RegionPriceStat` | 지도 줌 레벨별 표시를 위한 지역 단위 실거래가 평균 |
 | `User` | 로그인 사용자 정보 (Supabase Auth 연동) |
 | `Wishlist` | 찜한 매물 |
 | `ConversationSession` | AI 에이전트 대화 세션 (1.5차) |
@@ -22,11 +23,12 @@
 | `PropertyType` | `ONE_ROOM`, `OFFICETEL`, `VILLA`, `APARTMENT`, `MULTI_FAMILY` | 매물 또는 실거래가의 주택 유형 |
 | `TransactionType` | `MONTHLY_RENT`, `JEONSE`, `SALE` | 월세, 전세, 매매 구분 |
 | `SafetyFacilityType` | `CCTV`, `EMERGENCY_BELL`, `SECURITY_LIGHT`, `POLICE` | 안전시설 유형 |
+| `RegionLevel` | `SIDO`, `SIGUNGU`, `EUPMYEONDONG` | 지도 평균 표시용 행정구역 레벨 |
 | `ConversationIntent` | `PROPERTY_SEARCH`, `LEGAL_CONSULT`, `PRICE_ANALYSIS`, `SAFETY_ANALYSIS`, `HUG_CALC` | AI 에이전트 의도 분류 |
 
 ---
 
-## Property — 더미 매물
+## Property — 네이버부동산 크롤링 매물
 
 ```
 property
@@ -45,6 +47,10 @@ property
 - latitude
 - longitude
 - description
+- source                  ← NAVER_REAL_ESTATE
+- source_property_id
+- source_url
+- crawled_at
 - created_at
 ```
 
@@ -70,6 +76,29 @@ transaction_history
 - build_year
 - source_api
 - created_at
+```
+
+---
+
+## RegionPriceStat — 지역별 실거래가 평균
+
+실거래가 배치 후 시/도, 시/군/구, 읍/면/동 단위 평균을 계산해 지도 줌 레벨별 표시 데이터로 사용합니다.
+
+```
+region_price_stat
+- id
+- region_level            ← SIDO / SIGUNGU / EUPMYEONDONG
+- region_code
+- region_name
+- property_type
+- transaction_type
+- avg_deposit
+- avg_monthly_rent
+- avg_sale_price
+- transaction_count
+- latitude
+- longitude
+- calculated_at
 ```
 
 ---

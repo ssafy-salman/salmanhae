@@ -17,7 +17,7 @@
 Codex에게 다음처럼 요청합니다.
 
 ```text
-$salmanhae-harness 를 사용해서 F-1 더미 매물 API + 지도 연동을 Phase로 쪼개줘.
+$salmanhae-harness 를 사용해서 F-1 네이버부동산 매물 API + 지도 연동을 Phase로 쪼개줘.
 ```
 
 Codex는 문서를 읽고 3~7개 Phase 계획을 제안합니다. 승인 후 `phases/{task-name}/phase{N}-{slug}.md` 파일을 생성합니다.

@@ -214,9 +214,9 @@ GitHub 작업(커밋, PR)은 AI에게 직접 시키지 말고 수동으로 처�
 
 | 단계 | 이슈 제목 | 브랜치 |
 |------|-----------|--------|
-| 1 | [FEAT][F-1] 더미 매물 API + 지도 연동 | `feature/1-property-api` |
+| 1 | [FEAT][F-1] 네이버부동산 매물 API + 지도 연동 | `feature/1-property-api` |
 | 2 | [FEAT][F-1] 안전시설 API + 레이어 | `feature/2-safety-api` |
-| 3 | [FEAT][F-1] 실거래가 API + 레이어 | `feature/3-transaction-api` |
+| 3 | [FEAT][F-1] 실거래가 API + 지도 평균 레이어 | `feature/3-transaction-api` |
 | 4 | [FEAT][F-1] 안전 점수 계산 | `feature/4-safety-score` |
 | 5 | [FEAT][F-6] 인증 (Supabase Auth) | `feature/5-auth` |
 | 6 | [FEAT][F-2] AI 에이전트 — 매물 추천 | `feature/6-ai-recommend` |

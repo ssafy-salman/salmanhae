@@ -32,6 +32,7 @@ F-1(지도 탐색)과 지도 기반 시세·안전 분석 조회는 비로그인
 | --- | --- |
 | `GET /api/v1/properties` | 매물 탐색은 공개 기능 |
 | `GET /api/v1/properties/{id}` | 매물 상세는 공개 기능 |
+| `GET /api/v1/map/viewport` | 지도 줌 레벨별 표시 데이터는 공개 기능 |
 | `GET /api/v1/properties/{id}/transactions` | 실거래가는 공개 데이터 기반 |
 | `GET /api/v1/properties/{id}/safety-summary` | 안전 요약은 공개 데이터 기반 |
 | `GET /api/v1/safety/facilities` | 안전시설은 공개 데이터 기반 |
@@ -59,4 +60,5 @@ F-1(지도 탐색)과 지도 기반 시세·안전 분석 조회는 비로그인
 - 백엔드는 클라이언트가 보낸 userId를 직접 신뢰하지 않습니다.
 - 사용자 식별은 반드시 Supabase JWT 검증 후 SecurityContext에서 가져옵니다.
 - 리프레시 토큰은 Supabase에서 관리합니다. 별도 Redis 블랙리스트는 확장 단계에서 고려합니다.
-- API 키(국토부, 네이버지도 등)는 절대 프론트에 노출하지 않습니다.
+- 국토부, 생활안전지도, 재난안전, 크롤링 관련 키와 시크릿은 절대 프론트에 노출하지 않습니다.
+- 네이버지도 SDK처럼 브라우저에서 직접 쓰는 공개 클라이언트 키는 도메인 제한을 걸고, 서버용 시크릿과 분리합니다.
