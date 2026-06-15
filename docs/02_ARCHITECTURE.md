@@ -32,7 +32,7 @@ salmanhae/
 │       ├── api/           # Axios 클라이언트 + API 함수
 │       └── utils/         # 순수 유틸리티 함수
 ├── backend/           # Spring Boot 3 (Cloud Run)
-│   └── src/main/java/com/ssafy/salman/
+│   └── src/main/java/com/ssafy/salmanhae/
 │       ├── config/        # Security, CORS, Swagger, Beans
 │       ├── controller/    # REST 엔드포인트 (입력 검증·위임만)
 │       ├── model/
@@ -52,11 +52,13 @@ salmanhae/
 ## 서비스별 역할
 
 ### Frontend (Vue 3 + 네이버지도 SDK)
+
 - 네이버지도 SDK로 지도 렌더링, 마커, 레이어 표시
 - Spring Boot REST API 호출 (매물, 안전, 실거래가, 챗봇)
 - Supabase Auth JWT를 Axios Interceptor로 자동 첨부
 
 ### Spring Boot (Cloud Run)
+
 - 회원가입/로그인/로그아웃 API (Supabase Auth 래핑)
 - Supabase JWT 검증 (Spring Security Filter)
 - 공공데이터 배치 수집 → PostgreSQL 저장
@@ -65,6 +67,7 @@ salmanhae/
 - 메시지 로깅, 찜하기, 대화 세션 관리
 
 ### Python FastAPI + LangGraph (Cloud Run)
+
 - 사용자 입력 의도 분류 (매물 추천 / 법률 상담 / 시세 분석 / 안전 분석)
 - 의도별 툴 실행:
   - `search_properties` → Spring Boot API 호출
@@ -74,31 +77,32 @@ salmanhae/
 - Claude API로 최종 자연어 응답 생성
 
 ### Supabase
+
 - Auth: JWT 발급, 이메일/소셜 로그인 관리
 - DB (PostgreSQL): 매물, 실거래가, 안전시설, 찜하기, 대화 기록, 사용자
 - pgvector: 법률 문서 임베딩, 뉴스 임베딩
 
 ## 서비스 간 통신 규칙
 
-| 출발 | 도착 | 허용 | 내용 |
-|------|------|------|------|
-| Frontend | Spring Boot | O | REST HTTPS |
-| Frontend | FastAPI | X | 직접 호출 금지 |
-| Spring Boot | FastAPI | O | HTTP POST 내부망 |
-| FastAPI | Spring Boot | O | HTTP GET 내부망 (툴 호출) |
-| FastAPI | Supabase pgvector | O | SQL |
-| FastAPI | Claude API | O | HTTPS |
-| Spring Boot | Supabase Auth | O | HTTPS |
+| 출발        | 도착              | 허용 | 내용                      |
+| ----------- | ----------------- | ---- | ------------------------- |
+| Frontend    | Spring Boot       | O    | REST HTTPS                |
+| Frontend    | FastAPI           | X    | 직접 호출 금지            |
+| Spring Boot | FastAPI           | O    | HTTP POST 내부망          |
+| FastAPI     | Spring Boot       | O    | HTTP GET 내부망 (툴 호출) |
+| FastAPI     | Supabase pgvector | O    | SQL                       |
+| FastAPI     | Claude API        | O    | HTTPS                     |
+| Spring Boot | Supabase Auth     | O    | HTTPS                     |
 
 ## 데이터베이스
 
 PostgreSQL (Supabase) + pgvector 단일 인스턴스.
 
-| 용도 | 테이블 |
-|------|--------|
+| 용도   | 테이블                                                                                                     |
+| ------ | ---------------------------------------------------------------------------------------------------------- |
 | 관계형 | property, transaction_history, safety_facility, wishlist, user, conversation_session, conversation_message |
-| 벡터 | 법률 문서 임베딩, 뉴스 임베딩 (pgvector) |
-| 통계 | property_score_stat (안전·가격 점수 사전 계산) |
+| 벡터   | 법률 문서 임베딩, 뉴스 임베딩 (pgvector)                                                                   |
+| 통계   | property_score_stat (안전·가격 점수 사전 계산)                                                             |
 
 ## 배치 흐름
 
@@ -115,10 +119,10 @@ Spring Scheduler
 
 ## 설계 패턴
 
-| 패턴 | 적용 위치 |
-|------|----------|
-| Controller → Service → DAO (MyBatis) | Spring Boot 전 도메인 |
-| LangGraph State Machine | AI 에이전트 의도 분류 → 툴 선택 → 응답 생성 |
-| Pinia Store per Feature | Frontend (map, chat, auth, wishlist) |
-| Axios Interceptor | JWT 자동 첨부, 401 처리 |
-| Batch → DB 캐싱 | 공공 API 데이터 — 런타임에 외부 호출 없음 |
+| 패턴                                 | 적용 위치                                   |
+| ------------------------------------ | ------------------------------------------- |
+| Controller → Service → DAO (MyBatis) | Spring Boot 전 도메인                       |
+| LangGraph State Machine              | AI 에이전트 의도 분류 → 툴 선택 → 응답 생성 |
+| Pinia Store per Feature              | Frontend (map, chat, auth, wishlist)        |
+| Axios Interceptor                    | JWT 자동 첨부, 401 처리                     |
+| Batch → DB 캐싱                      | 공공 API 데이터 — 런타임에 외부 호출 없음   |
