@@ -157,10 +157,23 @@ def post_edit(payload: dict[str, Any]) -> int:
     if not file_path or not is_implementation_file(file_path):
         return 0
 
+    p = Path(file_path)
+    if not p.is_absolute():
+        p = Path.cwd() / p
+
+    # Determine a scoped search root: walk up from file's parent to find
+    # the component root (directory containing 'service'/'graph'/'rag'/'composables')
+    search_root = p.parent
+    for part in ["service", "graph", "rag", "composables"]:
+        if part in p.parts:
+            idx = p.parts.index(part)
+            if idx > 0:
+                search_root = Path(*p.parts[:idx])
+                break
+
     found = False
-    root = Path.cwd()
     for pattern in expected_test_patterns(file_path):
-        if any(root.rglob(pattern)):
+        if any(search_root.rglob(pattern)):
             found = True
             break
 

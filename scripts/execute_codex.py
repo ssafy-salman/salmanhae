@@ -133,7 +133,9 @@ def create_pr(branch_name: str, phase_path: Path, issue_number: int, enabled: bo
         "- [ ] 단위 테스트 통과\n"
         "- [ ] 로컬 동작 확인\n"
     )
-    run_command(["git", "push", "-u", "origin", branch_name])
+    push_result = run_command(["git", "push", "-u", "origin", branch_name])
+    if push_result.returncode != 0:
+        raise RuntimeError(f"git push failed: {push_result.stderr.strip()}")
     result = run_command(
         [
             "gh",
@@ -147,6 +149,8 @@ def create_pr(branch_name: str, phase_path: Path, issue_number: int, enabled: bo
             "ai-generated",
         ]
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"gh pr create failed: {result.stderr.strip()}")
     return result.stdout.strip().splitlines()[-1] if result.returncode == 0 else ""
 
 
@@ -180,7 +184,13 @@ def run_codex(prompt: str, codex_bin: str, timeout: int, extra_args: list[str]) 
 
 
 def ensure_branch(branch_name: str) -> None:
-    result = run_command(["git", "checkout", "-b", branch_name])
+    check_result = run_command(["git", "show-ref", "--verify", "--quiet", f"refs/heads/{branch_name}"])
+    if check_result.returncode == 0:
+        # Branch exists, just checkout
+        result = run_command(["git", "checkout", branch_name])
+    else:
+        # Branch doesn't exist, create it
+        result = run_command(["git", "checkout", "-b", branch_name])
     if result.returncode != 0:
         print(result.stderr.strip(), file=sys.stderr)
         sys.exit(result.returncode)
@@ -191,7 +201,7 @@ def commit_phase(phase_path: Path, issue_number: int) -> None:
     slug = phase_slug(phase_path).replace("-", " ")
     issue_tag = f" (#{issue_number})" if issue_number else ""
     run_command(["git", "add", "-A"])
-    result = run_command(["git", "commit", "-m", f"feat(harness): phase {num} {slug}{issue_tag}"])
+    result = run_command(["git", "commit", "-m", f"feat(harness): {num}단계 {slug} 구현{issue_tag}"])
     if result.returncode != 0:
         print("[WARN] Commit failed. Check git status manually.", file=sys.stderr)
         if result.stderr.strip():
@@ -216,10 +226,10 @@ def run_phase(phase_path: Path, task_name: str, args: argparse.Namespace) -> tup
     elapsed = int(time.time() - start)
     output = result.stdout + result.stderr
 
-    if "STATUS: completed" in output:
-        status = STATUS_COMPLETED
-    elif result.returncode != 0 or "STATUS: error" in output:
+    if result.returncode != 0 or "STATUS: error" in output:
         status = STATUS_ERROR
+    elif "STATUS: completed" in output:
+        status = STATUS_COMPLETED
     else:
         status = STATUS_COMPLETED
 
