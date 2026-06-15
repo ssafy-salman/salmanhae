@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/codex_hook_bridge.py\" pre-bash",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$root = git rev-parse --show-toplevel; python (Join-Path $root '.codex\\hooks\\codex_hook_bridge.py') pre-bash\"",
+            "statusMessage": "Checking command safety"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/codex_hook_bridge.py\" post-edit",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$root = git rev-parse --show-toplevel; python (Join-Path $root '.codex\\hooks\\codex_hook_bridge.py') post-edit\"",
+            "statusMessage": "Checking test coverage"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/codex_hook_bridge.py\" post-bash",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$root = git rev-parse --show-toplevel; python (Join-Path $root '.codex\\hooks\\codex_hook_bridge.py') post-bash\"",
+            "statusMessage": "Checking repeated failures"
+          }
+        ]
+      }
+    ]
+  }
+}

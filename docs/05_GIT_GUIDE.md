@@ -144,6 +144,8 @@ closes #이슈번호    ← 수동 PR만 해당. Phase PR은 이슈 없음
 
 ### Harness 방식 (AI 주도 — Phase 단위 구현)
 
+#### Claude Code
+
 ```
 1. /harness 입력
    → AI가 docs/ 읽고 Phase 계획 제안 → 승인
@@ -156,6 +158,26 @@ closes #이슈번호    ← 수동 PR만 해당. Phase PR은 이슈 없음
    → PR 자동 생성 (closes #이슈번호)
 4. Phase PR → 상대방 approve → develop merge
 ```
+
+#### Codex
+
+```
+1. $salmanhae-harness 입력
+   → Codex가 docs/ 읽고 Phase 계획 제안 → 승인
+2. phases/{task}/ 에 Phase 파일 생성됨
+3. python scripts/execute_codex.py {task-name} --dry-run
+   → 실행 전 Phase 목록과 상태 확인
+4. python scripts/execute_codex.py {task-name}
+   → Phase마다 GitHub 이슈 자동 생성 (ai-generated 라벨)
+   → phase/* 브랜치 자동 생성
+   → codex exec로 Phase 순차 실행
+   → Phase 완료 시 커밋 생성
+   → PR 자동 생성
+5. Phase PR → 상대방 approve → develop merge
+```
+
+로컬 테스트만 할 때는 `python scripts/execute_codex.py {task-name} --no-github`를 사용한다. 이 모드는 이슈 번호 없는 커밋을 만들지 않고 변경사항을 로컬에 남긴다.
+자세한 내용은 `docs/13_CODEX_HARNESS.md`를 참고한다.
 
 ### 수동 방식 (개별 버그·리팩터링·문서 작업)
 

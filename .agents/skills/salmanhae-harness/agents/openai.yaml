@@ -1,0 +1,4 @@
+interface:
+  display_name: "Salmanhae Harness"
+  short_description: "Plan and run Salmanhae phase-based Codex harness workflows."
+  default_prompt: "Use the Salmanhae harness workflow to plan this project task into reviewable phases."
