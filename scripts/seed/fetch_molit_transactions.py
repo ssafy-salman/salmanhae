@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 from urllib import error, parse, request
 
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw" / "molit"
 DEFAULT_PLAN_PATH = RAW_DIR / "fetch-plan.json"
 DEFAULT_MANIFEST_PATH = RAW_DIR / "manifest.json"
+DEFAULT_ERRORS_PATH = RAW_DIR / "fetch-errors.json"
 
 SOURCE_CONFIG = {
     "MOLIT_APT_RENT": {
@@ -89,7 +91,7 @@ def build_url(base_url, service_key, lawd_cd, deal_ymd, num_of_rows, page_no):
     return f"{base_url}?serviceKey={service_key_param(service_key)}&{query}"
 
 
-def fetch_xml(url, timeout=30):
+def fetch_xml(url, timeout=60):
     req = request.Request(url, headers={"Accept": "application/xml"})
     try:
         with request.urlopen(req, timeout=timeout) as response:
@@ -97,6 +99,22 @@ def fetch_xml(url, timeout=30):
     except error.HTTPError as exc:
         message = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"MOLIT request failed ({exc.code}): {message}") from exc
+    except (TimeoutError, error.URLError) as exc:
+        raise RuntimeError(f"MOLIT request failed: {exc}") from exc
+
+
+def fetch_xml_with_retries(url, timeout, retries, retry_sleep):
+    last_error = None
+    for attempt in range(1, retries + 2):
+        try:
+            return fetch_xml(url, timeout=timeout)
+        except RuntimeError as exc:
+            last_error = exc
+            if attempt > retries:
+                break
+            print(f"  retry {attempt}/{retries}: {exc}")
+            time.sleep(retry_sleep)
+    raise last_error
 
 
 def planned_requests(plan, source_filter=None, region_filter=None, month_filter=None):
@@ -123,27 +141,80 @@ def planned_requests(plan, source_filter=None, region_filter=None, month_filter=
                 }
 
 
-def fetch_plan(plan, service_key, output_dir, num_of_rows, page_no, dry_run=False, source_filter=None, region_filter=None, month_filter=None):
+def manifest_entry(item):
+    region = item["region"]
+    return {
+        "sourceApi": item["sourceApi"],
+        "xmlPath": item["filename"],
+        "sido": region["sido"],
+        "sigungu": region["sigungu"],
+        "legalDongCodePrefix": region["lawdCd"],
+        "dealYmd": item["month"],
+    }
+
+
+def fetch_plan(
+    plan,
+    service_key,
+    output_dir,
+    num_of_rows,
+    page_no,
+    dry_run=False,
+    source_filter=None,
+    region_filter=None,
+    month_filter=None,
+    timeout=60,
+    retries=2,
+    retry_sleep=2,
+    skip_existing=True,
+    fail_fast=False,
+    limit=None,
+    quiet=False,
+):
     manifest_entries = []
+    errors = []
     requests = list(planned_requests(plan, source_filter=source_filter, region_filter=region_filter, month_filter=month_filter))
-    for item in requests:
+    if limit is not None:
+        requests = requests[:limit]
+
+    for index, item in enumerate(requests, start=1):
         region = item["region"]
         xml_path = output_dir / item["filename"]
         url = build_url(item["url"], service_key, region["lawdCd"], item["month"], num_of_rows, page_no)
-        if not dry_run:
-            xml = fetch_xml(url)
+        if not quiet:
+            print(f"[{index}/{len(requests)}] {item['sourceApi']} {region['lawdCd']} {item['month']} -> {item['filename']}")
+
+        entry = manifest_entry(item)
+        if dry_run:
+            manifest_entries.append(entry)
+            continue
+
+        if skip_existing and xml_path.exists() and xml_path.stat().st_size > 0:
+            if not quiet:
+                print("  skip existing")
+            manifest_entries.append(entry)
+            continue
+
+        try:
+            xml = fetch_xml_with_retries(url, timeout=timeout, retries=retries, retry_sleep=retry_sleep)
             xml_path.write_text(xml, encoding="utf-8")
-        manifest_entries.append(
-            {
+            manifest_entries.append(entry)
+        except RuntimeError as exc:
+            error_entry = {
                 "sourceApi": item["sourceApi"],
                 "xmlPath": item["filename"],
                 "sido": region["sido"],
                 "sigungu": region["sigungu"],
                 "legalDongCodePrefix": region["lawdCd"],
                 "dealYmd": item["month"],
+                "error": str(exc),
             }
-        )
-    return manifest_entries
+            errors.append(error_entry)
+            if not quiet:
+                print(f"  failed: {exc}")
+            if fail_fast:
+                raise
+    return manifest_entries, errors
 
 
 def parse_csv(values):
@@ -163,6 +234,12 @@ def parse_args():
     parser.add_argument("--regions", help="Comma-separated LAWD_CD filter")
     parser.add_argument("--months", help="Comma-separated DEAL_YMD filter")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--timeout", type=int, default=60)
+    parser.add_argument("--retries", type=int, default=2)
+    parser.add_argument("--retry-sleep", type=float, default=2)
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--no-skip-existing", action="store_true")
+    parser.add_argument("--fail-fast", action="store_true")
     return parser.parse_args()
 
 
@@ -177,7 +254,7 @@ def main():
 
     plan = read_json(args.plan)
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    manifest_entries = fetch_plan(
+    manifest_entries, errors = fetch_plan(
         plan,
         service_key,
         args.output_dir,
@@ -187,12 +264,22 @@ def main():
         source_filter=parse_csv(args.source_apis),
         region_filter=parse_csv(args.regions),
         month_filter=parse_csv(args.months),
+        timeout=args.timeout,
+        retries=args.retries,
+        retry_sleep=args.retry_sleep,
+        skip_existing=not args.no_skip_existing,
+        fail_fast=args.fail_fast,
+        limit=args.limit,
+        quiet=False,
     )
 
     if not args.dry_run:
         write_json(args.manifest, {"files": manifest_entries})
+        if errors:
+            write_json(DEFAULT_ERRORS_PATH, {"errors": errors})
 
-    print(f"planned {len(manifest_entries)} MOLIT requests")
+    print(f"successful {len(manifest_entries)} MOLIT requests")
+    print(f"failed {len(errors)} MOLIT requests")
     print(args.manifest)
 
 

@@ -34,6 +34,37 @@ class FetchMolitTransactionsTest(unittest.TestCase):
         self.assertEqual(requests[0]["filename"], "apt-rent-11680-202605.xml")
         self.assertEqual(requests[-1]["filename"], "apt-sale-11620-202606.xml")
 
+    def test_fetch_plan_continues_after_failure(self):
+        plan = {
+            "months": ["202606"],
+            "sourceApis": ["MOLIT_APT_RENT"],
+            "regions": [
+                {"sido": "서울특별시", "sigungu": "강남구", "lawdCd": "11680"},
+            ],
+        }
+        original = fetcher.fetch_xml_with_retries
+
+        def failing_fetch(url, timeout, retries, retry_sleep):
+            raise RuntimeError("timeout")
+
+        try:
+            fetcher.fetch_xml_with_retries = failing_fetch
+            manifest_entries, errors = fetcher.fetch_plan(
+                plan,
+                "service-key",
+                output_dir=__import__("pathlib").Path("."),
+                num_of_rows=100,
+                page_no=1,
+                retries=0,
+                quiet=True,
+            )
+        finally:
+            fetcher.fetch_xml_with_retries = original
+
+        self.assertEqual(manifest_entries, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("timeout", errors[0]["error"])
+
 
 if __name__ == "__main__":
     unittest.main()

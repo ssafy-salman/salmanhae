@@ -8,6 +8,7 @@
 data/raw/molit/*.xml
 data/raw/molit/manifest.json
 data/raw/molit/fetch-plan.json
+data/raw/molit/fetch-errors.json
 
 # Python
 __pycache__/

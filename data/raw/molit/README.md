@@ -8,8 +8,10 @@ Copy `fetch-plan.example.json` to `fetch-plan.json`, adjust regions/months/sourc
 
 ```bash
 python scripts/seed/fetch_molit_transactions.py --dry-run
-python scripts/seed/fetch_molit_transactions.py
+python scripts/seed/fetch_molit_transactions.py --timeout 90 --retries 3
 ```
+
+The fetcher skips existing XML files by default, so rerunning the command resumes from cached files. Failed requests are written to `fetch-errors.json`, which is ignored by git.
 
 ```bash
 python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/manifest.json
