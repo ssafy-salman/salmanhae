@@ -4,6 +4,10 @@
 !.env.example
 !*.env.example
 
+# Local raw data inputs
+data/raw/molit/*.xml
+data/raw/molit/manifest.json
+
 # Python
 __pycache__/
 *.py[cod]

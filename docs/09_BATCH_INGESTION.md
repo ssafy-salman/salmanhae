@@ -16,6 +16,8 @@
 | 저장 테이블 | `transaction_history` |
 | 활용 | 지도 지역 평균, 매물 상세 시세 비교, 시세 분석, 가격 점수 계산 |
 
+운영 구현에서는 Spring Batch 또는 Scheduler가 국토교통부 API를 호출하고 XML 응답을 즉시 파싱해 `transaction_history`에 저장합니다. XML 원문 파일을 저장소에 커밋하지 않습니다. 현재 `data/raw/molit/*.xml` 기반 흐름은 F-1 데이터 계약과 seed 생성을 검증하기 위한 로컬 bootstrap 방식입니다.
+
 ### 실거래가 매칭 기준 (MVP)
 
 | 우선순위 | 기준 | 설명 |
@@ -93,6 +95,8 @@ python scripts/seed/geocode_property_anchors.py --dry-run
 python scripts/seed/geocode_property_anchors.py
 python scripts/seed/generate_properties_seed.py
 ```
+
+로컬 raw XML과 실제 `data/raw/molit/manifest.json`은 git에 올리지 않습니다. 필요한 경우 `data/raw/molit/manifest.example.json`을 복사해 로컬 manifest를 작성합니다.
 
 ---
 
