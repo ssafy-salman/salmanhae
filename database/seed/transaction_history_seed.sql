@@ -1,0 +1,1 @@
+-- No transaction_history seed rows. Populate data/seed/transaction-history.seed.json first.

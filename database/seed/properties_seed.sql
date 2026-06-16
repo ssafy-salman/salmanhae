@@ -1,0 +1,1 @@
+-- No properties seed rows. Populate transaction seed rows and geocoding-cache.json first.
