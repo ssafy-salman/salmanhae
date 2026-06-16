@@ -89,6 +89,8 @@ F-1 MVP의 `MVP_SYNTHETIC` 매물은 실거래가에서 추출한 실제 건물�
 
 ```bash
 python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/manifest.json
+python scripts/seed/geocode_property_anchors.py --dry-run
+python scripts/seed/geocode_property_anchors.py
 python scripts/seed/generate_properties_seed.py
 ```
 

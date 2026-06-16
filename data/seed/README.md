@@ -24,6 +24,8 @@ python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/ma
 Generate SQL seed files from normalized transactions and geocoding cache:
 
 ```bash
+python scripts/seed/geocode_property_anchors.py --dry-run
+python scripts/seed/geocode_property_anchors.py
 python scripts/seed/generate_properties_seed.py
 ```
 

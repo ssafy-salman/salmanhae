@@ -68,6 +68,7 @@ F-1 seed 단계에서는 저장해 둔 XML 응답 파일을 `scripts/seed/normal
 | 네이버지도 Geocoding API | seed/batch 시점에 건물명·지번 주소를 위도/경도로 변환 |
 
 지도 표시 데이터는 네이버지도 SDK가 직접 외부 공공 API를 호출하지 않고, Spring Boot의 지도 조회 API에서 DB 기반으로 내려줍니다.
+Geocoding 호출에는 `NAVER_MAPS_CLIENT_ID`, `NAVER_MAPS_CLIENT_SECRET` 환경변수를 사용합니다. 프론트 지도 SDK는 `VITE_NAVER_MAP_CLIENT_ID`만 사용하며 secret을 브라우저에 노출하지 않습니다.
 
 ### 줌 레벨별 표시 정책
 
