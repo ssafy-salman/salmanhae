@@ -18,6 +18,8 @@ The input transaction rows are normalized first, then geocoded once during seed 
 Normalize saved MOLIT XML files:
 
 ```bash
+python scripts/seed/fetch_molit_transactions.py --dry-run
+python scripts/seed/fetch_molit_transactions.py
 python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/manifest.json
 ```
 

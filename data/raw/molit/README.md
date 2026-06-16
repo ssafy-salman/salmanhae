@@ -2,7 +2,14 @@
 
 Place downloaded MOLIT real-transaction XML responses in this directory and list them in `manifest.json`.
 
-The normalizer does not call external APIs. It only converts saved XML files into `data/seed/transaction-history.seed.json`.
+The fetcher calls MOLIT APIs and stores XML responses as local raw cache files. The normalizer then converts saved XML files into `data/seed/transaction-history.seed.json`.
+
+Copy `fetch-plan.example.json` to `fetch-plan.json`, adjust regions/months/source APIs, and run:
+
+```bash
+python scripts/seed/fetch_molit_transactions.py --dry-run
+python scripts/seed/fetch_molit_transactions.py
+```
 
 ```bash
 python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/manifest.json
