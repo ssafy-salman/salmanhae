@@ -17,6 +17,21 @@ class FetchMolitTransactionsTest(unittest.TestCase):
         self.assertIn("serviceKey=abc%2Fdef%3D%3D", url)
         self.assertIn("LAWD_CD=11680", url)
         self.assertIn("DEAL_YMD=202606", url)
+        self.assertIn("numOfRows=100", url)
+        self.assertIn("pageNo=1", url)
+
+    def test_build_url_omits_pagination_by_default(self):
+        url = fetcher.build_url(
+            "https://example.test/api",
+            "abc%2Fdef%3D%3D",
+            "11680",
+            "202606",
+            None,
+            None,
+        )
+
+        self.assertNotIn("numOfRows", url)
+        self.assertNotIn("pageNo", url)
 
     def test_planned_requests_cross_joins_sources_regions_months(self):
         plan = {

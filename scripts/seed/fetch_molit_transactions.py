@@ -80,14 +80,15 @@ def service_key_param(service_key):
 
 
 def build_url(base_url, service_key, lawd_cd, deal_ymd, num_of_rows, page_no):
-    query = parse.urlencode(
-        {
-            "LAWD_CD": lawd_cd,
-            "DEAL_YMD": deal_ymd,
-            "numOfRows": num_of_rows,
-            "pageNo": page_no,
-        }
-    )
+    params = {
+        "LAWD_CD": lawd_cd,
+        "DEAL_YMD": deal_ymd,
+    }
+    if num_of_rows is not None:
+        params["numOfRows"] = num_of_rows
+    if page_no is not None:
+        params["pageNo"] = page_no
+    query = parse.urlencode(params)
     return f"{base_url}?serviceKey={service_key_param(service_key)}&{query}"
 
 
@@ -228,8 +229,8 @@ def parse_args():
     parser.add_argument("--plan", type=Path, default=DEFAULT_PLAN_PATH)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST_PATH)
     parser.add_argument("--output-dir", type=Path, default=RAW_DIR)
-    parser.add_argument("--num-of-rows", type=int, default=1000)
-    parser.add_argument("--page-no", type=int, default=1)
+    parser.add_argument("--num-of-rows", type=int)
+    parser.add_argument("--page-no", type=int)
     parser.add_argument("--source-apis", help="Comma-separated sourceApi filter")
     parser.add_argument("--regions", help="Comma-separated LAWD_CD filter")
     parser.add_argument("--months", help="Comma-separated DEAL_YMD filter")
