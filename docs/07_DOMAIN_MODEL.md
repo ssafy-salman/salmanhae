@@ -9,7 +9,7 @@
 | `SafetyFacility` | CCTV, 비상벨, 보안등, 치안시설 좌표 |
 | `PropertyScoreStat` | 매물별 안전·가격 점수 사전 계산 통계 |
 | `RegionPriceStat` | 지도 줌 레벨별 표시를 위한 지역 단위 실거래가 평균 |
-| `User` | 로그인 사용자 정보 (Supabase Auth 연동) |
+| `User` | 로그인 사용자 정보 (Spring Security 자체 관리) |
 | `Wishlist` | 찜한 매물 |
 | `ConversationSession` | AI 에이전트 대화 세션 (1.5차) |
 | `ConversationMessage` | 대화 메시지 원문 (1.5차) |
@@ -139,12 +139,13 @@ property_score_stat
 
 ## User — 사용자
 
-Supabase Auth가 인증을 관리하며, Spring Boot DB에는 최소 정보만 저장합니다.
+Spring Security가 인증을 직접 관리하며, 사용자 정보와 자격증명을 DB에 저장합니다.
 
 ```
 users
-- id                      ← Supabase Auth UUID와 동일
-- email
+- id                      ← Auto-increment PK
+- email                   ← UNIQUE
+- password_hash           ← BCrypt 해시
 - nickname
 - created_at
 ```

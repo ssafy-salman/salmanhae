@@ -5,7 +5,7 @@
 - Base path: `/api/v1`
 - 지도 범위 파라미터: `west`, `east`, `south`, `north`
 - 응답 형식: camelCase JSON
-- 인증: `Authorization: Bearer {supabase_jwt}`
+- 인증: `Authorization: Bearer {jwt}`
 
 ---
 
@@ -383,14 +383,25 @@ Authorization: Bearer {token}
 
 ## Auth API
 
-Auth API는 Spring Boot가 제공하는 래핑 API입니다. 프론트엔드는 Supabase Auth를 직접 호출하지 않고, Spring Boot Auth API를 호출합니다. Spring Boot는 내부에서 Supabase Auth API를 호출해 회원가입, 로그인, 로그아웃을 처리하고 발급된 JWT를 프론트에 반환합니다.
+Spring Boot가 Spring Security + JJWT로 자체 구현한 인증 API입니다. 프론트엔드는 이 API만 호출하며, 외부 Auth 서비스를 직접 호출하지 않습니다.
 
 ### 회원가입
 ```http
 POST /api/v1/auth/signup
 ```
 ```json
-{ "email": "user@example.com", "password": "password123" }
+{ "email": "user@example.com", "password": "password123", "nickname": "홍길동" }
+```
+**Response**
+```json
+{
+  "data": {
+    "id": 1,
+    "email": "user@example.com",
+    "nickname": "홍길동"
+  },
+  "message": "OK"
+}
 ```
 
 ### 로그인
@@ -404,9 +415,26 @@ POST /api/v1/auth/login
 ```json
 {
   "data": {
-    "accessToken": "jwt-token",
-    "refreshToken": "refresh-token",
-    "user": { "id": "uuid", "email": "user@example.com", "nickname": null }
+    "accessToken": "jwt-access-token",
+    "refreshToken": "jwt-refresh-token",
+    "user": { "id": 1, "email": "user@example.com", "nickname": "홍길동" }
+  },
+  "message": "OK"
+}
+```
+
+### 토큰 갱신
+```http
+POST /api/v1/auth/refresh
+```
+```json
+{ "refreshToken": "jwt-refresh-token" }
+```
+**Response**
+```json
+{
+  "data": {
+    "accessToken": "new-jwt-access-token"
   },
   "message": "OK"
 }
