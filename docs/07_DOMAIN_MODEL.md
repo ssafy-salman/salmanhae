@@ -143,11 +143,12 @@ Spring Security가 인증을 직접 관리하며, 사용자 정보와 자격증�
 
 ```
 users
-- id                      ← Auto-increment PK
-- email                   ← UNIQUE
-- password_hash           ← BCrypt 해시
-- nickname
-- created_at
+- id           uuid        PK, gen_random_uuid()
+- email        varchar(255) UNIQUE NOT NULL
+- password     varchar(255) NOT NULL  ← BCrypt 해시
+- nickname     varchar(50)  NOT NULL
+- created_at   timestamptz  NOT NULL, now()
+- updated_at   timestamptz  NOT NULL, now()
 ```
 
 ---
