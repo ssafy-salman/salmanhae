@@ -66,6 +66,18 @@ def normalize_items(payload):
     return payload.get("items", [])
 
 
+def deduplicate_transactions(transactions):
+    seen = set()
+    unique = []
+    for tx in transactions:
+        key = (tx.get("source_api"), tx.get("source_transaction_key"))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(tx)
+    return unique
+
+
 def group_by_building(transactions):
     groups = {}
     for tx in transactions:
@@ -487,7 +499,7 @@ def write_property_sql(properties):
 
 
 def main():
-    transactions = normalize_items(read_json(NORMALIZED_TRANSACTIONS_PATH, {"items": []}))
+    transactions = deduplicate_transactions(normalize_items(read_json(NORMALIZED_TRANSACTIONS_PATH, {"items": []})))
     geocoding_cache = read_json(GEOCODING_CACHE_PATH, {})
     properties = generate_properties(transactions, geocoding_cache)
     write_json(properties)

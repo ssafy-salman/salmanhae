@@ -253,7 +253,19 @@ def normalize_manifest(manifest_path):
         if not xml_path.is_absolute():
             xml_path = base_dir / xml_path
         output.extend(normalize_xml_file(xml_path, entry))
-    return sorted(output, key=lambda row: row["source_transaction_key"])
+    return deduplicate_rows(sorted(output, key=lambda row: row["source_transaction_key"]))
+
+
+def deduplicate_rows(rows):
+    seen = set()
+    unique = []
+    for row in rows:
+        key = (row["source_api"], row["source_transaction_key"])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(row)
+    return unique
 
 
 def write_output(rows, output_path):
