@@ -33,6 +33,31 @@ body {
   .form-input {
     @apply w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand;
   }
+
+  .filter-field {
+    @apply flex min-w-0 flex-col gap-1;
+  }
+
+  .filter-field span {
+    @apply text-[10px] font-black text-slate-500;
+  }
+
+  .filter-field input,
+  .filter-field select {
+    @apply h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs font-bold text-slate-800 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
+
+  .detail-stat {
+    @apply min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-3;
+  }
+
+  .detail-stat span {
+    @apply block text-[10px] font-black text-slate-500;
+  }
+
+  .detail-stat b {
+    @apply mt-1 block truncate text-sm font-black text-slate-900;
+  }
 }
 
 .glow-safe-path { filter: drop-shadow(0 0 6px #10b981); }
