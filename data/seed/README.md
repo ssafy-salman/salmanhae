@@ -13,6 +13,18 @@ The input transaction rows are normalized first, then geocoded once during seed 
 - `geocoding-cache.json`: address or building key to latitude/longitude cache.
 - `properties.seed.json`: generated dummy properties for map markers and property detail.
 
+## Retention Policy
+
+These files are **F-1 bootstrap seed artifacts**. They are committed for now so every teammate can reproduce the same Supabase seed state while the Spring Batch ingestion feature does not exist yet.
+
+| File | Keep now? | Why | Remove when |
+| --- | --- | --- | --- |
+| `transaction-history.seed.json` | Yes | Reproducible normalized MOLIT transaction input for SQL seed generation | Spring Batch stores MOLIT rows directly in `transaction_history` |
+| `geocoding-cache.json` | Yes | Avoids repeatedly calling Naver Geocoding for the same building anchors | Batch owns geocoding cache/upsert behavior |
+| `properties.seed.json` | Yes | Reproducible F-1 dummy map listings for BE/FE development | Production-like property ingestion or batch-generated dummy data replaces it |
+
+Do not treat these files as the production ingestion mechanism. They are a temporary bootstrap dataset for F-1 map/API development.
+
 ## Generate
 
 Normalize saved MOLIT XML files:

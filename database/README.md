@@ -10,6 +10,17 @@ This directory stores reproducible SQL for the shared Supabase database.
 
 The single SQL files in `seed/transaction_history_seed.sql` and `seed/properties_seed.sql` are useful for local database clients, but they may be too large for Supabase SQL Editor.
 
+## Seed Artifact Policy
+
+`database/seed/*.sql` and `database/seed/chunks/*.sql` are committed intentionally as F-1 bootstrap data. They are not intended to be the long-term data ingestion path.
+
+Keep them until:
+
+- BE/FE map development can rely on a stable seeded Supabase dataset.
+- Spring Batch or Scheduler can fetch MOLIT XML, normalize rows, geocode anchors, and upsert DB rows directly.
+
+After batch ingestion is implemented and verified, remove generated seed SQL/JSON artifacts in a cleanup PR. Keep schema migrations and seed scripts unless they are replaced by production code.
+
 Seed SQL is generated from normalized transaction rows and the geocoding cache with:
 
 ```bash

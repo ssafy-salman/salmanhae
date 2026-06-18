@@ -98,6 +98,12 @@ python scripts/seed/generate_properties_seed.py
 
 로컬 raw XML과 실제 `data/raw/molit/manifest.json`은 git에 올리지 않습니다. 필요한 경우 `data/raw/molit/manifest.example.json`을 복사해 로컬 manifest를 작성합니다.
 
+### F-1 bootstrap seed 보존 정책
+
+F-1 단계에서는 `data/seed/*.json`과 `database/seed/*.sql`을 레포에 보관합니다. Spring Batch가 아직 없기 때문에 팀원이 같은 Supabase seed 상태를 재현할 수 있어야 하기 때문입니다.
+
+이 파일들은 운영 수집 방식이 아니라 임시 bootstrap 산출물입니다. Spring Batch 또는 Scheduler가 국토교통부 API 호출, XML 파싱, 지오코딩, DB upsert를 직접 수행하게 되면 별도 cleanup PR에서 제거할 수 있습니다. 단, DB migration과 seed 생성 스크립트는 운영 코드로 대체되기 전까지 유지합니다.
+
 ---
 
 ## 점수 계산 배치
