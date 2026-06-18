@@ -37,8 +37,18 @@ public record PropertySearchCriteria(
 		if (minDeposit != null && maxDeposit != null && minDeposit > maxDeposit) {
 			throw new ApiException(ErrorCode.INVALID_REQUEST);
 		}
+		if (isNegative(minDeposit) || isNegative(maxDeposit)) {
+			throw new ApiException(ErrorCode.INVALID_REQUEST);
+		}
 		if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
 			throw new ApiException(ErrorCode.INVALID_REQUEST);
 		}
+		if (isNegative(minPrice) || isNegative(maxPrice)) {
+			throw new ApiException(ErrorCode.INVALID_REQUEST);
+		}
+	}
+
+	private boolean isNegative(Long value) {
+		return value != null && value < 0;
 	}
 }

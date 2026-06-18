@@ -8,6 +8,7 @@ public record ListResponse<T>(
 ) {
 
 	public static <T> ListResponse<T> from(List<T> items) {
-		return new ListResponse<>(items, items.size());
+		List<T> snapshot = List.copyOf(items);
+		return new ListResponse<>(snapshot, snapshot.size());
 	}
 }

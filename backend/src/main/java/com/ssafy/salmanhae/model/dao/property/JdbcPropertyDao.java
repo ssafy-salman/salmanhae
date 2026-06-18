@@ -73,7 +73,7 @@ public class JdbcPropertyDao implements PropertyDao {
 			params.put("maxPrice", criteria.maxPrice());
 		}
 
-		sql.append(" ORDER BY id ASC LIMIT 500");
+		sql.append(" ORDER BY id ASC");
 		return jdbcTemplate.query(sql.toString(), params, propertyRowMapper());
 	}
 

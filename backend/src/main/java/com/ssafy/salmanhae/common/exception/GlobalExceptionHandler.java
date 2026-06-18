@@ -19,8 +19,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler({
 			MissingServletRequestParameterException.class,
-			MethodArgumentTypeMismatchException.class,
-			IllegalArgumentException.class
+			MethodArgumentTypeMismatchException.class
 	})
 	public ResponseEntity<ErrorResponse> handleBadRequest(Exception exception) {
 		return ResponseEntity

@@ -53,6 +53,7 @@ public class PropertyController {
 				minPrice,
 				maxPrice
 		);
+		criteria.validateBounds();
 		List<PropertySummaryResponse> properties = propertyService.searchProperties(criteria);
 		return ApiResponse.ok(ListResponse.from(properties));
 	}

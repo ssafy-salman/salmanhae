@@ -20,7 +20,7 @@ class PropertyHttpIntegrationTest {
 	private TestRestTemplate restTemplate;
 
 	@Test
-	void propertyEndpointsRespondOverHttp() {
+	void listEndpointReturnsOkWithValidBounds() {
 		ResponseEntity<Map> listResponse = restTemplate.getForEntity(
 				"/api/v1/properties?west=126.93&east=126.94&south=37.46&north=37.48",
 				Map.class
@@ -28,7 +28,10 @@ class PropertyHttpIntegrationTest {
 
 		assertThat(listResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(listResponse.getBody()).containsEntry("message", "OK");
+	}
 
+	@Test
+	void detailEndpointReturnsOkForExistingProperty() {
 		ResponseEntity<Map> detailResponse = restTemplate.getForEntity(
 				"/api/v1/properties/1",
 				Map.class
@@ -36,7 +39,10 @@ class PropertyHttpIntegrationTest {
 
 		assertThat(detailResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(detailResponse.getBody()).containsEntry("message", "OK");
+	}
 
+	@Test
+	void detailEndpointReturnsNotFoundForMissingProperty() {
 		ResponseEntity<Map> notFoundResponse = restTemplate.getForEntity(
 				"/api/v1/properties/9999",
 				Map.class

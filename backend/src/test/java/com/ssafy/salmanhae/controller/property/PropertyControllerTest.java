@@ -54,6 +54,21 @@ class PropertyControllerTest {
 	}
 
 	@Test
+	void searchPropertiesAppliesDepositFilters() throws Exception {
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("minDeposit", "9000000")
+						.param("maxDeposit", "11000000"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].id").value(1))
+				.andExpect(jsonPath("$.data.items[0].deposit").value(10000000));
+	}
+
+	@Test
 	void searchPropertiesRejectsInvalidBounds() throws Exception {
 		mockMvc.perform(get("/api/v1/properties")
 						.param("west", "127.00")
@@ -62,6 +77,31 @@ class PropertyControllerTest {
 						.param("north", "37.48"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("INVALID_BOUNDS"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
+	void searchPropertiesRejectsInvalidLatitudeBounds() throws Exception {
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.48")
+						.param("north", "37.46"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_BOUNDS"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
+	void searchPropertiesRejectsNegativeFilters() throws Exception {
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("minPrice", "-1"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
 				.andExpect(jsonPath("$.status").value(400));
 	}
 
