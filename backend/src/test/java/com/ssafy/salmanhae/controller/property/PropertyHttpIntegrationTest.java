@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -50,5 +53,22 @@ class PropertyHttpIntegrationTest {
 
 		assertThat(notFoundResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(notFoundResponse.getBody()).containsEntry("code", "PROPERTY_NOT_FOUND");
+	}
+
+	@Test
+	void propertyApiAllowsLocalFrontendOrigin() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setOrigin("http://127.0.0.1:5173");
+		headers.setAccessControlRequestMethod(HttpMethod.GET);
+
+		ResponseEntity<Void> preflightResponse = restTemplate.exchange(
+				"/api/v1/properties?west=126.93&east=126.94&south=37.46&north=37.48",
+				HttpMethod.OPTIONS,
+				new HttpEntity<>(headers),
+				Void.class
+		);
+
+		assertThat(preflightResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(preflightResponse.getHeaders().getAccessControlAllowOrigin()).isEqualTo("http://127.0.0.1:5173");
 	}
 }
