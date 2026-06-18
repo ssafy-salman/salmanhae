@@ -43,7 +43,8 @@ export default defineStore('map', {
     error: '',
     detailError: '',
     lastFetchedAt: null,
-    requestSeq: 0
+    requestSeq: 0,
+    detailRequestSeq: 0
   }),
   getters: {
     regions: () => [
@@ -146,23 +147,31 @@ export default defineStore('map', {
       }
     },
     async selectProperty(id) {
+      const seq = ++this.detailRequestSeq
       this.selectedPropertyId = id
       this.detailError = ''
       this.selectedProperty = this.properties.find((property) => property.id === id) || null
       this.isDetailLoading = true
 
       try {
-        this.selectedProperty = await fetchPropertyDetail(id)
+        const property = await fetchPropertyDetail(id)
+        if (seq !== this.detailRequestSeq || this.selectedPropertyId !== id) return
+        this.selectedProperty = property
       } catch (error) {
+        if (seq !== this.detailRequestSeq || this.selectedPropertyId !== id) return
         this.detailError = error.response?.data?.message || '매물 상세 정보를 불러오지 못했습니다.'
       } finally {
-        this.isDetailLoading = false
+        if (seq === this.detailRequestSeq) {
+          this.isDetailLoading = false
+        }
       }
     },
     closeProperty() {
+      this.detailRequestSeq += 1
       this.selectedPropertyId = null
       this.selectedProperty = null
       this.detailError = ''
+      this.isDetailLoading = false
     }
   }
 })

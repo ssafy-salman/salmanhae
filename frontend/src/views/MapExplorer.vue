@@ -129,7 +129,10 @@
               'cursor-pointer rounded-xl border p-3 transition',
               store.selectedPropertyId === property.id ? 'border-brand bg-brand-light shadow-sm' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
             ]"
+            tabindex="0"
             @click="store.selectProperty(property.id)"
+            @keydown.enter="store.selectProperty(property.id)"
+            @keydown.space.prevent="store.selectProperty(property.id)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
