@@ -12,7 +12,10 @@ GEOCODING_CACHE_PATH = ROOT / "data" / "seed" / "geocoding-cache.json"
 PROPERTIES_OUTPUT_PATH = ROOT / "data" / "seed" / "properties.seed.json"
 TRANSACTION_SQL_OUTPUT_PATH = ROOT / "database" / "seed" / "transaction_history_seed.sql"
 PROPERTY_SQL_OUTPUT_PATH = ROOT / "database" / "seed" / "properties_seed.sql"
+SQL_CHUNK_DIR = ROOT / "database" / "seed" / "chunks"
 RANDOM_SEED = 20260616
+TRANSACTION_SQL_CHUNK_SIZE = 500
+PROPERTY_SQL_CHUNK_SIZE = 500
 
 
 PROPERTY_TYPE_LABELS = {
@@ -270,36 +273,34 @@ def write_json(properties):
     PROPERTIES_OUTPUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def write_transaction_sql(transactions):
-    if not transactions:
-        TRANSACTION_SQL_OUTPUT_PATH.write_text(
-            "-- No transaction_history seed rows. Populate data/seed/transaction-history.seed.json first.\n",
-            encoding="utf-8",
-        )
-        return
+def chunks(items, size):
+    for start in range(0, len(items), size):
+        yield start // size + 1, items[start : start + size]
 
-    columns = [
-        "source_api",
-        "source_transaction_key",
-        "property_type",
-        "transaction_type",
-        "sido",
-        "sigungu",
-        "dong",
-        "legal_dong_code",
-        "jibun",
-        "building_name",
-        "building_key",
-        "contract_year_month",
-        "contract_day",
-        "deposit",
-        "monthly_rent",
-        "price",
-        "area_m2",
-        "floor",
-        "build_year",
-        "raw_json",
+
+def clean_chunk_files(prefix):
+    SQL_CHUNK_DIR.mkdir(parents=True, exist_ok=True)
+    for path in SQL_CHUNK_DIR.glob(f"{prefix}_*.sql"):
+        path.unlink()
+
+
+def write_chunk_index(transaction_count, property_count):
+    lines = [
+        "# Seed SQL Chunks",
+        "",
+        "Supabase SQL Editor may reject very large SQL files. Run these chunk files in order.",
+        "",
+        "1. Run all `transaction_history_seed_*.sql` files in numeric order.",
+        "2. Run all `properties_seed_*.sql` files in numeric order.",
+        "",
+        f"- transaction chunks: {transaction_count}",
+        f"- property chunks: {property_count}",
+        "",
     ]
+    (SQL_CHUNK_DIR / "README.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def transaction_sql_lines(transactions, columns):
     lines = [
         "-- F-1 seed input normalized from MOLIT real-transaction XML APIs.",
         "insert into public.transaction_history (",
@@ -332,52 +333,51 @@ def write_transaction_sql(transactions):
         "    build_year = excluded.build_year,\n"
         "    raw_json = excluded.raw_json;"
     )
-    TRANSACTION_SQL_OUTPUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return lines
 
 
-def write_property_sql(properties):
-    if not properties:
-        PROPERTY_SQL_OUTPUT_PATH.write_text(
-            "-- No properties seed rows. Populate transaction seed rows and geocoding-cache.json first.\n",
+def write_transaction_sql(transactions):
+    if not transactions:
+        TRANSACTION_SQL_OUTPUT_PATH.write_text(
+            "-- No transaction_history seed rows. Populate data/seed/transaction-history.seed.json first.\n",
             encoding="utf-8",
         )
+        clean_chunk_files("transaction_history_seed")
+        write_chunk_index(0, 0)
         return
 
     columns = [
-        "title",
-        "building_name",
-        "building_key",
-        "anchor_transaction_id",
+        "source_api",
+        "source_transaction_key",
         "property_type",
         "transaction_type",
-        "deposit",
-        "monthly_rent",
-        "price",
-        "maintenance_fee",
-        "area_m2",
-        "floor",
-        "total_floor",
-        "address",
-        "road_address",
         "sido",
         "sigungu",
         "dong",
         "legal_dong_code",
-        "latitude",
-        "longitude",
-        "geocoding_provider",
-        "geocoding_quality",
-        "geocoded_at",
-        "description",
-        "source",
-        "source_property_id",
-        "source_url",
-        "crawled_at",
-        "registered_at",
-        "is_active",
-        "created_at",
-        "updated_at",
+        "jibun",
+        "building_name",
+        "building_key",
+        "contract_year_month",
+        "contract_day",
+        "deposit",
+        "monthly_rent",
+        "price",
+        "area_m2",
+        "floor",
+        "build_year",
+        "raw_json",
     ]
+    lines = transaction_sql_lines(transactions, columns)
+    TRANSACTION_SQL_OUTPUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    clean_chunk_files("transaction_history_seed")
+    for index, chunk in chunks(transactions, TRANSACTION_SQL_CHUNK_SIZE):
+        chunk_path = SQL_CHUNK_DIR / f"transaction_history_seed_{index:03d}.sql"
+        chunk_path.write_text("\n".join(transaction_sql_lines(chunk, columns)) + "\n", encoding="utf-8")
+
+
+def property_sql_lines(properties, columns):
     lines = [
         "-- F-1 MVP dummy properties generated from transaction building anchors.",
         "insert into public.properties (",
@@ -430,7 +430,60 @@ def write_property_sql(properties):
         "    is_active = excluded.is_active,\n"
         "    updated_at = excluded.updated_at;"
     )
+    return lines
+
+
+def write_property_sql(properties):
+    if not properties:
+        PROPERTY_SQL_OUTPUT_PATH.write_text(
+            "-- No properties seed rows. Populate transaction seed rows and geocoding-cache.json first.\n",
+            encoding="utf-8",
+        )
+        clean_chunk_files("properties_seed")
+        return
+
+    columns = [
+        "title",
+        "building_name",
+        "building_key",
+        "anchor_transaction_id",
+        "property_type",
+        "transaction_type",
+        "deposit",
+        "monthly_rent",
+        "price",
+        "maintenance_fee",
+        "area_m2",
+        "floor",
+        "total_floor",
+        "address",
+        "road_address",
+        "sido",
+        "sigungu",
+        "dong",
+        "legal_dong_code",
+        "latitude",
+        "longitude",
+        "geocoding_provider",
+        "geocoding_quality",
+        "geocoded_at",
+        "description",
+        "source",
+        "source_property_id",
+        "source_url",
+        "crawled_at",
+        "registered_at",
+        "is_active",
+        "created_at",
+        "updated_at",
+    ]
+    lines = property_sql_lines(properties, columns)
     PROPERTY_SQL_OUTPUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    clean_chunk_files("properties_seed")
+    for index, chunk in chunks(properties, PROPERTY_SQL_CHUNK_SIZE):
+        chunk_path = SQL_CHUNK_DIR / f"properties_seed_{index:03d}.sql"
+        chunk_path.write_text("\n".join(property_sql_lines(chunk, columns)) + "\n", encoding="utf-8")
 
 
 def main():
@@ -440,11 +493,15 @@ def main():
     write_json(properties)
     write_transaction_sql(transactions)
     write_property_sql(properties)
+    transaction_chunk_count = (len(transactions) + TRANSACTION_SQL_CHUNK_SIZE - 1) // TRANSACTION_SQL_CHUNK_SIZE
+    property_chunk_count = (len(properties) + PROPERTY_SQL_CHUNK_SIZE - 1) // PROPERTY_SQL_CHUNK_SIZE
+    write_chunk_index(transaction_chunk_count, property_chunk_count)
     print(f"loaded {len(transactions)} transaction rows")
     print(f"generated {len(properties)} properties")
     print(PROPERTIES_OUTPUT_PATH)
     print(TRANSACTION_SQL_OUTPUT_PATH)
     print(PROPERTY_SQL_OUTPUT_PATH)
+    print(SQL_CHUNK_DIR)
 
 
 if __name__ == "__main__":

@@ -35,5 +35,7 @@ The generator writes:
 
 - `database/seed/transaction_history_seed.sql`
 - `database/seed/properties_seed.sql`
+- `database/seed/chunks/transaction_history_seed_*.sql`
+- `database/seed/chunks/properties_seed_*.sql`
 
 Only coordinates with `BUILDING_EXACT` or `ADDRESS_EXACT` quality are used for F-1 property markers.

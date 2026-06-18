@@ -5,8 +5,10 @@ This directory stores reproducible SQL for the shared Supabase database.
 ## F-1 Apply Order
 
 1. Run `migrations/202606160001_create_properties.sql` in Supabase SQL Editor.
-2. Run `seed/transaction_history_seed.sql` in Supabase SQL Editor.
-3. Run `seed/properties_seed.sql` in Supabase SQL Editor.
+2. Run all `seed/chunks/transaction_history_seed_*.sql` files in numeric order.
+3. Run all `seed/chunks/properties_seed_*.sql` files in numeric order.
+
+The single SQL files in `seed/transaction_history_seed.sql` and `seed/properties_seed.sql` are useful for local database clients, but they may be too large for Supabase SQL Editor.
 
 Seed SQL is generated from normalized transaction rows and the geocoding cache with:
 
