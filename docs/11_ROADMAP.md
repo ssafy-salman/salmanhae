@@ -28,9 +28,10 @@
 - `property_score_stat` 저장
 - `GET /api/v1/properties/{id}/safety-summary`
 
-### 5단계. 인증 (Supabase Auth)
-- 회원가입 / 로그인 / 로그아웃
-- Spring Security Filter → Supabase JWT 검증
+### 5단계. 인증 (Spring Security JWT)
+- 회원가입 / 로그인 / 로그아웃 / 토큰 갱신
+- Spring Security Filter → JWT 서명·만료 검증
+- BCrypt 비밀번호 해싱, 리프레시 토큰 DB 저장
 - 비로그인 F-1 허용, 로그인 필요 API 분리
 
 ### 6단계. AI 에이전트 — 매물 추천 (LangGraph)

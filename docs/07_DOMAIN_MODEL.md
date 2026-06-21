@@ -9,7 +9,7 @@
 | `SafetyFacility` | CCTV, 비상벨, 보안등, 치안시설 좌표 |
 | `PropertyScoreStat` | 매물별 안전·가격 점수 사전 계산 통계 |
 | `RegionPriceStat` | 지도 줌 레벨별 표시를 위한 지역 단위 실거래가 평균 |
-| `User` | 로그인 사용자 정보 (Supabase Auth 연동) |
+| `User` | 로그인 사용자 정보 (Spring Security 자체 관리) |
 | `Wishlist` | 찜한 매물 |
 | `ConversationSession` | AI 에이전트 대화 세션 (1.5차) |
 | `ConversationMessage` | 대화 메시지 원문 (1.5차) |
@@ -191,15 +191,30 @@ property_score_stat
 
 ## User — 사용자
 
-Supabase Auth가 인증을 관리하며, Spring Boot DB에는 최소 정보만 저장합니다.
+Spring Security가 인증을 직접 관리하며, 사용자 정보와 자격증명을 DB에 저장합니다.
 
 ```
 users
-- id                      ← Supabase Auth UUID와 동일
-- email
-- nickname
-- created_at
+- id           uuid        PK, gen_random_uuid()
+- email        varchar(255) UNIQUE NOT NULL
+- password     varchar(255) NOT NULL  ← BCrypt 해시
+- nickname     varchar(50)  NOT NULL
+- created_at   timestamptz  NOT NULL, now()
+- updated_at   timestamptz  NOT NULL, now()
 ```
+
+### Spring Security 바인딩
+
+Java 클래스: `com.ssafy.salmanhae.model.dto.auth.User implements UserDetails`
+
+| UserDetails 메서드 | 반환값 |
+| --- | --- |
+| `getUsername()` | `email` (Spring Security 내부 식별자) |
+| `getPassword()` | BCrypt 해시된 password |
+| `getAuthorities()` | `[ROLE_USER]` |
+| `isAccountNonExpired()` / `isEnabled()` 등 | 항상 `true` (별도 잠금·만료 미구현) |
+
+`JwtAuthenticationFilter`는 토큰에서 email을 꺼내 `CustomUserDetailsService.loadUserByUsername(email)`로 `User` 객체를 조회하고, 이를 `UsernamePasswordAuthenticationToken`으로 감싸 `SecurityContextHolder`에 저장합니다.
 
 ---
 

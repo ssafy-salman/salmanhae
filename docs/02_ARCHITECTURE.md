@@ -8,7 +8,7 @@
        ▼ ① 챗봇 메시지 전송 (JWT 포함)
 [Spring Boot — Cloud Run]
        │
-       ├─ ② Supabase JWT 검증 + 메시지 로깅
+       ├─ ② Spring Security JWT 검증 + 메시지 로깅
        │
        ▼ ③ RAG 답변 요청 (HTTP POST, 내부망)
 [Python FastAPI + LangGraph — Cloud Run]
@@ -33,13 +33,26 @@ salmanhae/
 │       └── utils/         # 순수 유틸리티 함수
 ├── backend/           # Spring Boot 3 (Cloud Run)
 │   └── src/main/java/com/ssafy/salmanhae/
-│       ├── config/        # Security, CORS, Swagger, Beans
-│       ├── controller/    # REST 엔드포인트 (입력 검증·위임만)
+│       ├── common/
+│       │   ├── exception/ # ApiException, ErrorCode, GlobalExceptionHandler
+│       │   └── response/  # ApiResponse, ListResponse
+│       ├── config/        # SecurityConfig, WebConfig
+│       ├── controller/
+│       │   ├── auth/      # AuthController
+│       │   └── property/  # PropertyController
+│       ├── filter/        # JwtAuthenticationFilter
 │       ├── model/
-│       │   ├── dao/       # MyBatis DAO 인터페이스 + Impl
-│       │   └── dto/       # 요청/응답 데이터 객체
-│       ├── service/       # 비즈니스 로직 인터페이스 + Impl
-│       └── batch/         # Spring Scheduler 배치 작업
+│       │   ├── dao/
+│       │   │   ├── auth/     # UserDao (MyBatis @Mapper)
+│       │   │   └── property/ # PropertyDao
+│       │   └── dto/
+│       │       ├── auth/     # User (implements UserDetails), LoginRequest, LoginResponse, SignupRequest
+│       │       └── property/ # PropertyRow, PropertySummaryResponse, PropertyDetailResponse 등
+│       ├── service/
+│       │   ├── auth/      # AuthService, CustomUserDetailsService
+│       │   └── property/  # PropertyService, PropertyServiceImpl
+│       ├── util/          # JwtUtil
+│       └── batch/         # Spring Scheduler 배치 작업 (예정)
 └── backend-ai/        # Python FastAPI + LangGraph (Cloud Run)
     └── app/
         ├── api/           # FastAPI 라우터
@@ -55,12 +68,12 @@ salmanhae/
 
 - 네이버지도 SDK로 지도 렌더링, 마커, 레이어 표시
 - Spring Boot REST API 호출 (매물, 안전, 실거래가, 챗봇)
-- Supabase Auth JWT를 Axios Interceptor로 자동 첨부
+- Spring Security JWT를 Axios Interceptor로 자동 첨부
 
 ### Spring Boot (Cloud Run)
 
-- 회원가입/로그인/로그아웃 API (Supabase Auth 래핑)
-- Supabase JWT 검증 (Spring Security Filter)
+- 회원가입/로그인/로그아웃 API (Spring Security 자체 구현)
+- JWT 발급 및 검증 (Spring Security Filter)
 - 공공데이터 배치 수집 → PostgreSQL 저장
 - F-1 MVP 샘플 매물 및 운영 매물 데이터 저장/조회 API 제공
 - 실거래가 건물 anchor 지오코딩 결과를 DB에 저장하고 지도 API에서는 저장 좌표만 조회
@@ -80,7 +93,6 @@ salmanhae/
 
 ### Supabase
 
-- Auth: JWT 발급, 이메일/소셜 로그인 관리
 - DB (PostgreSQL): 매물, 실거래가, 안전시설, 찜하기, 대화 기록, 사용자
 - pgvector: 법률 문서 임베딩, 뉴스 임베딩
 
@@ -94,7 +106,6 @@ salmanhae/
 | FastAPI     | Spring Boot       | O    | HTTP GET 내부망 (툴 호출) |
 | FastAPI     | Supabase pgvector | O    | SQL                       |
 | FastAPI     | Claude API        | O    | HTTPS                     |
-| Spring Boot | Supabase Auth     | O    | HTTPS                     |
 
 ## 데이터베이스
 

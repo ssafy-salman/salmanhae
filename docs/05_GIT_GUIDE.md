@@ -218,7 +218,7 @@ GitHub 작업(커밋, PR)은 AI에게 직접 시키지 말고 수동으로 처�
 | 2 | [FEAT][F-1] 안전시설 API + 레이어 | `feature/2-safety-api` |
 | 3 | [FEAT][F-1] 실거래가 API + 지도 평균 레이어 | `feature/3-transaction-api` |
 | 4 | [FEAT][F-1] 안전 점수 계산 | `feature/4-safety-score` |
-| 5 | [FEAT][F-6] 인증 (Supabase Auth) | `feature/5-auth` |
+| 5 | [FEAT][F-6] 인증 (Spring Security JWT) | `feature/5-auth` |
 | 6 | [FEAT][F-2] AI 에이전트 — 매물 추천 | `feature/6-ai-recommend` |
 | 7 | [FEAT][F-3] AI 에이전트 — 법률 RAG | `feature/7-ai-legal-rag` |
 | 8 | [FEAT][F-4] AI 에이전트 — 시세·안전 분석 | `feature/8-ai-analysis` |
