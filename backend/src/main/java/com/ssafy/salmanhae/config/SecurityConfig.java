@@ -1,5 +1,6 @@
 package com.ssafy.salmanhae.config;
 
+import com.ssafy.salmanhae.filter.JwtAuthenticationFilter;
 import com.ssafy.salmanhae.service.CustomUserDetailsService;
 import com.ssafy.salmanhae.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -30,13 +32,16 @@ public class SecurityConfig {
                 // JWT는 요청마다 토큰으로 인증하므로 서버 세션을 사용하지 않음
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 현재는 모든 경로 허용 — JWT 필터 완성 후 경로별 인증 조건 추가 예정
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 허용
                         .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/properties/**", "/api/v1/map/**", "/api/v1/safety/**", "/api/v1/price-analysis").permitAll()
                         // 나머지는 로그인 필요
                         .anyRequest().authenticated()
+                )
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtUtil, userDetailsService),
+                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
