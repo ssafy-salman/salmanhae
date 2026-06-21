@@ -1,6 +1,6 @@
 package com.ssafy.salmanhae.filter;
 
-import com.ssafy.salmanhae.service.CustomUserDetailsService;
+import com.ssafy.salmanhae.service.auth.CustomUserDetailsService;
 import com.ssafy.salmanhae.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

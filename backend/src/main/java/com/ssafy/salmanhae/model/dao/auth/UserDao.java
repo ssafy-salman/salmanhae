@@ -1,6 +1,6 @@
-package com.ssafy.salmanhae.model.dao;
+package com.ssafy.salmanhae.model.dao.auth;
 
-import com.ssafy.salmanhae.model.dto.User;
+import com.ssafy.salmanhae.model.dto.auth.User;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

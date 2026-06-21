@@ -1,7 +1,7 @@
 package com.ssafy.salmanhae.config;
 
 import com.ssafy.salmanhae.filter.JwtAuthenticationFilter;
-import com.ssafy.salmanhae.service.CustomUserDetailsService;
+import com.ssafy.salmanhae.service.auth.CustomUserDetailsService;
 import com.ssafy.salmanhae.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

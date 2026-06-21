@@ -1,7 +1,7 @@
-package com.ssafy.salmanhae.service;
+package com.ssafy.salmanhae.service.auth;
 
-import com.ssafy.salmanhae.model.dao.UserDao;
-import com.ssafy.salmanhae.model.dto.User;
+import com.ssafy.salmanhae.model.dao.auth.UserDao;
+import com.ssafy.salmanhae.model.dto.auth.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

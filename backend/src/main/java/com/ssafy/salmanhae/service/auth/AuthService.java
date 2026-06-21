@@ -1,14 +1,12 @@
-package com.ssafy.salmanhae.service;
+package com.ssafy.salmanhae.service.auth;
 
-import com.ssafy.salmanhae.model.dao.UserDao;
-import com.ssafy.salmanhae.model.dto.LoginResponse;
-import com.ssafy.salmanhae.model.dto.User;
+import com.ssafy.salmanhae.model.dao.auth.UserDao;
+import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
+import com.ssafy.salmanhae.model.dto.auth.User;
 import com.ssafy.salmanhae.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +16,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    // 회원가입
     public void signup(String email, String password, String nickname) {
         User user = User.builder()
                 .email(email)
@@ -28,7 +25,6 @@ public class AuthService {
         userDao.save(user);
     }
 
-    // 로그인
     public LoginResponse login(String email, String password) {
         User user = userDao.findByEmail(email);
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {

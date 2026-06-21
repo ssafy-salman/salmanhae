@@ -1,10 +1,10 @@
-package com.ssafy.salmanhae.controller;
+package com.ssafy.salmanhae.controller.auth;
 
-import com.ssafy.salmanhae.model.dto.LoginRequest;
-import com.ssafy.salmanhae.model.dto.LoginResponse;
-import com.ssafy.salmanhae.model.dto.SignupRequest;
+import com.ssafy.salmanhae.model.dto.auth.LoginRequest;
+import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
+import com.ssafy.salmanhae.model.dto.auth.SignupRequest;
 import com.ssafy.salmanhae.model.dto.common.ApiResponse;
-import com.ssafy.salmanhae.service.AuthService;
+import com.ssafy.salmanhae.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

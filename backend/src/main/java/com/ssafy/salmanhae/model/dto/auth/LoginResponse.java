@@ -1,4 +1,4 @@
-package com.ssafy.salmanhae.model.dto;
+package com.ssafy.salmanhae.model.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
