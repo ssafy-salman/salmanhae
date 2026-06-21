@@ -1,5 +1,7 @@
 package com.ssafy.salmanhae.service.auth;
 
+import com.ssafy.salmanhae.common.exception.ApiException;
+import com.ssafy.salmanhae.common.exception.ErrorCode;
 import com.ssafy.salmanhae.model.dao.auth.UserDao;
 import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
 import com.ssafy.salmanhae.model.dto.auth.User;
@@ -28,7 +30,7 @@ public class AuthService {
     public LoginResponse login(String email, String password) {
         User user = userDao.findByEmail(email);
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
 
         return new LoginResponse(
