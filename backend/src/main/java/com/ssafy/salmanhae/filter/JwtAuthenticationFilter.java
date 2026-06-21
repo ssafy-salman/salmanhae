@@ -24,7 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String token = resovleToken(request);
+        String token = resolveToken(request);
 
         if (token != null && jwtUtil.isValid(token)) {
             // 토큰에서 email 꺼내서 DB 조회
@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     // Autorization 헤더에서 Bearer 토큰 추출
-    private String resovleToken(HttpServletRequest request) {
+    private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
