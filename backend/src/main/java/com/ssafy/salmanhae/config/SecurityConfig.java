@@ -5,6 +5,7 @@ import com.ssafy.salmanhae.service.auth.CustomUserDetailsService;
 import com.ssafy.salmanhae.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,7 +32,7 @@ public class SecurityConfig {
                 // REST API + JWT 방식이므로 CSRF 불필요
                 .csrf(csrf -> csrf.disable())
                 // CORS preflight(OPTIONS)가 인증 필터 전에 처리되도록 Spring Security CORS 활성화
-                .cors(cors -> cors.configure(http))
+                .cors(Customizer.withDefaults())
                 // JWT는 요청마다 토큰으로 인증하므로 서버 세션을 사용하지 않음
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
