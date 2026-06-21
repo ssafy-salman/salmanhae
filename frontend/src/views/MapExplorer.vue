@@ -1,172 +1,217 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <section class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-[620px] relative">
-      <div class="absolute top-3 left-3 z-20 flex flex-wrap gap-2 max-w-[92%]">
-        <button v-for="layer in layers" :key="layer.key" @click="store.toggleLayer(layer.key)" :class="layerButtonClass(layer.key)">
-          <span>{{ layer.icon }}</span> {{ layer.label }}
-        </button>
-      </div>
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <section class="relative h-[660px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-8">
+      <div class="absolute left-3 right-3 top-3 z-20 space-y-2">
+        <form class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur md:flex-row md:items-center" @submit.prevent="refreshFromFilters">
+          <label class="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <Search class="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+            <input
+              v-model="store.searchKeyword"
+              class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
+              type="search"
+              placeholder="건물명 또는 주소 검색"
+            />
+          </label>
+          <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800" type="submit">
+            <RotateCw class="h-4 w-4" aria-hidden="true" />
+            조회
+          </button>
+        </form>
 
-      <div class="absolute bottom-3 left-3 z-20 bg-white/95 border border-slate-200 p-3 rounded-xl shadow-md text-[10px] space-y-1.5">
-        <div class="font-bold text-slate-700 border-b border-slate-100 pb-1 mb-1">안전 인프라 및 범죄주의 구간</div>
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> CCTV</div>
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span> LED 보안등</div>
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 치안센터 / 안심벨</div>
-        <div class="flex items-center gap-2"><span class="h-1.5 w-6 rounded-full bg-teal-400 border border-dashed border-teal-700"></span> 안심귀갓길</div>
-        <div class="flex items-center gap-2"><span class="w-4 h-2.5 bg-rose-500/20 border border-dashed border-rose-600"></span> 범죄주의 구간</div>
-      </div>
-
-      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/95 text-white py-2 px-4 rounded-full text-xs shadow-md hidden md:flex items-center gap-2">
-        <span>🛡️</span>
-        <span>매물 마커를 클릭하면 HUG 가입성·실질 범죄지수·실거래 추이를 확인할 수 있습니다.</span>
-      </div>
-
-      <div class="relative w-full h-full bg-slate-100 overflow-hidden select-none">
-        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 520 460" preserveAspectRatio="xMidYMid slice">
-          <rect width="520" height="460" fill="#f1f5f9" />
-          <g stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-            <line v-for="(road, index) in store.currentInfra.mainRoads" :key="`main-${index}`" :x1="road[0]" :y1="road[1]" :x2="road[2]" :y2="road[3]" />
-          </g>
-          <g stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-            <line v-for="(road, index) in store.currentInfra.subRoads" :key="`sub-${index}`" :x1="road[0]" :y1="road[1]" :x2="road[2]" :y2="road[3]" />
-          </g>
-          <g v-show="store.activeLayers.path" stroke="#14b8a6" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 7" class="glow-safe-path">
-            <line v-for="(path, index) in store.currentInfra.paths" :key="`path-${index}`" :x1="path.x1" :y1="path.y1" :x2="path.x2" :y2="path.y2" class="animate-pulse-path" />
-          </g>
-          <g v-show="store.activeLayers.crimeZone" opacity="0.65">
-            <polygon v-for="(zone, index) in store.currentInfra.crimeZones" :key="`zone-${index}`" :points="zone" class="crime-danger-zone" />
-          </g>
-        </svg>
-
-        <template v-if="store.activeLayers.cctv">
-          <div v-for="(point, index) in store.currentInfra.cctvs" :key="`cctv-${index}`" class="map-feature text-blue-600 border-blue-300 glow-cctv" :style="pointStyle(point)">📹</div>
-        </template>
-        <template v-if="store.activeLayers.lamp">
-          <div v-for="(point, index) in store.currentInfra.lamps" :key="`lamp-${index}`" class="map-feature text-yellow-500 border-yellow-300 glow-lamp" :style="pointStyle(point)">💡</div>
-        </template>
-        <template v-if="store.activeLayers.police">
-          <div v-for="(point, index) in store.currentInfra.polices" :key="`police-${index}`" class="absolute z-20 bg-white border border-emerald-400 text-emerald-700 text-[10px] font-black rounded-lg px-2 py-1 shadow" :style="pointStyle(point)">🏢 {{ point.desc }}</div>
-        </template>
-
-        <button v-for="property in store.currentProperties" :key="property.id" @click="store.selectProperty(property.id)" class="absolute z-30 group -translate-x-1/2 -translate-y-full" :style="pointStyle(property)">
-          <div :class="['rounded-xl px-2.5 py-1.5 text-[11px] font-black shadow-md border-2 transition group-hover:scale-110', store.selectedPropertyId === property.id ? 'bg-amber-400 text-slate-900 border-white' : 'bg-brand text-white border-white']">
-            🏠 {{ (property.deposit / 10000).toFixed(1) }}억/{{ property.rent }}
+        <form class="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur md:grid-cols-6" @submit.prevent="refreshFromFilters">
+          <label class="filter-field">
+            <span>거래</span>
+            <select v-model="store.filters.transactionType">
+              <option value="">전체</option>
+              <option value="MONTHLY_RENT">월세</option>
+              <option value="JEONSE">전세</option>
+              <option value="SALE">매매</option>
+            </select>
+          </label>
+          <label class="filter-field">
+            <span>유형</span>
+            <select v-model="store.filters.propertyType">
+              <option value="">전체</option>
+              <option value="ONE_ROOM">원룸</option>
+              <option value="OFFICETEL">오피스텔</option>
+              <option value="APARTMENT">아파트</option>
+              <option value="VILLA">빌라</option>
+              <option value="MULTI_FAMILY">단독/다가구</option>
+            </select>
+          </label>
+          <label class="filter-field">
+            <span>보증금 최소</span>
+            <input v-model="store.filters.minDeposit" min="0" step="1000000" type="number" placeholder="원" />
+          </label>
+          <label class="filter-field">
+            <span>보증금 최대</span>
+            <input v-model="store.filters.maxDeposit" min="0" step="1000000" type="number" placeholder="원" />
+          </label>
+          <label class="filter-field">
+            <span>매매가 최소</span>
+            <input v-model="store.filters.minPrice" min="0" step="10000000" type="number" placeholder="원" />
+          </label>
+          <div class="flex items-end gap-2">
+            <button class="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50" type="button" @click="resetFilters">
+              초기화
+            </button>
+            <button class="h-10 rounded-xl bg-brand px-3 text-xs font-black text-white transition hover:bg-brand-dark" type="submit">
+              적용
+            </button>
           </div>
-          <div :class="['w-3 h-3 mx-auto -mt-1.5 rotate-45 border-r border-b border-white', store.selectedPropertyId === property.id ? 'bg-amber-400' : 'bg-brand']"></div>
-        </button>
+        </form>
+      </div>
+
+      <div ref="mapElement" class="h-full w-full bg-slate-100"></div>
+
+      <div v-if="isMapLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-slate-50">
+        <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
+          <Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
+          지도 불러오는 중
+        </div>
+      </div>
+
+      <div v-if="mapError" class="absolute inset-0 z-10 flex items-center justify-center bg-slate-50 p-6">
+        <div class="max-w-sm rounded-2xl border border-amber-200 bg-white p-5 text-center shadow-sm">
+          <AlertTriangle class="mx-auto h-8 w-8 text-amber-500" aria-hidden="true" />
+          <h2 class="mt-3 text-sm font-black text-slate-900">네이버 지도를 불러오지 못했습니다</h2>
+          <p class="mt-2 text-xs leading-5 text-slate-500">{{ mapError }}</p>
+          <p class="mt-3 text-xs font-bold text-slate-600">매물 목록은 기본 지도 범위로 조회됩니다.</p>
+        </div>
+      </div>
+
+      <div class="absolute bottom-3 left-3 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold text-slate-600 shadow-sm backdrop-blur">
+        <MapPin class="h-4 w-4 text-brand" aria-hidden="true" />
+        <span>{{ store.totalCount.toLocaleString() }}개 매물</span>
+        <span v-if="store.lastFetchedAt" class="text-slate-400">{{ formattedFetchedAt }}</span>
       </div>
     </section>
 
-    <aside class="lg:col-span-4 flex flex-col gap-4 h-[620px]">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 space-y-3">
-        <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl">
-          <span class="text-slate-400">🔎</span>
-          <input v-model="store.searchKeyword" type="text" placeholder="건물명 또는 주소 검색" class="bg-transparent text-sm w-full focus:outline-none" />
+    <aside class="flex h-[660px] flex-col gap-4 lg:col-span-4">
+      <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] font-black uppercase text-brand-dark">F-1 Property Search</p>
+            <h2 class="mt-1 text-lg font-black text-slate-900">지도 범위 매물</h2>
+          </div>
+          <SlidersHorizontal class="h-5 w-5 text-slate-400" aria-hidden="true" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <select v-model="store.filterType" class="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold focus:outline-none">
-            <option value="all">모든 주거유형</option>
-            <option value="다가구">원룸(다가구)</option>
-            <option value="오피스텔">오피스텔</option>
-            <option value="투룸">투룸</option>
-          </select>
-          <select v-model="store.sortType" class="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold focus:outline-none">
-            <option value="safe">치안지수 높은순</option>
-            <option value="price-low">월세 낮은순</option>
-          </select>
-        </div>
-      </div>
+        <p class="mt-2 text-xs leading-5 text-slate-500">현재 지도 화면 안의 매물을 Spring Boot API에서 조회합니다.</p>
+      </section>
 
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1 overflow-y-auto p-3 space-y-2">
-        <article v-for="property in store.filteredProperties" :key="property.id" @click="store.selectProperty(property.id)" :class="['p-3 rounded-xl border transition cursor-pointer', store.selectedPropertyId === property.id ? 'bg-brand-light border-brand shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100']">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-700">{{ property.type }}</span>
-            <span class="text-xs font-black text-emerald-600">🛡️ {{ property.safetyScore }}점</span>
+      <section class="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div v-if="store.isLoading" class="flex h-full items-center justify-center text-sm font-bold text-slate-500">
+          <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+          매물을 불러오는 중입니다
+        </div>
+
+        <div v-else-if="store.error" class="flex h-full items-center justify-center p-6 text-center">
+          <div>
+            <AlertTriangle class="mx-auto h-8 w-8 text-rose-500" aria-hidden="true" />
+            <p class="mt-3 text-sm font-black text-slate-900">매물 API 오류</p>
+            <p class="mt-2 text-xs leading-5 text-slate-500">{{ store.error }}</p>
           </div>
-          <h3 class="font-black text-slate-900 text-sm mt-2 flex items-center justify-between">
-            {{ property.name }}
-            <span v-if="store.favorites.includes(property.id)" class="text-rose-500">♥</span>
-          </h3>
-          <p class="text-[11px] text-slate-500 mt-1">{{ property.address }}</p>
-          <div class="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/60">
-            <span class="text-sm font-black text-slate-900">보증금 {{ (property.deposit / 10000).toFixed(1) }}억 / 월세 {{ property.rent }}</span>
-            <span class="text-[10px] text-slate-500 bg-teal-50 px-2 py-0.5 rounded font-bold">{{ property.crimeGrade }}</span>
+        </div>
+
+        <div v-else-if="store.filteredProperties.length === 0" class="flex h-full items-center justify-center p-6 text-center">
+          <div>
+            <Home class="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
+            <p class="mt-3 text-sm font-black text-slate-900">표시할 매물이 없습니다</p>
+            <p class="mt-2 text-xs leading-5 text-slate-500">지도를 조금 넓히거나 필터를 초기화해보세요.</p>
           </div>
-        </article>
-      </div>
+        </div>
+
+        <div v-else class="space-y-2">
+          <article
+            v-for="property in store.filteredProperties"
+            :key="property.id"
+            :class="[
+              'cursor-pointer rounded-xl border p-3 transition',
+              store.selectedPropertyId === property.id ? 'border-brand bg-brand-light shadow-sm' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+            ]"
+            tabindex="0"
+            @click="store.selectProperty(property.id)"
+            @keydown.enter="store.selectProperty(property.id)"
+            @keydown.space.prevent="store.selectProperty(property.id)"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-black text-slate-900">{{ displayTitle(property) }}</p>
+                <p class="mt-1 truncate text-xs font-semibold text-slate-500">{{ property.address }}</p>
+              </div>
+              <span class="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-slate-600">{{ propertyTypeLabel(property.propertyType) }}</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3">
+              <span class="text-sm font-black text-slate-900">{{ priceText(property) }}</span>
+              <span class="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-black text-white">{{ transactionLabel(property.transactionType) }}</span>
+            </div>
+            <p class="mt-2 text-xs font-semibold text-slate-500">{{ areaText(property) }} · {{ floorText(property) }}</p>
+          </article>
+        </div>
+      </section>
     </aside>
 
     <transition name="slide">
-      <section v-if="store.selectedProperty" class="fixed inset-y-0 right-0 w-full md:w-[480px] bg-white shadow-2xl z-[100] border-l border-slate-200 overflow-y-auto">
-        <div class="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between z-10">
+      <section v-if="store.selectedProperty" class="fixed inset-y-0 right-0 z-[100] w-full overflow-y-auto border-l border-slate-200 bg-white shadow-2xl md:w-[440px]">
+        <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
           <div class="flex items-center gap-2">
-            <span class="bg-brand-light text-brand-dark text-[10px] font-black px-2 py-0.5 rounded">{{ store.selectedProperty.type }}</span>
-            <span class="text-xs text-slate-500">매물 No. {{ store.selectedProperty.id }}</span>
+            <span class="rounded-full bg-brand-light px-2 py-1 text-[10px] font-black text-brand-dark">{{ transactionLabel(store.selectedProperty.transactionType) }}</span>
+            <span class="text-xs font-bold text-slate-400">No. {{ store.selectedProperty.id }}</span>
           </div>
-          <div class="flex gap-2">
-            <button @click="store.toggleFavorite(store.selectedProperty.id)" :class="['w-8 h-8 rounded-full border flex items-center justify-center text-sm', store.favorites.includes(store.selectedProperty.id) ? 'bg-rose-50 border-rose-200 text-rose-500' : 'bg-white border-slate-200 text-slate-400']">♥</button>
-            <button @click="store.closeProperty()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600">✕</button>
-          </div>
+          <button class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" type="button" @click="store.closeProperty">
+            <X class="h-4 w-4" aria-hidden="true" />
+            <span class="sr-only">닫기</span>
+          </button>
         </div>
 
-        <div class="p-5 space-y-5">
+        <div class="space-y-5 p-5">
           <div>
-            <h2 class="text-xl font-black text-slate-900">{{ store.selectedProperty.name }}</h2>
-            <p class="text-sm text-slate-500">{{ store.selectedProperty.address }}</p>
-            <div class="mt-3 flex items-center justify-between bg-brand-light p-3 rounded-xl border border-brand/20">
-              <div><span class="text-xs font-bold text-brand-dark">희망 월세</span><p class="text-lg font-black text-brand-dark">보증금 {{ (store.selectedProperty.deposit / 10000).toFixed(1) }}억 / {{ store.selectedProperty.rent }}만원</p></div>
-              <div class="text-right"><span class="text-[10px] text-slate-500">공시가격</span><p class="text-xs font-black">{{ formatMoney(store.selectedProperty.publicPrice) }}만원</p></div>
+            <p class="text-xs font-black text-brand-dark">{{ propertyTypeLabel(store.selectedProperty.propertyType) }}</p>
+            <h2 class="mt-1 text-2xl font-black text-slate-900">{{ displayTitle(store.selectedProperty) }}</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">{{ store.selectedProperty.address }}</p>
+            <p v-if="store.selectedProperty.roadAddress" class="text-xs leading-5 text-slate-400">{{ store.selectedProperty.roadAddress }}</p>
+          </div>
+
+          <div class="rounded-2xl border border-brand/20 bg-brand-light p-4">
+            <p class="text-xs font-black text-brand-dark">가격</p>
+            <p class="mt-1 text-xl font-black text-slate-900">{{ priceText(store.selectedProperty) }}</p>
+            <p v-if="store.selectedProperty.maintenanceFee" class="mt-2 text-xs font-bold text-slate-600">관리비 {{ formatWons(store.selectedProperty.maintenanceFee) }}</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="detail-stat">
+              <span>전용 면적</span>
+              <b>{{ areaText(store.selectedProperty) }}</b>
+            </div>
+            <div class="detail-stat">
+              <span>층수</span>
+              <b>{{ floorText(store.selectedProperty) }}</b>
+            </div>
+            <div class="detail-stat">
+              <span>건물명</span>
+              <b>{{ store.selectedProperty.buildingName || '-' }}</b>
+            </div>
+            <div class="detail-stat">
+              <span>법정동 코드</span>
+              <b>{{ store.selectedProperty.legalDongCode || '-' }}</b>
             </div>
           </div>
 
-          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
-            <div class="flex items-center justify-between">
-              <h3 class="font-black text-sm">🛡️ 통합 치안 및 거주 안전 리포트</h3>
-              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">{{ safetyLabel(store.selectedProperty.safetyScore) }}</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="w-16 h-16 rounded-full bg-emerald-50 border-4 border-brand flex flex-col items-center justify-center text-brand-dark">
-                <span class="text-xl font-black">{{ store.selectedProperty.safetyScore }}</span><span class="text-[8px] font-bold">안전 등급</span>
-              </div>
-              <div class="flex-1 space-y-1 text-[11px]">
-                <p class="flex justify-between"><span class="text-slate-500 font-bold">범죄 발생률 등급</span><b>{{ store.selectedProperty.crimeGrade }}</b></p>
-                <p class="flex justify-between"><span class="text-slate-500 font-bold">야간 조도</span><b>{{ store.selectedProperty.lamps }}</b></p>
-                <p class="flex justify-between"><span class="text-slate-500 font-bold">CCTV 수</span><b>{{ store.selectedProperty.cctvs }}개</b></p>
-              </div>
-            </div>
-            <p class="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed">{{ store.selectedProperty.description }}</p>
+          <div v-if="store.detailError" class="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
+            {{ store.detailError }}
           </div>
 
-          <div :class="['p-4 rounded-2xl border space-y-3', hugStatus(store.selectedProperty).eligible ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100']">
-            <div class="flex justify-between items-center">
-              <h3 class="font-black text-xs">🧾 HUG 126% 가입 적격성 예비진단</h3>
-              <span :class="['text-[10px] font-black px-2 py-0.5 rounded', hugStatus(store.selectedProperty).eligible ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-200 text-rose-950']">{{ hugStatus(store.selectedProperty).label }}</span>
-            </div>
-            <div class="bg-white/80 p-3 rounded-xl text-xs space-y-1 border border-white">
-              <p class="flex justify-between"><span>HUG 가입 보증 한도</span><b>{{ formatMoney(hugStatus(store.selectedProperty).limit) }}만원</b></p>
-              <p class="flex justify-between"><span>선순위 보증금</span><b>{{ store.selectedProperty.type.includes('다가구') ? formatMoney(store.selectedProperty.seniorDeposits) + '만원 확인 필요' : '개별등기' }}</b></p>
-            </div>
-            <p class="text-xs leading-relaxed">{{ hugStatus(store.selectedProperty).message }}</p>
-            <router-link to="/diagnosis" class="block text-center bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 rounded-xl">이 매물 상세진단 실행</router-link>
+          <div v-if="store.isDetailLoading" class="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+            상세 정보를 불러오는 중입니다
           </div>
 
-          <div>
-            <h3 class="font-black text-sm mb-2">📈 국토부 실거래 신고 내역</h3>
-            <svg class="w-full h-40 bg-slate-50 border border-slate-100 rounded-xl" viewBox="0 0 360 150">
-              <polyline :points="chartPoints(store.selectedProperty.historicalPrices)" fill="none" stroke="#1ABC9C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-              <circle v-for="(point, index) in chartPointArray(store.selectedProperty.historicalPrices)" :key="index" :cx="point.x" :cy="point.y" r="4" fill="#1ABC9C" />
-              <text x="16" y="135" font-size="10" fill="#64748b">23년</text><text x="110" y="135" font-size="10" fill="#64748b">24년</text><text x="210" y="135" font-size="10" fill="#64748b">25년</text><text x="310" y="135" font-size="10" fill="#64748b">26년</text>
-            </svg>
-          </div>
-
-          <div>
-            <h3 class="font-black text-sm mb-2">👤 실거주자 후기</h3>
-            <div class="space-y-2">
-              <article v-for="review in store.selectedProperty.reviews" :key="review.user" class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <div class="flex justify-between text-[11px]"><b>{{ review.user }} <span class="text-slate-400 font-normal">({{ review.date }})</span></b><span class="text-amber-500 font-black">★ {{ review.rate }}</span></div>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ review.content }}</p>
-              </article>
+          <div v-if="store.selectedProperty.description" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center gap-2">
+              <Building2 class="h-4 w-4 text-slate-400" aria-hidden="true" />
+              <h3 class="text-sm font-black text-slate-900">매물 메모</h3>
             </div>
+            <p class="mt-3 text-sm leading-6 text-slate-600">{{ store.selectedProperty.description }}</p>
           </div>
         </div>
       </section>
@@ -175,46 +220,224 @@
 </template>
 
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  AlertTriangle,
+  Building2,
+  Home,
+  Loader2,
+  MapPin,
+  RotateCw,
+  Search,
+  SlidersHorizontal,
+  X
+} from '@lucide/vue'
 import useMapStore from '../store/mapStore'
+import { loadNaverMaps } from '../utils/naverMaps'
 
 const store = useMapStore()
-const layers = [
-  { key: 'cctv', label: 'CCTV', icon: '📹' },
-  { key: 'lamp', label: '가로등/조도', icon: '💡' },
-  { key: 'police', label: '관공서/안심벨', icon: '🏢' },
-  { key: 'path', label: '안심귀갓길', icon: '🛣️' },
-  { key: 'crimeZone', label: '범죄 위험 지역구간', icon: '⚠️' }
-]
+const mapElement = ref(null)
+const isMapLoading = ref(true)
+const mapError = ref('')
 
-const layerButtonClass = (key) => {
-  const active = store.activeLayers[key]
-  if (key === 'crimeZone' && active) return 'layer-btn bg-rose-100 border-rose-300 text-rose-700 font-black'
-  if (active) return 'layer-btn bg-brand-light border-brand/40 text-brand-dark font-bold'
-  return 'layer-btn bg-white border-slate-200 text-slate-600 hover:bg-slate-50 font-bold'
+let mapsApi = null
+let map = null
+let idleListener = null
+let markers = []
+let markerListeners = []
+
+const formattedFetchedAt = computed(() => {
+  if (!store.lastFetchedAt) return ''
+  return new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(store.lastFetchedAt))
+})
+
+const displayTitle = (property) => property.title || property.buildingName || `매물 ${property.id}`
+
+const transactionLabel = (type) => ({
+  MONTHLY_RENT: '월세',
+  JEONSE: '전세',
+  SALE: '매매'
+}[type] || '거래')
+
+const propertyTypeLabel = (type) => ({
+  ONE_ROOM: '원룸',
+  OFFICETEL: '오피스텔',
+  APARTMENT: '아파트',
+  VILLA: '빌라',
+  MULTI_FAMILY: '단독/다가구'
+}[type] || '주거')
+
+const formatWons = (value) => {
+  if (value === null || value === undefined) return '-'
+  const man = Math.round(Number(value) / 10000)
+  if (!Number.isFinite(man)) return '-'
+  if (man >= 10000) {
+    const eok = Math.floor(man / 10000)
+    const rest = man % 10000
+    return rest > 0 ? `${eok}억 ${rest.toLocaleString()}만` : `${eok}억`
+  }
+  return `${man.toLocaleString()}만`
 }
-const pointStyle = (point) => ({ left: `${point.x}px`, top: `${point.y}px` })
-const formatMoney = (value) => Math.round(value).toLocaleString()
-const safetyLabel = (score) => score >= 90 ? '안전 최우수' : score >= 80 ? '안전 우수' : score >= 70 ? '주의 필요' : '야간 주의'
-const hugStatus = (property) => {
-  const limit = Math.round(property.publicPrice * 1.26)
-  const eligible = property.deposit <= limit
+
+const priceText = (property) => {
+  if (property.transactionType === 'SALE') return `매매 ${formatWons(property.price)}`
+  if (property.transactionType === 'JEONSE') return `전세 ${formatWons(property.deposit)}`
+  return `보증금 ${formatWons(property.deposit)} / 월세 ${formatWons(property.monthlyRent)}`
+}
+
+const areaText = (property) => {
+  if (!property.areaM2) return '면적 정보 없음'
+  const pyeong = Number(property.areaM2) / 3.3058
+  return `${Number(property.areaM2).toFixed(1)}m² (${pyeong.toFixed(1)}평)`
+}
+
+const floorText = (property) => {
+  const floor = property.floor ? `${property.floor}층` : '층수 미상'
+  return property.totalFloor ? `${floor} / ${property.totalFloor}층` : floor
+}
+
+const getMapBounds = () => {
+  const bounds = map.getBounds()
+  const sw = bounds.getSW()
+  const ne = bounds.getNE()
   return {
-    limit,
-    eligible,
-    label: eligible ? 'HUG 요건 부합' : 'HUG 가입불가',
-    message: eligible
-      ? '보증금이 HUG 가입 허용선 안에 있습니다. 다가구라면 선순위 보증금까지 합산해 최종 부채비율을 확인하세요.'
-      : `보증금 ${formatMoney(property.deposit)}만원이 HUG 한도 ${formatMoney(limit)}만원을 초과합니다. 보증보험 가입이 어려운 위험 매물입니다.`
+    west: sw.lng(),
+    south: sw.lat(),
+    east: ne.lng(),
+    north: ne.lat()
   }
 }
-const chartPointArray = (prices) => {
-  const min = Math.min(...prices)
-  const max = Math.max(...prices)
-  return prices.map((price, index) => {
-    const x = 30 + index * 100
-    const y = max === min ? 70 : 115 - ((price - min) / (max - min)) * 80
-    return { x, y }
+
+const markerContent = (property, isSelected) => {
+  const background = isSelected ? '#101311' : '#1ABC9C'
+  const label = property.transactionType === 'SALE' ? formatWons(property.price) : formatWons(property.deposit)
+
+  return `
+    <button type="button" style="
+      position: relative;
+      min-width: 74px;
+      border: 2px solid #fff;
+      border-radius: 14px;
+      background: ${background};
+      color: #fff;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+      cursor: pointer;
+      white-space: nowrap;
+    ">
+      ${transactionLabel(property.transactionType)} ${label}
+      <span style="
+        position: absolute;
+        left: 50%;
+        bottom: -6px;
+        width: 10px;
+        height: 10px;
+        transform: translateX(-50%) rotate(45deg);
+        background: ${background};
+        border-right: 2px solid #fff;
+        border-bottom: 2px solid #fff;
+      "></span>
+    </button>
+  `
+}
+
+const clearMarkers = () => {
+  markerListeners.forEach((listener) => mapsApi?.Event.removeListener(listener))
+  markerListeners = []
+  markers.forEach((marker) => marker.setMap(null))
+  markers = []
+}
+
+const renderMarkers = () => {
+  if (!mapsApi || !map) return
+  clearMarkers()
+
+  store.filteredProperties.forEach((property) => {
+    if (!property.latitude || !property.longitude) return
+
+    const marker = new mapsApi.Marker({
+      position: new mapsApi.LatLng(property.latitude, property.longitude),
+      map,
+      icon: {
+        content: markerContent(property, store.selectedPropertyId === property.id),
+        anchor: new mapsApi.Point(42, 44)
+      }
+    })
+    const listener = mapsApi.Event.addListener(marker, 'click', () => store.selectProperty(property.id))
+    markers.push(marker)
+    markerListeners.push(listener)
   })
 }
-const chartPoints = (prices) => chartPointArray(prices).map((point) => `${point.x},${point.y}`).join(' ')
+
+const refreshFromMapBounds = async () => {
+  if (!map) {
+    await store.fetchProperties()
+    return
+  }
+
+  store.setCenter({
+    latitude: map.getCenter().lat(),
+    longitude: map.getCenter().lng()
+  })
+  store.setZoom(map.getZoom())
+  await store.fetchProperties(getMapBounds())
+}
+
+const refreshFromFilters = async () => {
+  await refreshFromMapBounds()
+}
+
+const resetFilters = async () => {
+  store.resetFilters()
+  await refreshFromMapBounds()
+}
+
+watch(
+  [() => store.filteredProperties, () => store.selectedPropertyId],
+  () => renderMarkers(),
+  { deep: true }
+)
+
+watch(
+  () => store.selectedProperty,
+  (property) => {
+    if (!mapsApi || !map || !property?.latitude || !property?.longitude) return
+    map.panTo(new mapsApi.LatLng(property.latitude, property.longitude))
+  }
+)
+
+onMounted(async () => {
+  try {
+    mapsApi = await loadNaverMaps()
+    map = new mapsApi.Map(mapElement.value, {
+      center: new mapsApi.LatLng(store.center.latitude, store.center.longitude),
+      zoom: store.zoom,
+      minZoom: 9,
+      scaleControl: false,
+      mapDataControl: false,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: mapsApi.Position.RIGHT_CENTER
+      }
+    })
+    idleListener = mapsApi.Event.addListener(map, 'idle', refreshFromMapBounds)
+    await refreshFromMapBounds()
+  } catch (error) {
+    mapError.value = error.message || '지도 SDK 설정을 확인해주세요.'
+    await store.fetchProperties()
+  } finally {
+    isMapLoading.value = false
+  }
+})
+
+onBeforeUnmount(() => {
+  if (idleListener) mapsApi?.Event.removeListener(idleListener)
+  clearMarkers()
+})
 </script>

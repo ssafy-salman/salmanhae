@@ -98,8 +98,10 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 | `propertyType` | — | `ONE_ROOM` / `OFFICETEL` / `APARTMENT` / `VILLA` / `MULTI_FAMILY` |
 | `minDeposit` | — | 최소 보증금 (원) |
 | `maxDeposit` | — | 최대 보증금 (원) |
+| `minPrice` | — | 최소 매매가 (원) |
+| `maxPrice` | — | 최대 매매가 (원) |
 
-네이버부동산 크롤링 후 DB에 저장된 매물을 지도 범위와 필터 조건으로 조회합니다.
+F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물을 조회합니다. 운영 단계에서는 제휴 피드 또는 합법적으로 확보한 매물 데이터를 `properties`에 저장한 뒤 같은 API로 조회합니다.
 
 **Response**
 ```json
@@ -108,17 +110,18 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
     "items": [
       {
         "id": 1,
-        "buildingName": "대학동 그린빌",
+        "title": "대학동 그린빌",
+        "buildingName": "그린빌",
         "address": "서울특별시 관악구 대학동 000-00",
         "propertyType": "ONE_ROOM",
         "transactionType": "MONTHLY_RENT",
         "deposit": 10000000,
         "monthlyRent": 550000,
+        "price": null,
         "areaM2": 22.5,
         "floor": 3,
         "latitude": 37.470123,
-        "longitude": 126.936456,
-        "safetyScore": 78
+        "longitude": 126.936456
       }
     ],
     "totalCount": 1
@@ -194,14 +197,13 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
       {
         "type": "PROPERTY",
         "id": 1,
-        "buildingName": "대학동 그린빌",
+        "title": "대학동 그린빌",
         "transactionType": "MONTHLY_RENT",
         "deposit": 10000000,
         "monthlyRent": 550000,
         "areaM2": 22.5,
         "latitude": 37.470123,
-        "longitude": 126.936456,
-        "safetyScore": 78
+        "longitude": 126.936456
       },
       {
         "type": "CLUSTER",
@@ -232,7 +234,9 @@ GET /api/v1/properties/{propertyId}
 {
   "data": {
     "id": 1,
-    "buildingName": "대학동 그린빌",
+    "title": "대학동 그린빌",
+    "buildingName": "그린빌",
+    "buildingKey": "1162010200:ONE_ROOM:그린빌:000-00",
     "address": "서울특별시 관악구 대학동 000-00",
     "roadAddress": "서울특별시 관악구 대학길 00",
     "legalDongCode": "1162010200",
@@ -240,20 +244,14 @@ GET /api/v1/properties/{propertyId}
     "transactionType": "MONTHLY_RENT",
     "deposit": 10000000,
     "monthlyRent": 550000,
+    "price": null,
     "maintenanceFee": 70000,
     "areaM2": 22.5,
     "floor": 3,
+    "totalFloor": 5,
     "latitude": 37.470123,
     "longitude": 126.936456,
-    "description": "대학가 인근 원룸입니다.",
-    "scoreSummary": {
-      "safetyScore": 78,
-      "priceScore": 82,
-      "cctvCount300m": 8,
-      "bellCount300m": 2,
-      "lightCount300m": 14,
-      "policeCount500m": 1
-    }
+    "description": "대학가 인근 원룸입니다."
   },
   "message": "OK"
 }
@@ -265,6 +263,8 @@ GET /api/v1/properties/{propertyId}
 ```http
 GET /api/v1/properties/{propertyId}/transactions?years=3
 ```
+
+매물의 `buildingKey`와 같은 거래를 우선 조회하고, 부족하면 같은 `legalDongCode`, `propertyType`, `transactionType`, `areaM2 ±10㎡` 조건의 최근 거래로 확장합니다.
 
 **Response**
 ```json
@@ -365,7 +365,7 @@ Authorization: Bearer {token}
     "properties": [
       {
         "id": 1,
-        "buildingName": "대학동 그린빌",
+        "title": "대학동 그린빌",
         "deposit": 5000000,
         "monthlyRent": 480000,
         "safetyScore": 78,

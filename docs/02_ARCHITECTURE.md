@@ -62,7 +62,8 @@ salmanhae/
 - 회원가입/로그인/로그아웃 API (Spring Security 자체 구현)
 - JWT 발급 및 검증 (Spring Security Filter)
 - 공공데이터 배치 수집 → PostgreSQL 저장
-- 네이버부동산 매물 크롤링 데이터 저장 및 조회 API 제공
+- F-1 MVP 샘플 매물 및 운영 매물 데이터 저장/조회 API 제공
+- 실거래가 건물 anchor 지오코딩 결과를 DB에 저장하고 지도 API에서는 저장 좌표만 조회
 - 지도/매물/안전/실거래가 REST API 제공
 - FastAPI로 AI 에이전트 요청 프록시 (Frontend는 FastAPI 직접 호출 불가)
 - 메시지 로깅, 찜하기, 대화 세션 관리
@@ -99,7 +100,7 @@ PostgreSQL (Supabase) + pgvector 단일 인스턴스.
 
 | 용도   | 테이블                                                                                                     |
 | ------ | ---------------------------------------------------------------------------------------------------------- |
-| 관계형 | property, transaction_history, safety_facility, wishlist, user, conversation_session, conversation_message |
+| 관계형 | properties, transaction_history, safety_facility, wishlist, user, conversation_session, conversation_message |
 | 벡터   | 법률 문서 임베딩, 뉴스 임베딩 (pgvector)                                                                   |
 | 통계   | property_score_stat (매물별 안전·가격 점수), region_price_stat (지도 지역별 실거래가 평균)                  |
 
@@ -110,7 +111,8 @@ Spring Scheduler
   → 국토교통부 실거래가 API × 8 → transaction_history (매일)
       └─ 시/도·시/군/구·읍/면/동 평균 계산 → region_price_stat
   → 생활안전지도/재난안전 API × 4 → safety_facility (월 1회)
-  → 네이버부동산 매물 크롤링      → property (초기 저장 후 DB 조회)
+  → 실거래가 건물 anchor 지오코딩   → properties (F-1 더미 매물 seed 생성)
+  → 운영 매물 데이터               → properties (초기 저장 후 DB 조회)
   → 점수 계산                    → property_score_stat
       └─ 매물 기준 반경 검색
          → CCTV/비상벨/보안등/치안시설 개수 집계

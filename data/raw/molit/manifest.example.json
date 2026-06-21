@@ -1,0 +1,18 @@
+{
+  "files": [
+    {
+      "sourceApi": "MOLIT_APT_RENT",
+      "xmlPath": "apt-rent-11680-202605.xml",
+      "sido": "서울특별시",
+      "sigungu": "강남구",
+      "legalDongCodePrefix": "11680"
+    },
+    {
+      "sourceApi": "MOLIT_APT_SALE",
+      "xmlPath": "apt-sale-11680-202605.xml",
+      "sido": "서울특별시",
+      "sigungu": "강남구",
+      "legalDongCodePrefix": "11680"
+    }
+  ]
+}
