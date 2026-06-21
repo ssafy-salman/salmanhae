@@ -395,11 +395,7 @@ POST /api/v1/auth/signup
 **Response**
 ```json
 {
-  "data": {
-    "id": 1,
-    "email": "user@example.com",
-    "nickname": "홍길동"
-  },
+  "data": null,
   "message": "OK"
 }
 ```
@@ -416,8 +412,7 @@ POST /api/v1/auth/login
 {
   "data": {
     "accessToken": "jwt-access-token",
-    "refreshToken": "jwt-refresh-token",
-    "user": { "id": 1, "email": "user@example.com", "nickname": "홍길동" }
+    "refreshToken": "jwt-refresh-token"
   },
   "message": "OK"
 }

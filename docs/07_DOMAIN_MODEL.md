@@ -203,6 +203,19 @@ users
 - updated_at   timestamptz  NOT NULL, now()
 ```
 
+### Spring Security 바인딩
+
+Java 클래스: `com.ssafy.salmanhae.model.dto.auth.User implements UserDetails`
+
+| UserDetails 메서드 | 반환값 |
+| --- | --- |
+| `getUsername()` | `email` (Spring Security 내부 식별자) |
+| `getPassword()` | BCrypt 해시된 password |
+| `getAuthorities()` | `[ROLE_USER]` |
+| `isAccountNonExpired()` / `isEnabled()` 등 | 항상 `true` (별도 잠금·만료 미구현) |
+
+`JwtAuthenticationFilter`는 토큰에서 email을 꺼내 `CustomUserDetailsService.loadUserByUsername(email)`로 `User` 객체를 조회하고, 이를 `UsernamePasswordAuthenticationToken`으로 감싸 `SecurityContextHolder`에 저장합니다.
+
 ---
 
 ## Wishlist — 찜하기

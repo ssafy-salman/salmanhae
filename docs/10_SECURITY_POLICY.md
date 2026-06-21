@@ -19,8 +19,9 @@ F-1(지도 탐색)과 지도 기반 시세·안전 분석 조회는 비로그인
 → 프론트 Axios Interceptor에 저장
 → API 요청 시 Authorization: Bearer {accessToken} 헤더 포함
 → Spring Security JwtAuthenticationFilter에서 토큰 서명·만료 검증
-→ SecurityContext에 userId 설정
-→ 컨트롤러에서 @AuthenticationPrincipal로 사용
+→ CustomUserDetailsService.loadUserByUsername(email)로 User 객체 조회
+→ UsernamePasswordAuthenticationToken으로 감싸 SecurityContext에 저장
+→ 컨트롤러에서 @AuthenticationPrincipal User로 사용
 ```
 
 ---
@@ -32,8 +33,8 @@ F-1(지도 탐색)과 지도 기반 시세·안전 분석 조회는 비로그인
 | 액세스 토큰 만료 | 15분 |
 | 리프레시 토큰 만료 | 7일 |
 | 서명 알고리즘 | HS256 (서버 시크릿 키) |
-| JWT 시크릿 키 | 환경변수 `JWT_SECRET`으로 관리, 코드에 하드코딩 금지 |
-| 리프레시 토큰 저장 | DB(`refresh_token` 테이블)에 저장해 무효화 가능 |
+| JWT 시크릿 키 | Spring 프로퍼티 `jwt.secret`으로 주입. 로컬: `application-local.properties`, 운영: 환경변수 `JWT_SECRET` (Spring relaxed binding으로 자동 매핑). 코드에 하드코딩 금지 |
+| 리프레시 토큰 저장 | MVP에서는 발급만 하고 DB에 저장하지 않음. 1.5차에서 `refresh_token` 테이블 추가 예정 |
 
 ---
 

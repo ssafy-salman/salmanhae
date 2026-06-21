@@ -33,13 +33,26 @@ salmanhae/
 │       └── utils/         # 순수 유틸리티 함수
 ├── backend/           # Spring Boot 3 (Cloud Run)
 │   └── src/main/java/com/ssafy/salmanhae/
-│       ├── config/        # Security, CORS, Swagger, Beans
-│       ├── controller/    # REST 엔드포인트 (입력 검증·위임만)
+│       ├── common/
+│       │   ├── exception/ # ApiException, ErrorCode, GlobalExceptionHandler
+│       │   └── response/  # ApiResponse, ListResponse
+│       ├── config/        # SecurityConfig, WebConfig
+│       ├── controller/
+│       │   ├── auth/      # AuthController
+│       │   └── property/  # PropertyController
+│       ├── filter/        # JwtAuthenticationFilter
 │       ├── model/
-│       │   ├── dao/       # MyBatis DAO 인터페이스 + Impl
-│       │   └── dto/       # 요청/응답 데이터 객체
-│       ├── service/       # 비즈니스 로직 인터페이스 + Impl
-│       └── batch/         # Spring Scheduler 배치 작업
+│       │   ├── dao/
+│       │   │   ├── auth/     # UserDao (MyBatis @Mapper)
+│       │   │   └── property/ # PropertyDao
+│       │   └── dto/
+│       │       ├── auth/     # User (implements UserDetails), LoginRequest, LoginResponse, SignupRequest
+│       │       └── property/ # PropertyRow, PropertySummaryResponse, PropertyDetailResponse 등
+│       ├── service/
+│       │   ├── auth/      # AuthService, CustomUserDetailsService
+│       │   └── property/  # PropertyService, PropertyServiceImpl
+│       ├── util/          # JwtUtil
+│       └── batch/         # Spring Scheduler 배치 작업 (예정)
 └── backend-ai/        # Python FastAPI + LangGraph (Cloud Run)
     └── app/
         ├── api/           # FastAPI 라우터
