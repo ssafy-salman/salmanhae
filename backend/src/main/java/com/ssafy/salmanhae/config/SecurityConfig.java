@@ -30,6 +30,8 @@ public class SecurityConfig {
         http
                 // REST API + JWT 방식이므로 CSRF 불필요
                 .csrf(csrf -> csrf.disable())
+                // CORS preflight(OPTIONS)가 인증 필터 전에 처리되도록 Spring Security CORS 활성화
+                .cors(cors -> cors.configure(http))
                 // JWT는 요청마다 토큰으로 인증하므로 서버 세션을 사용하지 않음
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
