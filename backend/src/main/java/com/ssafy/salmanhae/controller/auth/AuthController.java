@@ -3,7 +3,7 @@ package com.ssafy.salmanhae.controller.auth;
 import com.ssafy.salmanhae.model.dto.auth.LoginRequest;
 import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
 import com.ssafy.salmanhae.model.dto.auth.SignupRequest;
-import com.ssafy.salmanhae.model.dto.common.ApiResponse;
+import com.ssafy.salmanhae.common.response.ApiResponse;
 import com.ssafy.salmanhae.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
