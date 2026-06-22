@@ -47,6 +47,8 @@ transaction_history 적재
 | `SIGUNGU` | 시/군/구 실거래가 평균 |
 | `DONG` | 읍/면/동 실거래가 평균 |
 
+MOLIT 실거래가 API의 `LAWD_CD`는 시군구 5자리 코드이므로, 동 단위 `region_code`는 `LAWD_CD:동명` 형식의 composite key를 사용합니다.
+
 ---
 
 ## 안전시설 수집

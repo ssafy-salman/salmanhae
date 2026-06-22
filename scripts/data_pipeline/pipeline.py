@@ -432,6 +432,15 @@ def planned_requests(regions, months, source_apis, limit_regions=None, limit_req
     return requests
 
 
+def selected_source_apis(value):
+    source_apis = parse_csv_list(value) or list(SOURCE_CONFIG.keys())
+    unknown = [source_api for source_api in source_apis if source_api not in SOURCE_CONFIG]
+    if unknown:
+        valid = ", ".join(sorted(SOURCE_CONFIG))
+        raise SystemExit(f"Unknown source API(s): {', '.join(unknown)}. Valid values: {valid}")
+    return source_apis
+
+
 def fetch_transactions(args):
     load_env()
     service_key = os.environ.get("MOLIT_SERVICE_KEY")
@@ -439,7 +448,7 @@ def fetch_transactions(args):
         raise SystemExit("MOLIT_SERVICE_KEY is required.")
     regions = load_lawd_codes(args.lawd_codes)
     months = parse_csv_list(args.month_values) or recent_months(args.months)
-    source_apis = parse_csv_list(args.source_apis) or list(SOURCE_CONFIG.keys())
+    source_apis = selected_source_apis(args.source_apis)
     requests_to_run = planned_requests(regions, months, source_apis, args.limit_regions, args.limit_requests)
 
     manifest = read_json(MANIFEST_PATH, {"files": []})
@@ -558,12 +567,7 @@ def compute_stats():
     region_groups = defaultdict(list)
     building_groups = defaultdict(list)
     for row in transactions:
-        region_keys = [
-            ("SIDO", row["sido"], row["sido"], None, None),
-            ("SIGUNGU", f"{row['sido']} {row['sigungu']}", row["sido"], row["sigungu"], None),
-            ("DONG", row["legal_dong_code"], row["sido"], row["sigungu"], row["dong"]),
-        ]
-        for level, code, sido, sigungu, dong in region_keys:
+        for level, code, sido, sigungu, dong in row_region_keys(row):
             key = (level, code, sido, sigungu, dong, row["property_type"], row["transaction_type"])
             region_groups[key].append(row)
         building_key_value = (row["building_key"], row["property_type"], row["transaction_type"])
@@ -817,7 +821,7 @@ def apply_migrations(args):
     if not migration_paths:
         raise SystemExit(f"No migration files found in {migrations_dir}")
 
-    with psycopg.connect(db_conninfo()) as conn:
+    with psycopg.connect(db_conninfo(), prepare_threshold=None) as conn:
         with conn.cursor() as cur:
             cur.execute(MIGRATION_TRACKING_SQL)
             cur.execute("select version from public.schema_migrations")
@@ -843,6 +847,47 @@ def execute_batch(cursor, sql, rows, page_size=1000):
         cursor.executemany(sql, rows[start : start + page_size])
 
 
+def row_region_keys(row):
+    legal_code = row["legal_dong_code"]
+    dong_code = f"{legal_code}:{row['dong']}"
+    return [
+        ("SIDO", legal_code[:2], row["sido"], None, None),
+        ("SIGUNGU", legal_code[:5], row["sido"], row["sigungu"], None),
+        ("DONG", dong_code, row["sido"], row["sigungu"], row["dong"]),
+    ]
+
+
+def limited_related_rows(transactions, region_stats, building_stats, properties, limit):
+    if not limit:
+        return transactions, region_stats, building_stats, properties
+
+    transactions = transactions[:limit]
+    transaction_keys = {row["source_transaction_key"] for row in transactions}
+    region_keys = {
+        (level, code, row["property_type"], row["transaction_type"])
+        for row in transactions
+        for level, code, _sido, _sigungu, _dong in row_region_keys(row)
+    }
+    building_keys = {
+        (row["building_key"], row["property_type"], row["transaction_type"])
+        for row in transactions
+    }
+    return (
+        transactions,
+        [
+            row
+            for row in region_stats
+            if (row["region_level"], row["region_code"], row["property_type"], row["transaction_type"]) in region_keys
+        ],
+        [
+            row
+            for row in building_stats
+            if (row["building_key"], row["property_type"], row["transaction_type"]) in building_keys
+        ],
+        [row for row in properties if row.get("anchor_transaction_key") in transaction_keys],
+    )
+
+
 def load_supabase(args):
     load_env()
     psycopg, _ = import_psycopg()
@@ -850,13 +895,15 @@ def load_supabase(args):
     region_stats = read_jsonl(REGION_STATS_JSONL)
     building_stats = read_jsonl(BUILDING_STATS_JSONL)
     properties = read_jsonl(PROPERTIES_JSONL)
-    if args.limit:
-        transactions = transactions[: args.limit]
-        region_stats = region_stats[: args.limit]
-        building_stats = building_stats[: args.limit]
-        properties = properties[: args.limit]
+    transactions, region_stats, building_stats, properties = limited_related_rows(
+        transactions,
+        region_stats,
+        building_stats,
+        properties,
+        args.limit,
+    )
 
-    with psycopg.connect(db_conninfo()) as conn:
+    with psycopg.connect(db_conninfo(), prepare_threshold=None) as conn:
         with conn.cursor() as cur:
             execute_batch(cur, TRANSACTION_UPSERT_SQL, [transaction_params(row) for row in transactions], args.batch_size)
             execute_batch(cur, REGION_STAT_UPSERT_SQL, [region_stat_params(row) for row in region_stats], args.batch_size)
@@ -1111,7 +1158,7 @@ def verify_db():
         "region_price_stat": "select count(*) as count from public.region_price_stat",
         "building_price_stat": "select count(*) as count from public.building_price_stat",
     }
-    with psycopg.connect(db_conninfo(), row_factory=dict_row) as conn:
+    with psycopg.connect(db_conninfo(), row_factory=dict_row, prepare_threshold=None) as conn:
         with conn.cursor() as cur:
             for label, sql in queries.items():
                 cur.execute(sql)
@@ -1156,7 +1203,7 @@ def add_common_args(parser):
 def command_plan(args):
     regions = load_lawd_codes(args.lawd_codes)
     months = parse_csv_list(args.month_values) or recent_months(args.months)
-    source_apis = parse_csv_list(args.source_apis) or list(SOURCE_CONFIG.keys())
+    source_apis = selected_source_apis(args.source_apis)
     requests_to_run = planned_requests(regions, months, source_apis, args.limit_regions, args.limit_requests)
     print(f"regions: {len(regions)}")
     print(f"months: {len(months)} ({months[-1]}..{months[0]})")
@@ -1173,7 +1220,10 @@ def parse_args():
     for command in ["plan", "fetch", "normalize", "compute-stats", "geocode", "generate-properties", "migrate-db", "load-db", "verify-db", "run"]:
         sub = subparsers.add_parser(command)
         add_common_args(sub)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.min_per_anchor > args.max_per_anchor:
+        parser.error("--min-per-anchor must be less than or equal to --max-per-anchor")
+    return args
 
 
 def main():

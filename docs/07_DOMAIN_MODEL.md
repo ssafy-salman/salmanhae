@@ -324,7 +324,7 @@ MVP bootstrap 기준은 전국 최근 12개월입니다. 기존 DB 데이터는 
 `region_price_stat`는 지도 줌 레벨별 시세 표시를 위한 지역 단위 통계를 저장합니다.
 
 - `region_level`: `SIDO`, `SIGUNGU`, `DONG`
-- `region_code`: 레벨에 따라 시도/시군구/법정동 코드
+- `region_code`: 레벨에 따라 시도 2자리, 시군구 5자리, 동 단위는 `LAWD_CD:동명`
 - `property_type`
 - `transaction_type`
 - 평균/중앙값 보증금, 월세, 매매가

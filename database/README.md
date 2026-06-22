@@ -10,6 +10,7 @@ Run migrations in numeric order:
 1. `migrations/202606160001_create_properties.sql`
 2. `migrations/202606220001_create_legal_document_chunks.sql`
 3. `migrations/202606230001_create_price_stats.sql`
+4. `migrations/202606230002_cleanup_region_price_stat_codes.sql`
 
 ## Data Loading Policy
 
