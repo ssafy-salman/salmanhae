@@ -6,6 +6,7 @@ import com.ssafy.salmanhae.service.auth.AuthService;
 import com.ssafy.salmanhae.service.auth.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,13 +33,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout() {
+    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal User user) {
+        authService.logout(user.getEmail());
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@RequestBody RefreshTokenRequest request) {
-        RefreshTokenResponse response = authService.refresh(request.getRefreshToken());
+    public ResponseEntity<ApiResponse<RefreshResponse>> refresh(@RequestBody RefreshRequest request) {
+        RefreshResponse response = authService.refresh(request.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
