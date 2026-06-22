@@ -136,3 +136,10 @@ def test_extract_chat_completion_text_supports_text_parts() -> None:
         )
         == "첫 문장\n둘째 문장"
     )
+
+
+def test_extract_chat_completion_text_handles_malformed_payloads() -> None:
+    assert extract_chat_completion_text([]) is None
+    assert extract_chat_completion_text({}) is None
+    assert extract_chat_completion_text({"choices": []}) is None
+    assert extract_chat_completion_text({"choices": [{"message": None}]}) is None

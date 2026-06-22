@@ -89,7 +89,10 @@ class LLMClient:
             return None
 
 
-def extract_chat_completion_text(payload: dict[str, Any]) -> str | None:
+def extract_chat_completion_text(payload: Any) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+
     choices = payload.get("choices")
     if not isinstance(choices, list) or not choices:
         return None
