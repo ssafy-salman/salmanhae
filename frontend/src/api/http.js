@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const viteEnv = import.meta.env || {}
+const baseURL = viteEnv.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const http = axios.create({
   baseURL,
@@ -8,6 +9,23 @@ const http = axios.create({
   headers: {
     Accept: 'application/json'
   }
+})
+
+const readAccessToken = () => {
+  if (typeof window === 'undefined' || !window.localStorage) return ''
+  return (
+    window.localStorage.getItem('accessToken') ||
+    window.localStorage.getItem('salmanhae.accessToken') ||
+    ''
+  )
+}
+
+http.interceptors.request.use((config) => {
+  const token = readAccessToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 export default http

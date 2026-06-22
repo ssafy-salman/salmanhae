@@ -1,39 +1,99 @@
 <template>
-  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[650px]">
-    <div class="border-b border-slate-100 p-4 flex items-center justify-between bg-slate-50 rounded-t-2xl">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-brand-light rounded-xl flex items-center justify-center text-brand-dark text-xl">🤖</div>
-        <div>
-          <h3 class="font-black text-slate-900">살만해 안심 계약 AI 챗봇</h3>
-          <p class="text-[11px] text-slate-500">HUG 126%, 다가구 선순위, 세금 체납 확인 등 계약 전 안전 질문을 답변합니다.</p>
+  <section class="flex h-[650px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <header class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-base font-black text-slate-900">계약 법률 AI 상담</h2>
+        <p class="mt-1 text-xs leading-5 text-slate-500">
+          전월세 계약 전 확정일자, 보증금 회수, 전세사기 피해지원 관련 질문을 확인합니다.
+        </p>
+      </div>
+      <span class="w-fit rounded-lg bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">
+        법률 RAG 연결
+      </span>
+    </header>
+
+    <div ref="messageArea" class="flex-1 space-y-4 overflow-y-auto p-4">
+      <div
+        v-for="(message, index) in store.chatMessages"
+        :key="index"
+        :class="message.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
+      >
+        <article
+          :class="[
+            'max-w-[88%] rounded-lg p-3 text-sm leading-relaxed',
+            message.role === 'user'
+              ? 'bg-brand text-white'
+              : message.isError
+                ? 'border border-rose-200 bg-rose-50 text-rose-700'
+                : 'bg-slate-100 text-slate-800'
+          ]"
+        >
+          <p v-if="message.role === 'bot'" class="mb-1 text-xs font-black text-brand-dark">
+            살만해 계약 AI
+          </p>
+          <p class="whitespace-pre-line">{{ message.text }}</p>
+
+          <div v-if="message.legalCards?.length" class="mt-3 space-y-2">
+            <article
+              v-for="card in message.legalCards"
+              :key="`${card.lawName}-${card.articleNo}-${card.title}`"
+              class="rounded-lg border border-slate-200 bg-white p-3 text-slate-800"
+            >
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-xs font-black text-brand-dark">{{ card.lawName }} {{ card.articleNo }}</p>
+                  <h3 class="mt-1 text-sm font-black text-slate-900">{{ card.title }}</h3>
+                </div>
+                <span v-if="card.score !== null" class="w-fit rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                  {{ Math.round(card.score * 100) }}%
+                </span>
+              </div>
+              <p class="mt-2 text-xs leading-5 text-slate-600">{{ card.content }}</p>
+            </article>
+          </div>
+        </article>
+      </div>
+
+      <div v-if="store.isChatLoading" class="flex justify-start">
+        <div class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">
+          답변을 생성하는 중입니다...
         </div>
       </div>
-      <span class="hidden sm:inline text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-black">법률 가이드 연동 시뮬레이터</span>
-    </div>
 
-    <div ref="messageArea" class="flex-1 overflow-y-auto p-4 space-y-4">
-      <div v-for="(message, index) in store.chatMessages" :key="index" :class="message.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-        <div :class="message.role === 'user' ? 'max-w-[80%] bg-brand text-white p-3 rounded-2xl rounded-tr-none text-sm' : 'max-w-[80%] bg-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-none text-sm leading-relaxed'">
-          <p v-if="message.role === 'bot'" class="font-black text-brand-dark text-xs mb-1">AI 안심계약 위원</p>
-          {{ message.text }}
-        </div>
-      </div>
-
-      <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 max-w-[80%]">
-        <p class="font-bold text-slate-700 text-xs mb-2">💡 자주 묻는 질문</p>
-        <div class="flex flex-col gap-1.5">
-          <button v-for="question in quickQuestions" :key="question" @click="send(question)" class="text-left text-xs bg-white hover:bg-brand-light text-brand-dark p-2 rounded-lg border border-slate-200 transition font-bold">
+      <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+        <p class="mb-2 text-xs font-black text-slate-700">자주 묻는 질문</p>
+        <div class="grid gap-2 sm:grid-cols-3">
+          <button
+            v-for="question in quickQuestions"
+            :key="question"
+            type="button"
+            :disabled="store.isChatLoading"
+            class="rounded-lg border border-slate-200 bg-white p-2 text-left text-xs font-bold text-brand-dark transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-60"
+            @click="send(question)"
+          >
             {{ question }}
           </button>
         </div>
       </div>
     </div>
 
-    <form @submit.prevent="send(input)" class="border-t border-slate-100 p-3 bg-slate-50 flex gap-2 rounded-b-2xl">
-      <input v-model="input" type="text" placeholder="임대인 세금 체납 확인 서류 등 궁금증을 질문하세요..." class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
-      <button class="bg-brand hover:bg-brand-dark text-white px-5 py-3 rounded-xl text-sm font-black shadow-sm transition">전송</button>
+    <form class="flex gap-2 border-t border-slate-100 bg-slate-50 p-3" @submit.prevent="send(input)">
+      <input
+        v-model="input"
+        type="text"
+        :disabled="store.isChatLoading"
+        placeholder="예: 확정일자는 언제 받아야 하나요?"
+        class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-slate-100"
+      />
+      <button
+        type="submit"
+        :disabled="store.isChatLoading || !input.trim()"
+        class="rounded-lg bg-brand px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        전송
+      </button>
     </form>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -44,17 +104,26 @@ const store = useMapStore()
 const input = ref('')
 const messageArea = ref(null)
 const quickQuestions = [
-  'HUG 보증보험 가입 기준인 126% 규정이 무엇인가요?',
-  '다가구 주택 계약 시 선순위 보증금을 왜 확인해야 하나요?',
-  '집주인의 세금 체납 여부는 어떤 서류로 확인하나요?'
+  '확정일자는 언제 받아야 하나요?',
+  '전세 보증금을 돌려받으려면 어떤 순서를 확인해야 하나요?',
+  '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?'
 ]
 
-const send = async (text) => {
-  const message = text.trim()
-  if (!message) return
-  store.sendChat(message)
-  input.value = ''
+const scrollToBottom = async () => {
   await nextTick()
-  if (messageArea.value) messageArea.value.scrollTop = messageArea.value.scrollHeight
+  if (messageArea.value) {
+    messageArea.value.scrollTop = messageArea.value.scrollHeight
+  }
+}
+
+const send = async (text) => {
+  const message = String(text || '').trim()
+  if (!message) return
+
+  input.value = ''
+  const response = store.sendChat(message)
+  await scrollToBottom()
+  await response
+  await scrollToBottom()
 }
 </script>
