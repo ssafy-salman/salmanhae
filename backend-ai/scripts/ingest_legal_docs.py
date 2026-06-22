@@ -10,6 +10,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Sequence
 
+from app.clients.embedding_client import EmbeddingClient
+from app.clients.supabase_client import SupabaseVectorClient
 from app.rag.chunker import chunk_text
 
 
@@ -115,6 +117,31 @@ def prepare_legal_chunks(
     return rows
 
 
+def embed_legal_chunks(
+    rows: Sequence[dict[str, Any]],
+    embedding_client: Any,
+) -> list[dict[str, Any]]:
+    embedded_rows: list[dict[str, Any]] = []
+    for row in rows:
+        content = str(row.get("content", ""))
+        embedded_row = dict(row)
+        embedded_row["embedding"] = embedding_client.embed_query(content)
+        embedded_rows.append(embedded_row)
+    return embedded_rows
+
+
+def write_legal_chunks(
+    rows: Sequence[dict[str, Any]],
+    embedding_client: Any | None = None,
+    vector_client: Any | None = None,
+) -> dict[str, int]:
+    embedding_client = embedding_client or EmbeddingClient()
+    vector_client = vector_client or SupabaseVectorClient()
+    embedded_rows = embed_legal_chunks(rows, embedding_client)
+    upserted = vector_client.upsert_legal_document_chunks(embedded_rows)
+    return {"chunks": len(embedded_rows), "upserted": int(upserted)}
+
+
 def normalize_content(content: str) -> str:
     return "\n".join(line.strip() for line in content.splitlines() if line.strip())
 
@@ -156,15 +183,24 @@ def content_hash(document: LegalDocument, content: str, chunk_index: int) -> str
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Prepare legal document chunks for pgvector ingestion.")
     parser.add_argument("--dry-run", action="store_true", help="Validate and summarize chunks without DB writes.")
+    parser.add_argument("--write", action="store_true", help="Embed chunks and upsert them into Supabase.")
     parser.add_argument("source", type=Path, help="Path to a legal document JSON array.")
     parser.add_argument("--chunk-size", type=int, default=800)
     parser.add_argument("--overlap", type=int, default=120)
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(
+    argv: Sequence[str] | None = None,
+    embedding_client: Any | None = None,
+    vector_client: Any | None = None,
+) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.dry_run and args.write:
+        parser.error("Use only one of --dry-run or --write.")
+    if not args.dry_run and not args.write:
+        parser.error("Use --dry-run to validate or --write to upsert legal chunks.")
     if args.chunk_size <= 0:
         parser.error("--chunk-size must be greater than 0.")
     if args.overlap < 0 or args.overlap >= args.chunk_size:
@@ -177,7 +213,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Legal ingestion dry-run: documents={len(documents)} chunks={len(rows)}")
         return 0
 
-    raise RuntimeError("Database writes are not enabled in Phase 2. Use --dry-run.")
+    summary = write_legal_chunks(rows, embedding_client, vector_client)
+    print(
+        "Legal ingestion write: "
+        f"documents={len(documents)} chunks={summary['chunks']} upserted={summary['upserted']}"
+    )
+    return 0
 
 
 if __name__ == "__main__":
