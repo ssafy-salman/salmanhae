@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { sendChatMessage } from '../api/chat'
 import { fetchProperties, fetchPropertyDetail } from '../api/properties'
 
 const DEFAULT_BOUNDS = {
@@ -40,11 +41,22 @@ export default defineStore('map', {
     },
     isLoading: false,
     isDetailLoading: false,
+    isChatLoading: false,
     error: '',
     detailError: '',
+    chatError: '',
+    chatSessionId: null,
+    chatMessages: [
+      {
+        role: 'bot',
+        text: '계약서, 보증금 회수, 확정일자처럼 헷갈리는 전월세 법률 질문을 물어보세요.',
+        legalCards: []
+      }
+    ],
     lastFetchedAt: null,
     requestSeq: 0,
-    detailRequestSeq: 0
+    detailRequestSeq: 0,
+    chatRequestSeq: 0
   }),
   getters: {
     regions: () => [
@@ -172,6 +184,46 @@ export default defineStore('map', {
       this.selectedProperty = null
       this.detailError = ''
       this.isDetailLoading = false
+    },
+    async sendChat(message) {
+      const text = String(message || '').trim()
+      if (!text || this.isChatLoading) return
+
+      const seq = ++this.chatRequestSeq
+      this.chatMessages.push({ role: 'user', text })
+      this.isChatLoading = true
+      this.chatError = ''
+
+      try {
+        const response = await sendChatMessage({
+          message: text,
+          sessionId: this.chatSessionId
+        })
+
+        if (seq !== this.chatRequestSeq) return
+
+        this.chatSessionId = response.sessionId || this.chatSessionId
+        this.chatMessages.push({
+          role: 'bot',
+          text: response.message,
+          intent: response.intent,
+          legalCards: response.legalCards,
+          properties: response.properties
+        })
+      } catch (error) {
+        if (seq !== this.chatRequestSeq) return
+        this.chatError = error.response?.data?.message || 'AI 계약 상담 응답을 불러오지 못했습니다.'
+        this.chatMessages.push({
+          role: 'bot',
+          text: this.chatError,
+          isError: true,
+          legalCards: []
+        })
+      } finally {
+        if (seq === this.chatRequestSeq) {
+          this.isChatLoading = false
+        }
+      }
     }
   }
 })
