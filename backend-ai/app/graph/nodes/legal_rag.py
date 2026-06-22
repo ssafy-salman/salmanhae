@@ -10,6 +10,6 @@ def legal_rag(state: AgentState) -> AgentState:
         "legal_cards": cards,
         "tool_results": {
             **state.get("tool_results", {}),
-            "legalRag": {"topK": len(cards), "source": "supabase-pgvector-stub"},
+            "legalRag": {"topK": len(cards), "source": "supabase-pgvector"},
         },
     }
