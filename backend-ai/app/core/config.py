@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
     gms_api_key: str = Field(default="", alias="GMS_API_KEY")
     llm_model: str = Field(default="", alias="LLM_MODEL")
+    embedding_api_key: str = Field(default="", alias="EMBEDDING_API_KEY")
+    embedding_base_url: str = Field(
+        default="https://api.openai.com/v1",
+        alias="EMBEDDING_BASE_URL",
+    )
     embedding_model: str = Field(default="", alias="EMBEDDING_MODEL")
     langsmith_tracing: bool = Field(default=False, alias="LANGSMITH_TRACING")
     langsmith_api_key: str = Field(default="", alias="LANGSMITH_API_KEY")
