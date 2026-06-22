@@ -1,11 +1,16 @@
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
 from app.graph.nodes.classify_intent import classify_message
 from app.graph.state import Intent
 from app.main import app
 
 
 client = TestClient(app)
+
+
+def internal_api_headers() -> dict[str, str]:
+    return {"X-Internal-Api-Key": get_settings().internal_api_key}
 
 
 def test_agent_chat_requires_internal_api_key() -> None:
@@ -25,7 +30,7 @@ def test_agent_chat_requires_internal_api_key() -> None:
 def test_agent_chat_returns_intent_and_answer() -> None:
     response = client.post(
         "/internal/agent/chat",
-        headers={"X-Internal-Api-Key": "change-me"},
+        headers=internal_api_headers(),
         json={
             "userId": "user-1",
             "sessionId": None,
@@ -39,6 +44,31 @@ def test_agent_chat_returns_intent_and_answer() -> None:
     assert body["intent"] == "PROPERTY_SEARCH"
     assert body["answer"]
     assert "properties" in body
+
+
+def test_agent_chat_returns_legal_cards_for_legal_question() -> None:
+    response = client.post(
+        "/internal/agent/chat",
+        headers=internal_api_headers(),
+        json={
+            "userId": "user-1",
+            "sessionId": None,
+            "message": "확정일자는 언제 받아야 하나요?",
+            "context": {"selectedPropertyId": None, "recentMessages": []},
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["intent"] == "LEGAL_CONSULT"
+    assert body["answer"]
+    assert len(body["legalCards"]) >= 1
+    card = body["legalCards"][0]
+    assert card["lawName"] == "주택임대차보호법"
+    assert card["articleNo"]
+    assert card["title"]
+    assert card["content"]
+    assert isinstance(card["score"], (int, float))
 
 
 def test_classify_intent_examples() -> None:
