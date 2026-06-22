@@ -64,7 +64,7 @@ class SupabaseVectorClient:
             return 0
 
         sql = """
-            insert into public.legal_document_chunks (
+            insert into public.legal_document_chunks as existing (
                 law_id,
                 law_name,
                 article_no,
@@ -105,8 +105,21 @@ class SupabaseVectorClient:
                 embedding = excluded.embedding,
                 metadata_json = excluded.metadata_json,
                 updated_at = now()
+            where
+                existing.law_id is distinct from excluded.law_id
+                or existing.law_name is distinct from excluded.law_name
+                or existing.article_no is distinct from excluded.article_no
+                or existing.article_title is distinct from excluded.article_title
+                or existing.effective_date is distinct from excluded.effective_date
+                or existing.source_name is distinct from excluded.source_name
+                or existing.source_url is distinct from excluded.source_url
+                or existing.chunk_index is distinct from excluded.chunk_index
+                or existing.content is distinct from excluded.content
+                or existing.embedding is distinct from excluded.embedding
+                or existing.metadata_json is distinct from excluded.metadata_json
         """
         params = [legal_chunk_upsert_params(row) for row in rows]
+        affected_rows = 0
         with psycopg.connect(
             self.database_url,
             row_factory=dict_row,
@@ -119,7 +132,8 @@ class SupabaseVectorClient:
                 )
                 for row_params in params:
                     cursor.execute(sql, row_params)
-        return len(params)
+                    affected_rows += max(int(getattr(cursor, "rowcount", 1)), 0)
+        return affected_rows
 
 
 def to_pgvector_literal(embedding: list[float]) -> str:

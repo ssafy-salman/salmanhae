@@ -127,6 +127,8 @@ def test_supabase_vector_client_upserts_legal_chunks(
     calls: dict[str, object] = {}
 
     class FakeCursor:
+        rowcount = 1
+
         def __enter__(self):
             return self
 
@@ -165,11 +167,13 @@ def test_supabase_vector_client_upserts_legal_chunks(
     assert upserted == 1
     assert executes[0] == ("set local statement_timeout = %s", (3000,))
     assert "on conflict (content_hash)" in executes[1][0]
+    assert "where" in executes[1][0]
+    assert "existing.content is distinct from excluded.content" in executes[1][0]
     assert executes[1][1]["embedding"] == "[0.1,0.2]"
     assert executes[1][1]["metadata_json"] == '{"sourceUrl": "https://www.law.go.kr"}'
 
 
-def test_prepare_legal_chunks_still_defaults_to_no_embedding(tmp_path) -> None:
+def test_dry_run_mode_returns_success(tmp_path) -> None:
     source_path = write_source(
         tmp_path,
         [
