@@ -81,6 +81,7 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
     assert body["answer"]
     assert len(body["legalCards"]) >= 1
     card = body["legalCards"][0]
+    assert card_text_in_answer(body["answer"], card)
     assert card["lawName"] == "주택임대차보호법"
     assert card["articleNo"]
     assert card["title"]
@@ -94,3 +95,7 @@ def test_classify_intent_examples() -> None:
     assert classify_message("이 매물 가격이 비싼 편이야?") == Intent.PRICE_ANALYSIS
     assert classify_message("주변 cctv는 괜찮아?") == Intent.SAFETY_ANALYSIS
     assert classify_message("hug 보증보험 가능해?") == Intent.HUG_CALC
+
+
+def card_text_in_answer(answer: str, card: dict) -> bool:
+    return card["lawName"] in answer and card["articleNo"] in answer
