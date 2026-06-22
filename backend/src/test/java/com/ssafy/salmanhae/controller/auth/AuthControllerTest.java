@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -29,6 +31,9 @@ class AuthControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@MockBean
 	private StringRedisTemplate redisTemplate;
@@ -103,6 +108,45 @@ class AuthControllerTest {
 								"""))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+	}
+
+	@Test
+	void refreshReturnsNewTokens() throws Exception {
+		setEmailVerified(EMAIL);
+		signup(EMAIL, PASSWORD, NICKNAME);
+
+		MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"email": "%s", "password": "%s"}
+								""".formatted(EMAIL, PASSWORD)))
+				.andExpect(status().isOk())
+				.andReturn();
+
+		String refreshToken = objectMapper.readTree(loginResult.getResponse().getContentAsString())
+				.path("data").path("refreshToken").asText();
+
+		when(valueOps.get("refresh:" + EMAIL)).thenReturn(refreshToken);
+
+		mockMvc.perform(post("/api/v1/auth/refresh")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"refreshToken": "%s"}
+								""".formatted(refreshToken)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+				.andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+	}
+
+	@Test
+	void refreshFailsWithInvalidToken() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/refresh")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"refreshToken": "invalid.token.value"}
+								"""))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
 	}
 
 	private void signup(String email, String password, String nickname) throws Exception {
