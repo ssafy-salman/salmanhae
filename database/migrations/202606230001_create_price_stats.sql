@@ -79,11 +79,8 @@ create table if not exists public.building_price_stat (
     )
 );
 
-create index if not exists idx_region_price_stat_lookup
-    on public.region_price_stat (region_level, region_code, property_type, transaction_type);
-
-create index if not exists idx_building_price_stat_lookup
-    on public.building_price_stat (building_key, property_type, transaction_type);
+drop index if exists public.idx_region_price_stat_lookup;
+drop index if exists public.idx_building_price_stat_lookup;
 
 create index if not exists idx_building_price_stat_region
     on public.building_price_stat (legal_dong_code, property_type, transaction_type);

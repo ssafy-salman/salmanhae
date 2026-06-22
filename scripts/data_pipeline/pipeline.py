@@ -11,7 +11,9 @@ from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from urllib import error, parse, request
-from xml.etree import ElementTree
+
+from defusedxml.ElementTree import fromstring as parse_xml_text
+from defusedxml.ElementTree import parse as parse_xml_file
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -244,7 +246,7 @@ def strip_namespace(tag):
 
 
 def parse_xml(xml_text):
-    return ElementTree.fromstring(xml_text.encode("utf-8"))
+    return parse_xml_text(xml_text.encode("utf-8"))
 
 
 def find_text(root, tag_name, default=None):
@@ -461,7 +463,7 @@ def fetch_transactions(args):
             }
             print(f"[{index}/{len(requests_to_run)}] {source_api} {region['lawdCd']} {month} page {page_no}")
             if relative_path in seen_paths and xml_path.exists() and xml_path.stat().st_size > 0 and not args.no_skip_existing:
-                root = ElementTree.parse(xml_path).getroot()
+                root = parse_xml_file(str(xml_path)).getroot()
             else:
                 url = build_molit_url(config, service_key, region["lawdCd"], month, page_no, args.num_of_rows)
                 try:
@@ -501,7 +503,7 @@ def normalize_manifest():
         xml_path = WORK_DIR / entry["xmlPath"]
         if not xml_path.exists():
             continue
-        root = ElementTree.parse(xml_path).getroot()
+        root = parse_xml_file(str(xml_path)).getroot()
         for item in item_elements(root):
             normalized = normalize_row(xml_item_to_dict(item), entry)
             if normalized:
@@ -716,7 +718,7 @@ def generate_properties(args):
     for row in transactions:
         grouped[row["building_key"]].append(row)
     properties = []
-    for sequence, (building_key_value, rows) in enumerate(sorted(grouped.items()), start=1):
+    for building_key_value, rows in sorted(grouped.items()):
         coords = cache.get(building_key_value)
         if not coords or coords.get("quality") not in ("ADDRESS_EXACT", "BUILDING_EXACT"):
             continue
@@ -799,6 +801,14 @@ def db_conninfo():
     return parse.urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
 
 
+MIGRATION_TRACKING_SQL = """
+create table if not exists public.schema_migrations (
+    version varchar(255) primary key,
+    applied_at timestamptz not null default now()
+)
+"""
+
+
 def apply_migrations(args):
     load_env()
     psycopg, _ = import_psycopg()
@@ -809,11 +819,21 @@ def apply_migrations(args):
 
     with psycopg.connect(db_conninfo()) as conn:
         with conn.cursor() as cur:
+            cur.execute(MIGRATION_TRACKING_SQL)
+            cur.execute("select version from public.schema_migrations")
+            applied = {row[0] for row in cur.fetchall()}
             for migration_path in migration_paths:
+                if migration_path.name in applied:
+                    print(f"skipping migration: {migration_path.name}")
+                    continue
                 print(f"applying migration: {migration_path.name}")
                 cur.execute(migration_path.read_text(encoding="utf-8"))
+                cur.execute(
+                    "insert into public.schema_migrations (version) values (%s) on conflict do nothing",
+                    (migration_path.name,),
+                )
         conn.commit()
-    print(f"applied migrations: {len(migration_paths)}")
+    print(f"checked migrations: {len(migration_paths)}")
 
 
 def execute_batch(cursor, sql, rows, page_size=1000):

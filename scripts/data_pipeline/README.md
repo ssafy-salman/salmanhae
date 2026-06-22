@@ -74,6 +74,36 @@ Fetch a small sample:
 python scripts/data_pipeline/pipeline.py fetch --months 1 --limit-regions 1 --source-apis MOLIT_APT_RENT
 ```
 
+Normalize fetched XML:
+
+```bash
+python scripts/data_pipeline/pipeline.py normalize
+```
+
+Compute region and building price statistics:
+
+```bash
+python scripts/data_pipeline/pipeline.py compute-stats
+```
+
+Geocode building anchors:
+
+```bash
+python scripts/data_pipeline/pipeline.py geocode
+```
+
+Generate MVP synthetic property rows:
+
+```bash
+python scripts/data_pipeline/pipeline.py generate-properties
+```
+
+Load already generated JSONL outputs into Supabase:
+
+```bash
+python scripts/data_pipeline/pipeline.py load-db
+```
+
 Run a resumable nationwide pipeline:
 
 ```bash
