@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     )
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
     gms_api_key: str = Field(default="", alias="GMS_API_KEY")
+    llm_base_url: str = Field(default="https://api.openai.com/v1", alias="LLM_BASE_URL")
     llm_model: str = Field(default="", alias="LLM_MODEL")
     embedding_api_key: str = Field(default="", alias="EMBEDDING_API_KEY")
     embedding_base_url: str = Field(
