@@ -10,6 +10,7 @@ import com.ssafy.salmanhae.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +21,13 @@ public class AuthService {
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final StringRedisTemplate redisTemplate;
 
     public void signup(String email, String password, String nickname) {
+        if (!Boolean.TRUE.toString().equals(redisTemplate.opsForValue().get("email:verified:" + email))) {
+            throw new ApiException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
