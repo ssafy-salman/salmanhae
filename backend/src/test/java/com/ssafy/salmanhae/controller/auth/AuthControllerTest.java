@@ -1,15 +1,22 @@
 package com.ssafy.salmanhae.controller.auth;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +30,33 @@ class AuthControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 
+	@MockBean
+	private StringRedisTemplate redisTemplate;
+
+	@MockBean
+	private JavaMailSender mailSender;
+
+	private ValueOperations<String, String> valueOps;
+
 	private static final String EMAIL = "test@example.com";
 	private static final String PASSWORD = "password123";
 	private static final String NICKNAME = "테스터";
 
+	@BeforeEach
+	@SuppressWarnings("unchecked")
+	void setUp() {
+		valueOps = mock(ValueOperations.class);
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+	}
+
+	private void setEmailVerified(String email) {
+		when(valueOps.get("email:verified:" + email)).thenReturn("true");
+	}
+
 	@Test
 	void signupReturnsOk() throws Exception {
+		setEmailVerified(EMAIL);
+
 		mockMvc.perform(post("/api/v1/auth/signup")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
@@ -40,7 +68,19 @@ class AuthControllerTest {
 	}
 
 	@Test
+	void signupFailsWhenEmailNotVerified() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/signup")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"email": "%s", "password": "%s", "nickname": "%s"}
+								""".formatted(EMAIL, PASSWORD, NICKNAME)))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("EMAIL_NOT_VERIFIED"));
+	}
+
+	@Test
 	void loginReturnsAccessTokenAndRefreshToken() throws Exception {
+		setEmailVerified(EMAIL);
 		signup(EMAIL, PASSWORD, NICKNAME);
 
 		mockMvc.perform(post("/api/v1/auth/login")
