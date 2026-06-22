@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -13,6 +14,13 @@ from app.rag.chunker import chunk_text
 
 
 REQUIRED_FIELDS = ("lawId", "lawName", "articleNo", "title", "content", "sourceUrl")
+FIELD_LIMITS = {
+    "lawId": 120,
+    "lawName": 200,
+    "articleNo": 50,
+    "title": 200,
+    "sourceName": 80,
+}
 
 
 @dataclass(frozen=True)
@@ -42,16 +50,35 @@ def load_legal_documents(source_path: str | Path) -> list[LegalDocument]:
         if missing:
             raise ValueError(f"Document at index {index} is missing required field: {missing[0]}")
 
+        law_id = str(item["lawId"]).strip()
+        law_name = str(item["lawName"]).strip()
+        article_no = str(item["articleNo"]).strip()
+        title = str(item["title"]).strip()
+        source_url = str(item["sourceUrl"]).strip()
+        effective_date = optional_str(item.get("effectiveDate"))
+        source_name = optional_str(item.get("sourceName")) or "law.go.kr"
+        validate_document_fields(
+            index,
+            {
+                "lawId": law_id,
+                "lawName": law_name,
+                "articleNo": article_no,
+                "title": title,
+                "sourceName": source_name,
+            },
+            effective_date,
+        )
+
         documents.append(
             LegalDocument(
-                law_id=str(item["lawId"]).strip(),
-                law_name=str(item["lawName"]).strip(),
-                article_no=str(item["articleNo"]).strip(),
-                title=str(item["title"]).strip(),
+                law_id=law_id,
+                law_name=law_name,
+                article_no=article_no,
+                title=title,
                 content=normalize_content(str(item["content"])),
-                source_url=str(item["sourceUrl"]).strip(),
-                effective_date=optional_str(item.get("effectiveDate")),
-                source_name=optional_str(item.get("sourceName")) or "law.go.kr",
+                source_url=source_url,
+                effective_date=effective_date,
+                source_name=source_name,
             )
         )
     return documents
@@ -99,6 +126,26 @@ def optional_str(value: Any) -> str | None:
     return stripped or None
 
 
+def validate_document_fields(
+    index: int,
+    values: dict[str, str],
+    effective_date: str | None,
+) -> None:
+    for field, limit in FIELD_LIMITS.items():
+        if len(values[field]) > limit:
+            raise ValueError(
+                f"Document at index {index} field {field} exceeds {limit} characters."
+            )
+
+    if effective_date is not None:
+        try:
+            date.fromisoformat(effective_date)
+        except ValueError as exc:
+            raise ValueError(
+                f"Document at index {index} field effectiveDate must use YYYY-MM-DD."
+            ) from exc
+
+
 def content_hash(document: LegalDocument, content: str, chunk_index: int) -> str:
     key = "\n".join(
         [document.law_id, document.article_no, document.title, str(chunk_index), content]
@@ -116,7 +163,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.chunk_size <= 0:
+        parser.error("--chunk-size must be greater than 0.")
+    if args.overlap < 0 or args.overlap >= args.chunk_size:
+        parser.error("--overlap must satisfy 0 <= overlap < chunk-size.")
+
     documents = load_legal_documents(args.source)
     rows = prepare_legal_chunks(documents, chunk_size=args.chunk_size, overlap=args.overlap)
 

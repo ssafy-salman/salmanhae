@@ -69,6 +69,45 @@ def test_load_legal_documents_rejects_blank_required_fields(tmp_path) -> None:
         load_legal_documents(source_path)
 
 
+def test_load_legal_documents_rejects_values_over_database_limits(tmp_path) -> None:
+    source_path = write_source(
+        tmp_path,
+        [
+            {
+                "lawId": "x" * 121,
+                "lawName": "주택임대차보호법",
+                "articleNo": "제3조",
+                "title": "대항력",
+                "content": "임차인은 주택의 인도와 주민등록을 마친 때 효력이 생긴다.",
+                "sourceUrl": "https://www.law.go.kr/법령/주택임대차보호법",
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError, match="lawId"):
+        load_legal_documents(source_path)
+
+
+def test_load_legal_documents_rejects_invalid_effective_date(tmp_path) -> None:
+    source_path = write_source(
+        tmp_path,
+        [
+            {
+                "lawId": "housing-lease-protection-act",
+                "lawName": "주택임대차보호법",
+                "articleNo": "제3조",
+                "title": "대항력",
+                "content": "임차인은 주택의 인도와 주민등록을 마친 때 효력이 생긴다.",
+                "sourceUrl": "https://www.law.go.kr/법령/주택임대차보호법",
+                "effectiveDate": "2025/01/01",
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError, match="effectiveDate"):
+        load_legal_documents(source_path)
+
+
 def test_prepare_legal_chunks_creates_stable_rows(tmp_path) -> None:
     source_path = write_source(
         tmp_path,
@@ -121,3 +160,13 @@ def test_dry_run_outputs_summary(tmp_path, capsys) -> None:
     assert exit_code == 0
     assert "documents=1" in output
     assert "chunks=1" in output
+
+
+def test_main_rejects_invalid_chunk_options(tmp_path) -> None:
+    source_path = write_source(tmp_path, [])
+
+    with pytest.raises(SystemExit):
+        main(["--dry-run", "--chunk-size", "0", str(source_path)])
+
+    with pytest.raises(SystemExit):
+        main(["--dry-run", "--chunk-size", "10", "--overlap", "10", str(source_path)])

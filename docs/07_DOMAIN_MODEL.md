@@ -194,7 +194,7 @@ property_score_stat
 
 F-3 MVP에서는 주택임대차보호법과 전세사기피해자 지원 및 주거안정에 관한 특별법 조문을 청킹해 `legal_document_chunks`에 저장합니다. pgvector 유사도 검색은 FastAPI(`backend-ai`)에서만 수행하며, Spring Boot는 법률 문서를 직접 검색하지 않습니다.
 
-```
+```text
 legal_document_chunks
 - id
 - law_id
