@@ -9,6 +9,7 @@
 | `SafetyFacility` | CCTV, 비상벨, 보안등, 치안시설 좌표 |
 | `PropertyScoreStat` | 매물별 안전·가격 점수 사전 계산 통계 |
 | `RegionPriceStat` | 지도 줌 레벨별 표시를 위한 지역 단위 실거래가 평균 |
+| `LegalDocumentChunk` | F-3 법률 RAG 검색을 위한 법령 조문 chunk와 embedding |
 | `User` | 로그인 사용자 정보 (Spring Security 자체 관리) |
 | `Wishlist` | 찜한 매물 |
 | `ConversationSession` | AI 에이전트 대화 세션 (1.5차) |
@@ -186,6 +187,39 @@ property_score_stat
 - police_count_500m
 - updated_at
 ```
+
+---
+
+## LegalDocumentChunk — 법률 RAG 문서 chunk
+
+F-3 MVP에서는 주택임대차보호법과 전세사기피해자 지원 및 주거안정에 관한 특별법 조문을 청킹해 `legal_document_chunks`에 저장합니다. pgvector 유사도 검색은 FastAPI(`backend-ai`)에서만 수행하며, Spring Boot는 법률 문서를 직접 검색하지 않습니다.
+
+```
+legal_document_chunks
+- id
+- law_id
+- law_name
+- article_no
+- article_title
+- effective_date
+- source_name
+- source_url
+- chunk_index
+- content
+- content_hash
+- embedding              ← vector(1536), Phase 2 dry-run에서는 null 허용
+- metadata_json
+- created_at
+- updated_at
+```
+
+### F-3 인덱싱 정책
+
+- MVP 대상 법령은 `주택임대차보호법`, `전세사기피해자 지원 및 주거안정에 관한 특별법`으로 제한합니다.
+- 원문 출처는 공식 법령 출처 URL을 `source_url`에 저장합니다.
+- 같은 원문 chunk의 중복 적재를 막기 위해 `content_hash`를 고유 키로 사용합니다.
+- Phase 2에서는 오프라인 JSON 입력을 검증하고 chunk row를 준비하는 dry-run까지만 구현합니다.
+- 실제 embedding 생성과 Supabase upsert는 이후 Phase에서 `backend-ai` 인덱싱 단계로 연결합니다.
 
 ---
 
