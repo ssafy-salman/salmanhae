@@ -107,7 +107,7 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 
 F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물을 조회합니다. 운영 단계에서는 제휴 피드 또는 합법적으로 확보한 매물 데이터를 `properties`에 저장한 뒤 같은 API로 조회합니다.
 
-**Response**
+**Response — 매물 추천**
 ```json
 {
   "data": {
@@ -377,7 +377,29 @@ Authorization: Bearer {token}
         "longitude": 126.936456
       }
     ],
-    "legalCards": null
+    "legalCards": []
+  },
+  "message": "OK"
+}
+```
+
+**Response — 법률 RAG**
+```json
+{
+  "data": {
+    "intent": "LEGAL_CONSULT",
+    "message": "관련 법령 근거 2개를 확인했습니다. 실제 계약 전에는 전문가 검토도 함께 권장합니다.",
+    "sessionId": null,
+    "properties": [],
+    "legalCards": [
+      {
+        "lawName": "주택임대차보호법",
+        "articleNo": "제3조의2",
+        "title": "보증금의 회수",
+        "content": "확정일자를 갖춘 임차인은 경매 또는 공매 시 후순위권리자보다 우선하여 보증금을 변제받을 수 있습니다.",
+        "score": 0.86
+      }
+    ]
   },
   "message": "OK"
 }
