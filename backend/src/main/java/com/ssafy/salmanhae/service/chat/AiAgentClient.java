@@ -5,9 +5,11 @@ import com.ssafy.salmanhae.common.exception.ErrorCode;
 import com.ssafy.salmanhae.model.dto.chat.ChatRequest;
 import com.ssafy.salmanhae.model.dto.chat.ChatResponse;
 import com.ssafy.salmanhae.model.dto.chat.LegalCardResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -20,10 +22,16 @@ public class AiAgentClient {
 
 	public AiAgentClient(
 			@Value("${ai.agent.base-url}") String baseUrl,
-			@Value("${ai.agent.internal-api-key}") String internalApiKey
+			@Value("${ai.agent.internal-api-key}") String internalApiKey,
+			@Value("${ai.agent.connect-timeout-ms:2000}") long connectTimeoutMs,
+			@Value("${ai.agent.read-timeout-ms:10000}") long readTimeoutMs
 	) {
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
+		requestFactory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
 		this.restClient = RestClient.builder()
 				.baseUrl(baseUrl)
+				.requestFactory(requestFactory)
 				.build();
 		this.internalApiKey = internalApiKey;
 	}

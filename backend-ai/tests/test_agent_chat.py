@@ -63,9 +63,12 @@ def test_agent_chat_returns_legal_cards_for_legal_question() -> None:
     assert body["intent"] == "LEGAL_CONSULT"
     assert body["answer"]
     assert len(body["legalCards"]) >= 1
-    assert body["legalCards"][0]["lawName"] == "주택임대차보호법"
-    assert body["legalCards"][0]["articleNo"]
-    assert body["legalCards"][0]["content"]
+    card = body["legalCards"][0]
+    assert card["lawName"] == "주택임대차보호법"
+    assert card["articleNo"]
+    assert card["title"]
+    assert card["content"]
+    assert isinstance(card["score"], (int, float))
 
 
 def test_classify_intent_examples() -> None:

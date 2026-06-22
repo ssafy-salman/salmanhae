@@ -1,6 +1,7 @@
 package com.ssafy.salmanhae.controller.chat;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -80,7 +81,10 @@ class ChatControllerTest {
 				.andExpect(jsonPath("$.data.properties", hasSize(0)))
 				.andExpect(jsonPath("$.data.legalCards", hasSize(1)))
 				.andExpect(jsonPath("$.data.legalCards[0].lawName").value("주택임대차보호법"))
-				.andExpect(jsonPath("$.data.legalCards[0].articleNo").value("제3조의2"));
+				.andExpect(jsonPath("$.data.legalCards[0].articleNo").value("제3조의2"))
+				.andExpect(jsonPath("$.data.legalCards[0].title").value("보증금의 회수"))
+				.andExpect(jsonPath("$.data.legalCards[0].content").isNotEmpty())
+				.andExpect(jsonPath("$.data.legalCards[0].score").value(0.92));
 	}
 
 	private String loginAccessToken() throws Exception {
@@ -102,6 +106,8 @@ class ChatControllerTest {
 				.andReturn();
 
 		JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
-		return body.path("data").path("accessToken").asText();
+		String accessToken = body.path("data").path("accessToken").asText();
+		assertFalse(accessToken.isBlank(), "login response must include non-empty accessToken");
+		return accessToken;
 	}
 }
