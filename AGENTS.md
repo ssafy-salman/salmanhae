@@ -5,8 +5,8 @@
 | 영역 | 기술 |
 |------|------|
 | Frontend | Vue 3, Vite, Pinia, Axios, 네이버지도 SDK, Tailwind CSS |
-| Backend | Spring Boot 3, Spring Security (자체 JWT), PostgreSQL |
-| AI Backend | Python 3.11, FastAPI, LangGraph, Codex API (OpenAI) |
+| Backend | Spring Boot 3, Spring Security (자체 JWT), PostgreSQL, Redis, Gmail SMTP |
+| AI Backend | Python 3.11, FastAPI, LangGraph, Claude API (Anthropic) |
 | DB | Supabase (PostgreSQL + pgvector) |
 | Infra | Cloud Run (backend + backend-ai 각각 독립 배포) |
 | Batch | Spring Scheduler (국토교통부·생활안전지도 공공 API) |
