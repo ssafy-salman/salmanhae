@@ -4,8 +4,11 @@ import com.ssafy.salmanhae.common.exception.ApiException;
 import com.ssafy.salmanhae.common.exception.ErrorCode;
 import com.ssafy.salmanhae.model.dao.auth.UserDao;
 import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
+import com.ssafy.salmanhae.model.dto.auth.RefreshTokenResponse;
 import com.ssafy.salmanhae.model.dto.auth.User;
 import com.ssafy.salmanhae.util.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,5 +40,19 @@ public class AuthService {
                 jwtUtil.generateAccessToken(email),
                 jwtUtil.generateRefreshToken(email)
         );
+    }
+
+    public RefreshTokenResponse refresh(String refreshToken) {
+        String email;
+        try {
+            email = jwtUtil.getEmail(refreshToken);
+        } catch (ExpiredJwtException e) {
+            throw new ApiException(ErrorCode.EXPIRED_TOKEN);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new ApiException(ErrorCode.INVALID_TOKEN);
+        }
+
+        String newAccessToken = jwtUtil.generateAccessToken(email);
+        return new RefreshTokenResponse(newAccessToken);
     }
 }

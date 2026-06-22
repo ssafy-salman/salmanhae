@@ -1,8 +1,6 @@
 package com.ssafy.salmanhae.controller.auth;
 
-import com.ssafy.salmanhae.model.dto.auth.LoginRequest;
-import com.ssafy.salmanhae.model.dto.auth.LoginResponse;
-import com.ssafy.salmanhae.model.dto.auth.SignupRequest;
+import com.ssafy.salmanhae.model.dto.auth.*;
 import com.ssafy.salmanhae.common.response.ApiResponse;
 import com.ssafy.salmanhae.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +32,11 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@RequestBody RefreshTokenRequest request) {
+        RefreshTokenResponse response = authService.refresh(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }
