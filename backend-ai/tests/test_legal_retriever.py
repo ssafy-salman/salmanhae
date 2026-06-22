@@ -164,4 +164,5 @@ def test_supabase_vector_client_sets_connection_and_statement_timeouts(
     client.similarity_search_legal_documents([0.1, 0.2], top_k=2)
 
     assert calls["connect_kwargs"]["connect_timeout"] == 7
+    assert len(calls.get("executes", [])) >= 1
     assert calls["executes"][0] == ("set local statement_timeout = %s", (3000,))
