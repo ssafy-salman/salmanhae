@@ -52,8 +52,12 @@
 | --- | --- | --- |
 | 400 | `INVALID_REQUEST` | 요청 파라미터 누락 또는 형식 오류 |
 | 400 | `INVALID_BOUNDS` | 지도 범위 파라미터 오류 (west/east/south/north) |
-| 401 | `UNAUTHORIZED` | 인증 토큰 없음 또는 만료 |
+| 400 | `INVALID_VERIFICATION_CODE` | 이메일 인증 코드가 올바르지 않음 |
+| 401 | `UNAUTHORIZED` | 인증 토큰 없음 또는 자격증명 불일치 |
+| 401 | `INVALID_TOKEN` | 서명 검증 실패 또는 Redis 불일치 리프레시 토큰 |
+| 401 | `EXPIRED_TOKEN` | 만료된 리프레시 토큰 |
 | 403 | `FORBIDDEN` | 권한 없음 (다른 사용자 리소스 접근 등) |
+| 403 | `EMAIL_NOT_VERIFIED` | 이메일 인증 미완료 상태에서 회원가입 시도 |
 | 404 | `PROPERTY_NOT_FOUND` | 매물 없음 |
 | 404 | `WISHLIST_NOT_FOUND` | 찜 항목 없음 |
 | 404 | `SESSION_NOT_FOUND` | 대화 세션 없음 |
@@ -407,6 +411,33 @@ Authorization: Bearer {token}
 
 Spring Boot가 Spring Security + JJWT로 자체 구현한 인증 API입니다. 프론트엔드는 이 API만 호출하며, 외부 Auth 서비스를 직접 호출하지 않습니다.
 
+회원가입 전 이메일 인증이 필수입니다. 인증 코드는 Gmail SMTP로 발송되고 Redis에 5분간 보관됩니다.
+
+### 이메일 인증 코드 발송
+```http
+POST /api/v1/auth/email/send
+```
+```json
+{ "email": "user@example.com" }
+```
+**Response**
+```json
+{ "data": null, "message": "OK" }
+```
+
+### 이메일 인증 코드 검증
+```http
+POST /api/v1/auth/email/verify
+```
+```json
+{ "email": "user@example.com", "code": "123456" }
+```
+**Response**
+```json
+{ "data": null, "message": "OK" }
+```
+**Error** — 코드 불일치 또는 만료 시: `400 INVALID_VERIFICATION_CODE`
+
 ### 회원가입
 ```http
 POST /api/v1/auth/signup
@@ -414,13 +445,13 @@ POST /api/v1/auth/signup
 ```json
 { "email": "user@example.com", "password": "password123", "nickname": "홍길동" }
 ```
+이메일 인증(`/email/verify`) 완료 후 10분 이내에 호출해야 합니다.
+
 **Response**
 ```json
-{
-  "data": null,
-  "message": "OK"
-}
+{ "data": null, "message": "OK" }
 ```
+**Error** — 인증 미완료 시: `403 EMAIL_NOT_VERIFIED`
 
 ### 로그인
 ```http
@@ -440,27 +471,37 @@ POST /api/v1/auth/login
 }
 ```
 
-### 토큰 갱신
+### 토큰 갱신 (Token Rotation)
 ```http
 POST /api/v1/auth/refresh
 ```
 ```json
 { "refreshToken": "jwt-refresh-token" }
 ```
+갱신 시 액세스 토큰과 리프레시 토큰을 **모두 새로 발급**합니다 (Token Rotation). 프론트는 두 토큰을 모두 교체해야 합니다.
+
 **Response**
 ```json
 {
   "data": {
-    "accessToken": "new-jwt-access-token"
+    "accessToken": "new-jwt-access-token",
+    "refreshToken": "new-jwt-refresh-token"
   },
   "message": "OK"
 }
 ```
+**Error** — 서명 불일치·Redis 불일치: `401 INVALID_TOKEN` / 만료: `401 EXPIRED_TOKEN`
 
 ### 로그아웃
 ```http
 POST /api/v1/auth/logout
 Authorization: Bearer {token}
+```
+Redis에서 리프레시 토큰을 삭제하여 이후 갱신을 차단합니다.
+
+**Response**
+```json
+{ "data": null, "message": "OK" }
 ```
 
 ---

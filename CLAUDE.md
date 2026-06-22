@@ -5,7 +5,7 @@
 | 영역 | 기술 |
 |------|------|
 | Frontend | Vue 3, Vite, Pinia, Axios, 네이버지도 SDK, Tailwind CSS |
-| Backend | Spring Boot 3, Spring Security (자체 JWT), PostgreSQL |
+| Backend | Spring Boot 3, Spring Security (자체 JWT), PostgreSQL, Redis, Gmail SMTP |
 | AI Backend | Python 3.11, FastAPI, LangGraph, Claude API (Anthropic) |
 | DB | Supabase (PostgreSQL + pgvector) |
 | Infra | Cloud Run (backend + backend-ai 각각 독립 배포) |
@@ -51,5 +51,11 @@ cd backend-ai && uvicorn app.main:app --reload  # 개발 서버
 cd backend-ai && pytest tests/                  # 테스트
 ```
 
+## 로컬 개발 사전 조건
+
+- Redis 실행 필수: `redis-server` (brew) 또는 `docker run -p 6379:6379 redis`
+- `backend/.env` 파일 필요 (`.gitignore`에 포함, 팀원에게 별도 공유)
+- `frontend/.env` 파일 필요 (`.gitignore`에 포함, 팀원에게 별도 공유)
+
 ## 문서
-`docs/` 폴더에 01~12 번호 순서로 정렬되어 있습니다.
+`docs/` 폴더에 01~13 번호 순서로 정렬되어 있습니다.

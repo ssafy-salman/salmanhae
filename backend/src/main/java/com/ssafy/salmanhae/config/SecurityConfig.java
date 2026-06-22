@@ -37,8 +37,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 허용
-                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        // 인가 없이 허용
+                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh",
+                                "/api/v1/auth/email/send", "/api/v1/auth/email/verify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/properties/**", "/api/v1/map/**", "/api/v1/safety/**", "/api/v1/price-analysis").permitAll()
                         // 나머지는 로그인 필요
                         .anyRequest().authenticated()

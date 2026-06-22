@@ -46,10 +46,10 @@ salmanhae/
 │       │   │   ├── auth/     # UserDao (MyBatis @Mapper)
 │       │   │   └── property/ # PropertyDao
 │       │   └── dto/
-│       │       ├── auth/     # User (implements UserDetails), LoginRequest, LoginResponse, SignupRequest
+│       │       ├── auth/     # User (implements UserDetails), LoginRequest, LoginResponse, SignupRequest, RefreshRequest, RefreshResponse, EmailSendRequest, EmailVerifyRequest
 │       │       └── property/ # PropertyRow, PropertySummaryResponse, PropertyDetailResponse 등
 │       ├── service/
-│       │   ├── auth/      # AuthService, CustomUserDetailsService
+│       │   ├── auth/      # AuthService, CustomUserDetailsService, EmailVerificationService
 │       │   └── property/  # PropertyService, PropertyServiceImpl
 │       ├── util/          # JwtUtil
 │       └── batch/         # Spring Scheduler 배치 작업 (예정)
@@ -72,8 +72,9 @@ salmanhae/
 
 ### Spring Boot (Cloud Run)
 
-- 회원가입/로그인/로그아웃 API (Spring Security 자체 구현)
-- JWT 발급 및 검증 (Spring Security Filter)
+- 회원가입/로그인/로그아웃/토큰 갱신 API (Spring Security 자체 구현)
+- 회원가입 전 이메일 인증 (Gmail SMTP + Redis TTL 5분)
+- JWT 발급 및 검증 (Spring Security Filter), 리프레시 토큰 Redis 저장 및 Token Rotation
 - 공공데이터 배치 수집 → PostgreSQL 저장
 - F-1 MVP 샘플 매물 및 운영 매물 데이터 저장/조회 API 제공
 - 실거래가 건물 anchor 지오코딩 결과를 DB에 저장하고 지도 API에서는 저장 좌표만 조회
@@ -90,6 +91,13 @@ salmanhae/
   - `analyze_price` → Spring Boot API 호출
   - `analyze_safety` → Spring Boot API 호출
 - Claude API로 최종 자연어 응답 생성
+
+### Redis
+
+- 이메일 인증 코드 (`email:verify:{email}`, TTL 5분)
+- 이메일 인증 완료 플래그 (`email:verified:{email}`, TTL 10분)
+- 리프레시 토큰 (`refresh:{email}`, TTL 7일)
+- 로컬 개발: `localhost:6379` / 운영: 환경변수 `REDIS_HOST`, `REDIS_PORT`
 
 ### Supabase
 
