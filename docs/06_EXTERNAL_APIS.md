@@ -32,7 +32,7 @@ WMS 기반 안전 레이어는 MVP에서 제외하고 이후 확장으로 미룹
 수집 주기: 매일 새벽 배치. 저장 테이블: `transaction_history`.
 
 실거래가 배치 후 시/도, 시/군/구, 읍/면/동 단위 평균을 계산해 지도 줌 레벨별 표시 데이터로 사용합니다.
-F-1 seed 단계에서는 저장해 둔 XML 응답 파일을 `scripts/seed/normalize_molit_transactions.py`로 정규화해 `data/seed/transaction-history.seed.json`을 생성합니다.
+F-1 MVP 단계에서는 `scripts/data_pipeline/pipeline.py`가 OpenAPI 응답을 가져와 정규화하고, 통계와 생성 매물을 Supabase에 직접 upsert합니다.
 
 ---
 
@@ -102,11 +102,12 @@ Geocoding 호출에는 `NAVER_MAPS_CLIENT_ID`, `NAVER_MAPS_CLIENT_SECRET` 환경
 
 | 데이터 | 저장 여부 | 테이블 | 갱신 주기 |
 | --- | --- | --- | --- |
-| F-1 MVP 더미 매물 | 저장 | `properties` | 실거래가 건물 anchor와 지오코딩 캐시로 생성 후 수동 적재 |
+| F-1 MVP 더미 매물 | 저장 | `properties` | 오프라인 파이프라인으로 생성 후 Supabase upsert |
 | 운영 매물 | 저장 | `properties` | 제휴/등록/합법 수집 정책 확정 후 수동 또는 주기 갱신 |
-| 전월세 실거래가 | 저장 | `transaction_history` | 매일 배치 |
-| 매매 실거래가 | 저장 | `transaction_history` | 매일 배치 |
-| 지역별 실거래가 평균 | 저장 | `region_price_stat` | 실거래가 배치 후 매일 재계산 |
+| 전월세 실거래가 | 저장 | `transaction_history` | MVP는 전국 최근 12개월 오프라인 upsert, 운영은 주기 갱신 |
+| 매매 실거래가 | 저장 | `transaction_history` | MVP는 전국 최근 12개월 오프라인 upsert, 운영은 주기 갱신 |
+| 지역별 실거래가 평균 | 저장 | `region_price_stat` | 오프라인 파이프라인에서 사전 계산 |
+| 건물별 실거래가 통계 | 저장 | `building_price_stat` | 오프라인 파이프라인에서 사전 계산 |
 | CCTV | 저장 | `safety_facility` | 월 1회 |
 | 안전비상벨 | 저장 | `safety_facility` | 월 1회 |
 | 보안등/방범등 | 저장 | `safety_facility` | 월 1회 |
