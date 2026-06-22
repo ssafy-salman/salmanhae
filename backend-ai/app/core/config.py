@@ -15,6 +15,14 @@ class Settings(BaseSettings):
         default="postgresql://user:password@host:5432/postgres",
         alias="SUPABASE_DB_URL",
     )
+    supabase_connect_timeout_seconds: int = Field(
+        default=5,
+        alias="SUPABASE_CONNECT_TIMEOUT_SECONDS",
+    )
+    supabase_statement_timeout_ms: int = Field(
+        default=5000,
+        alias="SUPABASE_STATEMENT_TIMEOUT_MS",
+    )
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
     gms_api_key: str = Field(default="", alias="GMS_API_KEY")
     llm_model: str = Field(default="", alias="LLM_MODEL")

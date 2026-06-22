@@ -1,5 +1,7 @@
 import pytest
 
+from app.clients import supabase_client as supabase_module
+from app.clients.supabase_client import SupabaseVectorClient
 from app.graph.nodes import legal_rag as legal_rag_module
 from app.graph.state import Intent
 from app.rag.retriever import LegalRetriever
@@ -118,3 +120,48 @@ def test_legal_rag_node_records_tool_metadata(monkeypatch: pytest.MonkeyPatch) -
         "topK": 1,
         "source": "supabase-pgvector",
     }
+
+
+def test_supabase_vector_client_sets_connection_and_statement_timeouts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeCursor:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def execute(self, sql, params) -> None:
+            calls.setdefault("executes", []).append((sql, params))
+
+        def fetchall(self) -> list[dict]:
+            return []
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def cursor(self) -> FakeCursor:
+            return FakeCursor()
+
+    def fake_connect(database_url, **kwargs):
+        calls["database_url"] = database_url
+        calls["connect_kwargs"] = kwargs
+        return FakeConnection()
+
+    monkeypatch.setattr(supabase_module.psycopg, "connect", fake_connect)
+    client = SupabaseVectorClient(
+        connect_timeout_seconds=7,
+        statement_timeout_ms=3000,
+    )
+
+    client.similarity_search_legal_documents([0.1, 0.2], top_k=2)
+
+    assert calls["connect_kwargs"]["connect_timeout"] == 7
+    assert calls["executes"][0] == ("set local statement_timeout = %s", (3000,))
