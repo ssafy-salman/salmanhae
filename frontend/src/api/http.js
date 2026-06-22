@@ -12,12 +12,16 @@ const http = axios.create({
 })
 
 const readAccessToken = () => {
-  if (typeof window === 'undefined' || !window.localStorage) return ''
-  return (
-    window.localStorage.getItem('accessToken') ||
-    window.localStorage.getItem('salmanhae.accessToken') ||
-    ''
-  )
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return ''
+    return (
+      window.localStorage.getItem('accessToken') ||
+      window.localStorage.getItem('salmanhae.accessToken') ||
+      ''
+    )
+  } catch {
+    return ''
+  }
 }
 
 http.interceptors.request.use((config) => {
