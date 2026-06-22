@@ -16,7 +16,7 @@
 | 저장 테이블 | `transaction_history` |
 | 활용 | 지도 지역 평균, 매물 상세 시세 비교, 시세 분석, 가격 점수 계산 |
 
-운영 구현에서는 Spring Batch 또는 Scheduler가 국토교통부 API를 호출하고 XML 응답을 즉시 파싱해 `transaction_history`에 저장합니다. XML 원문 파일을 저장소에 커밋하지 않습니다. 현재 `data/raw/molit/*.xml` 기반 흐름은 F-1 데이터 계약과 seed 생성을 검증하기 위한 로컬 bootstrap 방식입니다.
+운영 구현에서는 Spring Batch 또는 Scheduler가 국토교통부 API를 호출하고 XML 응답을 즉시 파싱해 `transaction_history`에 저장합니다. XML 원문 파일을 저장소에 커밋하지 않습니다. 현재 MVP는 `scripts/data_pipeline/pipeline.py`로 전국 최근 12개월 데이터를 오프라인 수집한 뒤 Supabase에 직접 upsert합니다.
 
 ### 실거래가 매칭 기준 (MVP)
 
@@ -45,7 +45,9 @@ transaction_history 적재
 | --- | --- |
 | `SIDO` | 시/도 실거래가 평균 |
 | `SIGUNGU` | 시/군/구 실거래가 평균 |
-| `EUPMYEONDONG` | 읍/면/동 실거래가 평균 |
+| `DONG` | 읍/면/동 실거래가 평균 |
+
+MOLIT 실거래가 API의 `LAWD_CD`는 시군구 5자리 코드이므로, 동 단위 `region_code`는 `LAWD_CD:동명` 형식의 composite key를 사용합니다.
 
 ---
 
@@ -67,7 +69,7 @@ WMS 기반 범죄주의구간 레이어는 MVP에서 제외합니다.
 | 항목 | 내용 |
 | --- | --- |
 | F-1 MVP 대상 | 실거래가 건물 anchor 기반 더미 매물 |
-| F-1 MVP 방식 | `transaction_history` 정규화 row와 `data/seed/geocoding-cache.json` 기준으로 seed 생성 후 Supabase에 수동 적재 |
+| F-1 MVP 방식 | 오프라인 파이프라인이 실거래가 정규화, 지오코딩, 통계/매물 생성 후 Supabase에 직접 upsert |
 | 운영 대상 | 제휴 매물 피드, 중개사/임대인 등록, 합법 검토된 수집 데이터 |
 | 운영 방식 | 원천 정책 확정 후 DB 저장 |
 | 저장 테이블 | `properties` |
@@ -75,34 +77,32 @@ WMS 기반 범죄주의구간 레이어는 MVP에서 제외합니다.
 
 F-1 MVP의 `MVP_SYNTHETIC` 매물은 실거래가에서 추출한 실제 건물·지역 정보를 anchor로 사용합니다. 매물 가격은 같은 건물 또는 같은 법정동·유형·면적대 실거래가의 중앙값을 기준으로 생성합니다. 운영 매물 자동 갱신 주기는 원천 계약, 페이지 구조 변경 리스크, 약관/법적 검토가 끝난 뒤 확정합니다.
 
-### F-1 seed 생성 흐름
+### F-1 오프라인 생성 흐름
 
 ```
-국토교통부 실거래가 XML 수집
-→ `data/raw/molit/manifest.json` 기준 XML 파일 정규화
-→ `data/seed/transaction-history.seed.json` 생성
+국토교통부 실거래가 OpenAPI 호출
+→ XML 응답을 로컬 `data/pipeline/raw/`에 임시 저장
+→ `data/pipeline/normalized/transaction_history.jsonl` 생성
 → building_key 기준 건물 anchor 추출
-→ 지오코딩 캐시로 latitude/longitude 부여
-→ 실거래가 중앙값 기준 더미 가격 생성
-→ properties seed 생성
+→ 네이버 Geocoding 캐시로 latitude/longitude 부여
+→ 지역/건물별 시세 통계 JSONL 생성
+→ 실거래가 중앙값 기준 MVP 더미 매물 JSONL 생성
+→ Supabase에 직접 upsert
 ```
 
-로컬 seed 정규화 명령:
+오프라인 적재 명령:
 
 ```bash
-python scripts/seed/normalize_molit_transactions.py --manifest data/raw/molit/manifest.json
-python scripts/seed/geocode_property_anchors.py --dry-run
-python scripts/seed/geocode_property_anchors.py
-python scripts/seed/generate_properties_seed.py
+python scripts/data_pipeline/pipeline.py run --months 12 --scope nationwide --migrate-db --load-db
 ```
 
-로컬 raw XML과 실제 `data/raw/molit/manifest.json`은 git에 올리지 않습니다. 필요한 경우 `data/raw/molit/manifest.example.json`을 복사해 로컬 manifest를 작성합니다.
+로컬 raw XML, JSONL, geocoding cache는 git에 올리지 않습니다. 전국 수집에는 `data/reference/lawd-codes.csv`가 필요하며, 이 파일은 행정표준코드 기반 시군구 목록으로 로컬에서 준비합니다.
 
-### F-1 bootstrap seed 보존 정책
+### F-1 오프라인 산출물 보존 정책
 
-F-1 단계에서는 `data/seed/*.json`과 `database/seed/*.sql`을 레포에 보관합니다. Spring Batch가 아직 없기 때문에 팀원이 같은 Supabase seed 상태를 재현할 수 있어야 하기 때문입니다.
+`data/raw/`, `data/seed/`, `data/pipeline/`, `database/seed/` 아래의 생성 산출물은 레포에 보관하지 않습니다. Supabase에는 파이프라인이 직접 upsert하고, 재현이 필요하면 같은 명령을 다시 실행합니다.
 
-이 파일들은 운영 수집 방식이 아니라 임시 bootstrap 산출물입니다. Spring Batch 또는 Scheduler가 국토교통부 API 호출, XML 파싱, 지오코딩, DB upsert를 직접 수행하게 되면 별도 cleanup PR에서 제거할 수 있습니다. 단, DB migration과 seed 생성 스크립트는 운영 코드로 대체되기 전까지 유지합니다.
+이 산출물은 운영 수집 방식이 아니라 MVP bootstrap을 위한 임시 결과입니다. 운영 단계에서 주기적 최신화가 필요해지면 같은 정규화/적재 로직을 Spring Scheduler 또는 별도 job으로 옮기고, 로컬 산출물은 계속 gitignore 대상으로 유지합니다.
 
 ---
 
@@ -142,6 +142,22 @@ F-1 단계에서는 `data/seed/*.json`과 `database/seed/*.sql`을 레포에 보
 
 ---
 
-## 운영 방식
+## MVP 오프라인 적재 방식
 
-MVP에서는 자동 스케줄보다 수동 실행 가능한 Spring Scheduler 또는 CommandLineRunner로 먼저 구현합니다.
+F-1 MVP에서는 Spring Batch/Scheduler를 바로 운영하지 않고, 오프라인 데이터 파이프라인으로 전국 최근 12개월 실거래가와 MVP 더미 매물을 미리 생성해 Supabase에 upsert합니다.
+
+```bash
+python scripts/data_pipeline/pipeline.py run --months 12 --scope nationwide --migrate-db --load-db
+```
+
+정책은 다음과 같습니다.
+
+- 수집 범위: 전국 최근 12개월
+- 대상 API: 아파트, 오피스텔, 연립/다세대, 단독/다가구의 매매와 전월세 전체
+- 실거래가: `transaction_history`에 누적 upsert
+- 시세 통계: `region_price_stat`, `building_price_stat`에 사전 계산 upsert
+- 매물 데이터: 실거래가 건물 anchor당 1~2개 `MVP_SYNTHETIC` 매물 생성 후 `properties`에 upsert
+- geocoding 실패 정책: 거래 데이터는 저장하고, 좌표가 없는 건물은 매물 생성만 skip
+- 기존 DB 데이터 처리: truncate 없이 unique key 기준 누적 upsert
+
+이 방식은 데모/MVP에서 안정적인 지도 매물 탐색과 시세 비교를 제공하기 위한 bootstrap 방식입니다. 운영 단계에서 주기적 최신화가 필요해지면 같은 정규화/적재 로직을 Spring Scheduler 또는 별도 job으로 옮깁니다.

@@ -4,11 +4,18 @@
 !.env.example
 !*.env.example
 
-# Local raw data inputs
-data/raw/molit/*.xml
-data/raw/molit/manifest.json
-data/raw/molit/fetch-plan.json
-data/raw/molit/fetch-errors.json
+# Local generated data inputs and pipeline outputs
+data/raw/
+data/seed/
+data/pipeline/
+data/cache/
+data/output/
+!data/reference/
+!data/reference/*.example.csv
+!data/**/README.md
+
+# Generated SQL seed artifacts
+database/seed/
 
 # Python
 __pycache__/

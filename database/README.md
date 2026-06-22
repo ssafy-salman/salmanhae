@@ -1,47 +1,57 @@
 # Database
 
-This directory stores reproducible SQL for the shared Supabase database.
+This directory stores reproducible schema migrations for the shared Supabase
+PostgreSQL database.
 
-## F-1 Apply Order
+## Apply Order
 
-1. Run `migrations/202606160001_create_properties.sql` in Supabase SQL Editor.
-2. Run all `seed/chunks/transaction_history_seed_*.sql` files in numeric order.
-3. Run all `seed/chunks/properties_seed_*.sql` files in numeric order.
+Run migrations in numeric order:
 
-The single SQL files in `seed/transaction_history_seed.sql` and `seed/properties_seed.sql` are useful for local database clients, but they may be too large for Supabase SQL Editor.
+1. `migrations/202606160001_create_properties.sql`
+2. `migrations/202606220001_create_legal_document_chunks.sql`
+3. `migrations/202606230001_create_price_stats.sql`
+4. `migrations/202606230002_cleanup_region_price_stat_codes.sql`
 
-## Seed Artifact Policy
+## Data Loading Policy
 
-`database/seed/*.sql` and `database/seed/chunks/*.sql` are committed intentionally as F-1 bootstrap data. They are not intended to be the long-term data ingestion path.
+Do not commit generated nationwide transaction/property seed SQL files.
 
-Keep them until:
-
-- BE/FE map development can rely on a stable seeded Supabase dataset.
-- Spring Batch or Scheduler can fetch MOLIT XML, normalize rows, geocode anchors, and upsert DB rows directly.
-
-After batch ingestion is implemented and verified, remove generated seed SQL/JSON artifacts in a cleanup PR. Keep schema migrations and seed scripts unless they are replaced by production code.
-
-Seed SQL is generated from normalized transaction rows and the geocoding cache with:
+F-1 and price-stat data are now loaded by the offline data pipeline:
 
 ```bash
-python scripts/seed/generate_properties_seed.py
+python scripts/data_pipeline/pipeline.py run --months 12 --scope nationwide --migrate-db --load-db
 ```
 
-Secrets, connection strings, geocoding API keys, and service role keys must not be committed.
+The pipeline upserts into:
+
+- `transaction_history`
+- `region_price_stat`
+- `building_price_stat`
+- `properties`
+
+It does not truncate existing rows by default. It accumulates and updates rows
+based on each table's unique keys.
 
 ## Local Environment
 
-For local seed generation and future direct DB apply scripts, keep secrets in `.env.local`:
+Keep secrets in ignored `.env` files:
 
 ```env
+MOLIT_SERVICE_KEY=
 NAVER_MAPS_CLIENT_ID=
 NAVER_MAPS_CLIENT_SECRET=
 SUPABASE_DB_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_DB_USERNAME=
+SUPABASE_DB_PASSWORD=
 ```
 
-Current F-1 database application is manual: copy the SQL files into Supabase SQL Editor and run them in the order above.
+`SUPABASE_DB_URL` may be either `jdbc:postgresql://...` or
+`postgresql://...`.
 
-Do not use `SUPABASE_SERVICE_ROLE_KEY` in the frontend. It is only for backend, batch, seed, or admin scripts.
+## Generated Data
 
-Direct SQL execution from local scripts requires a PostgreSQL client such as `psql` or a Python driver such as `psycopg`. If those tools are not installed, use Supabase SQL Editor.
+Generated files under `data/raw/`, `data/seed/`, `data/pipeline/`, and
+`database/seed/` are local artifacts and should not be committed.
+
+Use `scripts/data_pipeline/README.md` for the current nationwide 12-month data
+collection and Supabase load workflow.

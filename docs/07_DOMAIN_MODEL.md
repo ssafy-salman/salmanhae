@@ -26,7 +26,7 @@
 | `PropertySource` | `MVP_SYNTHETIC`, `NAVER_REAL_ESTATE` | 매물 데이터 출처. `MVP_SYNTHETIC`은 실거래가 건물 anchor 기반 더미 매물 |
 | `GeocodingQuality` | `BUILDING_EXACT`, `ADDRESS_EXACT`, `DONG_APPROX`, `FAILED` | 실거래가 주소성 정보를 좌표로 변환한 품질 |
 | `SafetyFacilityType` | `CCTV`, `EMERGENCY_BELL`, `SECURITY_LIGHT`, `POLICE` | 안전시설 유형 |
-| `RegionLevel` | `SIDO`, `SIGUNGU`, `EUPMYEONDONG` | 지도 평균 표시용 행정구역 레벨 |
+| `RegionLevel` | `SIDO`, `SIGUNGU`, `DONG` | 지도 평균 표시용 행정구역 레벨 |
 | `ConversationIntent` | `PROPERTY_SEARCH`, `LEGAL_CONSULT`, `PRICE_ANALYSIS`, `SAFETY_ANALYSIS`, `HUG_CALC` | AI 에이전트 의도 분류 |
 
 ---
@@ -92,8 +92,8 @@ properties
 - 실거래가 정규화 row에서 `building_key` 기준 건물 anchor를 추출합니다.
 - 지오코딩 품질이 `BUILDING_EXACT` 또는 `ADDRESS_EXACT`인 anchor만 지도 bounds 조회용 매물로 생성합니다.
 - 가격은 같은 건물 또는 같은 법정동·주택유형·면적대 실거래가 중앙값을 기준으로 생성합니다.
-- 정규화 입력은 `data/seed/transaction-history.seed.json`, 지오코딩 캐시는 `data/seed/geocoding-cache.json`, 생성 결과는 `data/seed/properties.seed.json`에 둡니다.
-- Supabase 적용 SQL은 `database/migrations/202606160001_create_properties.sql`, seed SQL은 `database/seed/transaction_history_seed.sql`과 `database/seed/properties_seed.sql`에 둡니다.
+- 정규화 입력, 지오코딩 캐시, 생성 결과는 `data/pipeline/` 아래 로컬 산출물로 둡니다.
+- Supabase 스키마는 `database/migrations/`를 적용하고, 데이터는 `scripts/data_pipeline/pipeline.py`가 직접 upsert합니다.
 
 ---
 
@@ -140,7 +140,7 @@ transaction_history
 ```
 region_price_stat
 - id
-- region_level            ← SIDO / SIGUNGU / EUPMYEONDONG
+- region_level            ← SIDO / SIGUNGU / DONG
 - region_code
 - region_name
 - property_type
@@ -290,3 +290,71 @@ conversation_message
 - metadata_json           ← 선택 매물 ID, 참조 법령 등
 - created_at
 ```
+
+---
+
+## F-1 오프라인 매물 데이터셋
+
+F-1 MVP는 국토교통부 실거래가 데이터를 건물 anchor의 원천으로 사용하고, 그 위에 지도 탐색용 더미 매물 데이터를 생성합니다. 이 매물은 실시간 중개 매물이 아니라 실제 건물/지역 기반의 MVP 검증용 데이터입니다. 따라서 지도, 필터, 상세 조회, 이후 시세 비교 흐름은 현실적인 주소와 거래 범위를 기준으로 테스트할 수 있습니다.
+
+### 원천 실거래가
+
+`transaction_history`는 국토교통부 실거래가 OpenAPI 8종을 정규화해 저장합니다.
+
+- 아파트 전월세/매매
+- 오피스텔 전월세/매매
+- 연립다세대 전월세/매매
+- 단독다가구 전월세/매매
+
+MVP bootstrap 기준은 전국 최근 12개월입니다. 기존 DB 데이터는 truncate하지 않고 unique key 기준으로 누적 upsert합니다.
+
+주요 연결 키:
+
+- `source_api`
+- `source_transaction_key`
+- `property_type`
+- `transaction_type`
+- `legal_dong_code`
+- `building_key`
+
+`building_key`는 실거래가, 건물별 시세 통계, 생성 매물을 연결하는 anchor입니다.
+
+### 시세 통계
+
+`region_price_stat`는 지도 줌 레벨별 시세 표시를 위한 지역 단위 통계를 저장합니다.
+
+- `region_level`: `SIDO`, `SIGUNGU`, `DONG`
+- `region_code`: 레벨에 따라 시도 2자리, 시군구 5자리, 동 단위는 `LAWD_CD:동명`
+- `property_type`
+- `transaction_type`
+- 평균/중앙값 보증금, 월세, 매매가
+- `sample_from_ym`, `sample_to_ym`
+
+`building_price_stat`는 실제 건물 anchor 단위의 시세 통계를 저장합니다.
+
+- `building_key`
+- `legal_dong_code`
+- `property_type`
+- `transaction_type`
+- 평균/중앙값 보증금, 월세, 매매가
+- `sample_from_ym`, `sample_to_ym`
+
+두 통계 테이블은 API 요청 시 계산하지 않고 오프라인 파이프라인에서 미리 계산해 저장합니다.
+
+### 생성 매물
+
+F-1 MVP 생성 매물은 `properties`에 다음 기준으로 저장합니다.
+
+- `source = 'MVP_SYNTHETIC'`
+- `building_key`는 실거래가 anchor에서 복사
+- `source_property_id`는 `building_key`와 거래 유형 기반으로 생성
+- `anchor_transaction_id`는 `transaction_history.source_transaction_key`로 연결
+- 좌표는 네이버 Geocoding 결과를 사용
+
+생성 정책:
+
+- geocoding이 성공한 건물 anchor마다 1~2개 생성
+- geocoding 실패 시 실거래가 row는 유지하고 매물 생성만 skip
+- 기존 DB 데이터는 삭제하지 않고 upsert
+
+raw XML, JSONL, geocoding cache, SQL chunk 같은 파일은 로컬 파이프라인 산출물입니다. git에 커밋하지 않으며, 운영 수집 job이 같은 역할을 대체하면 삭제해도 됩니다.
