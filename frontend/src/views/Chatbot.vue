@@ -74,16 +74,18 @@
                 </span>
               </div>
               <p v-if="card.summary" class="mt-2 text-xs leading-5 text-slate-600">{{ card.summary }}</p>
-              <dl v-if="analysisMetricEntries(card).length" class="mt-3 grid grid-cols-2 gap-2">
-                <div
-                  v-for="metric in analysisMetricEntries(card)"
-                  :key="metric.key"
-                  class="rounded-md border border-slate-100 bg-slate-50 px-2 py-2"
-                >
-                  <dt class="text-[11px] font-bold text-slate-500">{{ metric.label }}</dt>
-                  <dd class="mt-1 text-xs font-black text-slate-900">{{ metric.value }}</dd>
-                </div>
-              </dl>
+              <template v-for="metricEntries in [analysisMetricEntries(card)]" :key="`${card.type}-${card.title}-metrics`">
+                <dl v-if="metricEntries.length" class="mt-3 grid grid-cols-2 gap-2">
+                  <div
+                    v-for="metric in metricEntries"
+                    :key="metric.key"
+                    class="rounded-md border border-slate-100 bg-slate-50 px-2 py-2"
+                  >
+                    <dt class="text-[11px] font-bold text-slate-500">{{ metric.label }}</dt>
+                    <dd class="mt-1 text-xs font-black text-slate-900">{{ metric.value }}</dd>
+                  </div>
+                </dl>
+              </template>
             </article>
           </div>
         </article>
