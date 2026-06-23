@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from typing import Any
 
@@ -10,11 +11,26 @@ from app.rag.prompts import build_legal_rag_prompt, format_legal_context
 
 HttpPost = Callable[..., httpx.Response]
 
+PROPERTY_CRITERIA_PROMPT = """\
+다음 메시지에서 매물 검색 조건을 JSON으로 추출해줘.
+
+메시지: {message}
+
+아래 필드만 포함해. 언급이 없으면 null로 해:
+- sigungu: 시군구 이름 (예: "관악구", "강남구")
+- dong: 동 이름 (예: "신림동")
+- property_type: ONE_ROOM | OFFICETEL | VILLA | APARTMENT | MULTI_FAMILY
+- transaction_type: MONTHLY_RENT | JEONSE | SALE
+- max_deposit: 최대 보증금 (원 단위, 숫자만)
+- max_monthly_rent: 최대 월세 (원 단위, 숫자만)
+- max_price: 최대 매매가 (원 단위, 숫자만)
+
+JSON만 반환해. 설명 없이.\
+"""
+
 
 class LLMClient:
-    """GMS LLM API boundary.
-
-    Live calls use an OpenAI-compatible chat-completions endpoint. The
+    """Live calls use an OpenAI-compatible chat-completions endpoint. The
     deterministic fallback keeps local development and tests usable when no LLM
     key is configured or the provider is temporarily unavailable.
     """
@@ -34,6 +50,28 @@ class LLMClient:
         self.base_url = configured_base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.http_post = http_post
+
+    def extract_property_criteria(self, message: str) -> dict[str, Any]:
+        prompt = PROPERTY_CRITERIA_PROMPT.format(message=message)
+        try:
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 256,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            text = extract_chat_completion_text(response.json()) or "{}"
+            return json.loads(text)
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+            return {}
 
     def generate_answer(self, state: AgentState) -> str:
         intent = state.get("intent", Intent.FALLBACK)

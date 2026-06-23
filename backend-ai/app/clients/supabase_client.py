@@ -59,6 +59,53 @@ class SupabaseVectorClient:
                 cursor.execute(sql, (vector_literal, vector_literal, top_k))
                 return list(cursor.fetchall())
 
+    def search_properties(self, criteria: dict[str, Any], limit: int = 20) -> list[dict[str, Any]]:
+        conditions = ["is_active = true"]
+        params: list[Any] = []
+
+        field_map = {
+            "sigungu": ("sigungu = %s", "sigungu"),
+            "dong": ("dong = %s", "dong"),
+            "property_type": ("property_type = %s", "property_type"),
+            "transaction_type": ("transaction_type = %s", "transaction_type"),
+        }
+        range_map = {
+            "max_deposit": "deposit <= %s",
+            "max_monthly_rent": "monthly_rent <= %s",
+            "max_price": "price <= %s",
+        }
+
+        for key, (condition, _) in field_map.items():
+            if criteria.get(key):
+                conditions.append(condition)
+                params.append(criteria[key])
+
+        for key, condition in range_map.items():
+            if criteria.get(key) is not None:
+                conditions.append(condition)
+                params.append(criteria[key])
+
+        where_clause = " AND ".join(conditions)
+        sql = f"""
+            SELECT id, title, building_name, address, property_type, transaction_type,
+                   deposit, monthly_rent, price, area_m2, floor, latitude, longitude
+            FROM public.properties
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+            LIMIT %s
+        """
+        params.append(limit)
+
+        with psycopg.connect(
+            self.database_url,
+            row_factory=dict_row,
+            connect_timeout=self.connect_timeout_seconds,
+        ) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("set local statement_timeout = %s", (self.statement_timeout_ms,))
+                cursor.execute(sql, params)
+                return list(cursor.fetchall())
+
     def upsert_legal_document_chunks(self, rows: list[dict[str, Any]]) -> int:
         if not rows:
             return 0

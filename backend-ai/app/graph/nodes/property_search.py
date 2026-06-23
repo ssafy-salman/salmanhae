@@ -1,18 +1,16 @@
-from app.clients.spring_client import SpringClient
+from app.clients.llm_client import LLMClient
+from app.clients.supabase_client import SupabaseVectorClient
 from app.graph.state import AgentState
 
 
 def property_search(state: AgentState) -> AgentState:
-    client = SpringClient()
-    result = client.search_properties(
-        message=state["message"],
-        context=state.get("context", {}),
-    )
+    criteria = LLMClient().extract_property_criteria(state["message"])
+    properties = SupabaseVectorClient().search_properties(criteria)
     return {
         **state,
-        "properties": result["properties"],
+        "properties": properties,
         "tool_results": {
             **state.get("tool_results", {}),
-            "propertySearch": result["meta"],
+            "propertySearch": {"count": len(properties), "criteria": criteria},
         },
     }
