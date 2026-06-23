@@ -102,7 +102,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("set local statement_timeout = %s", (self.statement_timeout_ms,))
+                cursor.execute(f"SET LOCAL statement_timeout = {int(self.statement_timeout_ms)}")
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
 

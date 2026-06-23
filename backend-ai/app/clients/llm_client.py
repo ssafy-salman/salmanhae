@@ -63,7 +63,7 @@ class LLMClient:
                 json={
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 256,
+                    "max_completion_tokens": 256,
                 },
                 timeout=self.timeout_seconds,
             )
