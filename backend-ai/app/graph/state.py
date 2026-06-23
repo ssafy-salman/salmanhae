@@ -21,5 +21,6 @@ class AgentState(TypedDict):
     answer: NotRequired[str]
     properties: NotRequired[list[dict[str, Any]]]
     legal_cards: NotRequired[list[dict[str, Any]]]
+    analysis_cards: NotRequired[list[dict[str, Any]]]
     tool_results: NotRequired[dict[str, Any]]
     next_actions: NotRequired[list[dict[str, Any]]]

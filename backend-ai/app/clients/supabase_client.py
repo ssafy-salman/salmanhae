@@ -1,10 +1,16 @@
 import json
+import math
+import re
 from typing import Any
 
+import httpx
 import psycopg
 from psycopg.rows import dict_row
 
 from app.core.config import get_settings
+
+
+REST_PAGE_SIZE = 1000
 
 
 class SupabaseVectorClient:
@@ -32,6 +38,25 @@ class SupabaseVectorClient:
         self,
         query_embedding: list[float],
         top_k: int = 3,
+    ) -> list[dict[str, Any]]:
+        try:
+            return self._similarity_search_legal_documents_pgvector(
+                query_embedding=query_embedding,
+                top_k=top_k,
+            )
+        except psycopg.OperationalError:
+            settings = get_settings()
+            if settings.app_env.lower() in {"prod", "production"}:
+                raise
+            return self._similarity_search_legal_documents_rest(
+                query_embedding=query_embedding,
+                top_k=top_k,
+            )
+
+    def _similarity_search_legal_documents_pgvector(
+        self,
+        query_embedding: list[float],
+        top_k: int,
     ) -> list[dict[str, Any]]:
         vector_literal = to_pgvector_literal(query_embedding)
         sql = """
@@ -105,6 +130,60 @@ class SupabaseVectorClient:
                 cursor.execute(f"SET LOCAL statement_timeout = {int(self.statement_timeout_ms)}")
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
+
+    def _similarity_search_legal_documents_rest(
+        self,
+        query_embedding: list[float],
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        settings = get_settings()
+        project_ref = supabase_project_ref(settings.supabase_db_url)
+        if not project_ref or not settings.supabase_service_role_key:
+            raise RuntimeError("Supabase REST fallback is not configured.")
+
+        url = f"https://{project_ref}.supabase.co/rest/v1/legal_document_chunks"
+        headers = {
+            "apikey": settings.supabase_service_role_key,
+            "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        }
+        rows: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = httpx.get(
+                url,
+                headers=headers,
+                params={
+                    "select": "law_name,article_no,article_title,content,embedding",
+                    "embedding": "not.is.null",
+                    "limit": str(REST_PAGE_SIZE),
+                    "offset": str(offset),
+                },
+                timeout=self.connect_timeout_seconds + 10,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list) or not payload:
+                break
+
+            for row in payload:
+                if not isinstance(row, dict):
+                    continue
+                embedding = parse_pgvector_value(row.get("embedding"))
+                if not embedding:
+                    continue
+                rows.append(
+                    {
+                        "law_name": row["law_name"],
+                        "article_no": row["article_no"],
+                        "article_title": row["article_title"],
+                        "content": row["content"],
+                        "score": cosine_similarity(query_embedding, embedding),
+                    }
+                )
+            if len(payload) < REST_PAGE_SIZE:
+                break
+            offset += REST_PAGE_SIZE
+        return sorted(rows, key=lambda item: item["score"], reverse=True)[:top_k]
 
     def upsert_legal_document_chunks(self, rows: list[dict[str, Any]]) -> int:
         if not rows:
@@ -187,6 +266,53 @@ def to_pgvector_literal(embedding: list[float]) -> str:
     if not embedding:
         raise ValueError("query_embedding must not be empty.")
     return "[" + ",".join(f"{float(value):.10g}" for value in embedding) + "]"
+
+
+def supabase_project_ref(database_url: str) -> str | None:
+    match = re.search(r"postgres(?:ql)?://([^:]+):[^@]+@", database_url)
+    if not match:
+        return None
+    username = match.group(1)
+    if "." not in username:
+        return None
+    return username.split(".", 1)[1]
+
+
+def parse_pgvector_value(value: Any) -> list[float]:
+    if isinstance(value, list):
+        return [parsed for item in value if (parsed := parse_float_value(item)) is not None]
+    if not isinstance(value, str):
+        return []
+    stripped = value.strip()
+    if not stripped.startswith("[") or not stripped.endswith("]"):
+        return []
+    body = stripped[1:-1].strip()
+    if not body:
+        return []
+    return [
+        parsed
+        for item in body.split(",")
+        if item.strip()
+        if (parsed := parse_float_value(item.strip())) is not None
+    ]
+
+
+def parse_float_value(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def cosine_similarity(left: list[float], right: list[float]) -> float:
+    if not left or not right or len(left) != len(right):
+        return 0.0
+    dot = sum(a * b for a, b in zip(left, right, strict=True))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm == 0 or right_norm == 0:
+        return 0.0
+    return dot / (left_norm * right_norm)
 
 
 def legal_chunk_upsert_params(row: dict[str, Any]) -> dict[str, Any]:

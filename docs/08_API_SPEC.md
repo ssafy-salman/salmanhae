@@ -280,6 +280,7 @@ GET /api/v1/properties/{propertyId}/transactions?years=3
         "contractYearMonth": "2026-05",
         "deposit": 10000000,
         "monthlyRent": 520000,
+        "price": null,
         "areaM2": 21.8,
         "floor": 2
       }
@@ -304,6 +305,7 @@ GET /api/v1/properties/{propertyId}/safety-summary?radius=500
     "propertyId": 1,
     "radius": 500,
     "safetyScore": 78,
+    "priceScore": 64,
     "cctvCount300m": 8,
     "bellCount300m": 2,
     "lightCount300m": 14,
@@ -355,9 +357,16 @@ Authorization: Bearer {token}
 ```json
 {
   "message": "관악구 보증금 5천 이하 원룸 추천해줘",
-  "sessionId": null
+  "sessionId": null,
+  "selectedPropertyId": null
 }
 ```
+
+| 필드 | 필수 | 설명 |
+| --- | --- | --- |
+| `message` | ✅ | 사용자 질문 |
+| `sessionId` | — | 대화 세션 ID. MVP에서는 `null` 허용 |
+| `selectedPropertyId` | — | 지도/매물 상세에서 선택한 매물 ID. 시세·안전 분석 질문에서 사용 |
 
 **Response**
 ```json
@@ -377,7 +386,8 @@ Authorization: Bearer {token}
         "longitude": 126.936456
       }
     ],
-    "legalCards": []
+    "legalCards": [],
+    "analysisCards": []
   },
   "message": "OK"
 }
@@ -398,6 +408,32 @@ Authorization: Bearer {token}
         "title": "보증금의 회수",
         "content": "확정일자를 갖춘 임차인은 경매 또는 공매 시 후순위권리자보다 우선하여 보증금을 변제받을 수 있습니다.",
         "score": 0.86
+      }
+    ],
+    "analysisCards": []
+  },
+  "message": "OK"
+}
+```
+
+**Response — 시세·안전 분석**
+```json
+{
+  "data": {
+    "intent": "PRICE_ANALYSIS",
+    "message": "선택한 매물의 실거래가를 기준으로 시세를 분석했습니다.",
+    "sessionId": null,
+    "properties": [],
+    "legalCards": [],
+    "analysisCards": [
+      {
+        "type": "PRICE",
+        "title": "시세 분석",
+        "summary": "주변 실거래가 대비 가격 적정성을 확인했습니다.",
+        "score": null,
+        "metrics": {
+          "selectedPropertyId": "1"
+        }
       }
     ]
   },
@@ -536,6 +572,54 @@ Authorization: Bearer {token}
 ### 지역 시세 분석
 ```http
 GET /api/v1/price-analysis?legalDongCode=1162010200&propertyType=ONE_ROOM&transactionType=MONTHLY_RENT
+```
+
+**Response**
+```json
+{
+  "data": {
+    "legalDongCode": "1162010200",
+    "propertyType": "ONE_ROOM",
+    "transactionType": "MONTHLY_RENT",
+    "regionStats": [
+      {
+        "regionLevel": "DONG",
+        "regionCode": "1162010200",
+        "sido": "서울특별시",
+        "sigungu": "관악구",
+        "dong": "대학동",
+        "avgDeposit": 10500000,
+        "medianDeposit": 10000000,
+        "avgMonthlyRent": 520000,
+        "medianMonthlyRent": 520000,
+        "avgPrice": null,
+        "medianPrice": null,
+        "transactionCount": 3,
+        "sampleFromYm": "2026-03",
+        "sampleToYm": "2026-05"
+      }
+    ],
+    "buildingStats": [
+      {
+        "buildingKey": "1162010200:ONE_ROOM:그린빌:12-3",
+        "buildingName": "그린빌",
+        "sido": "서울특별시",
+        "sigungu": "관악구",
+        "dong": "대학동",
+        "avgDeposit": 11000000,
+        "medianDeposit": 11000000,
+        "avgMonthlyRent": 510000,
+        "medianMonthlyRent": 510000,
+        "avgPrice": null,
+        "medianPrice": null,
+        "transactionCount": 2,
+        "sampleFromYm": "2026-04",
+        "sampleToYm": "2026-05"
+      }
+    ]
+  },
+  "message": "OK"
+}
 ```
 
 ---

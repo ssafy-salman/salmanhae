@@ -9,10 +9,16 @@ data/raw/
 data/seed/
 data/pipeline/
 data/cache/
+data/legal/
 data/output/
 !data/reference/
 !data/reference/*.example.csv
 !data/**/README.md
+
+# Local run logs
+run-logs/
+.codex/run-logs/
+.tmp/
 
 # Generated SQL seed artifacts
 database/seed/

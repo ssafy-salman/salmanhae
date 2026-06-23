@@ -11,6 +11,10 @@ class Settings(BaseSettings):
         default="http://localhost:8080",
         alias="SPRING_API_BASE_URL",
     )
+    spring_api_timeout_seconds: float = Field(
+        default=5.0,
+        alias="SPRING_API_TIMEOUT_SECONDS",
+    )
     supabase_db_url: str = Field(
         default="postgresql://user:password@host:5432/postgres",
         alias="SUPABASE_DB_URL",

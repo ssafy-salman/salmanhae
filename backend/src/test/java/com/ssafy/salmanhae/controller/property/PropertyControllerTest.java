@@ -123,4 +123,66 @@ class PropertyControllerTest {
 				.andExpect(jsonPath("$.code").value("PROPERTY_NOT_FOUND"))
 				.andExpect(jsonPath("$.status").value(404));
 	}
+
+	@Test
+	void getPropertyTransactionsReturnsComparableRows() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/transactions", 1)
+						.param("years", "3"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.message").value("OK"))
+				.andExpect(jsonPath("$.data.totalCount").value(3))
+				.andExpect(jsonPath("$.data.items", hasSize(3)))
+				.andExpect(jsonPath("$.data.items[0].contractYearMonth").value("2026-05"))
+				.andExpect(jsonPath("$.data.items[0].deposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].monthlyRent").value(520000))
+				.andExpect(jsonPath("$.data.items[0].areaM2").value(21.80));
+	}
+
+	@Test
+	void getPropertyTransactionsReturnsNotFoundForMissingProperty() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/transactions", 999))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("PROPERTY_NOT_FOUND"));
+	}
+
+	@Test
+	void getPropertyTransactionsRejectsInvalidYearsAtController() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/transactions", 1)
+						.param("years", "0"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
+	void getPropertySafetySummaryReturnsPrecomputedScore() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 1)
+						.param("radius", "500"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.message").value("OK"))
+				.andExpect(jsonPath("$.data.propertyId").value(1))
+				.andExpect(jsonPath("$.data.radius").value(500))
+				.andExpect(jsonPath("$.data.safetyScore").value(78))
+				.andExpect(jsonPath("$.data.priceScore").value(64))
+				.andExpect(jsonPath("$.data.cctvCount300m").value(8))
+				.andExpect(jsonPath("$.data.bellCount300m").value(2))
+				.andExpect(jsonPath("$.data.lightCount300m").value(14))
+				.andExpect(jsonPath("$.data.policeCount500m").value(1));
+	}
+
+	@Test
+	void getPropertySafetySummaryReturnsNotFoundForMissingProperty() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 999))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("PROPERTY_NOT_FOUND"));
+	}
+
+	@Test
+	void getPropertySafetySummaryRejectsUnsupportedRadius() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 1)
+						.param("radius", "400"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
 }

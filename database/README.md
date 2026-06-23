@@ -11,6 +11,7 @@ Run migrations in numeric order:
 2. `migrations/202606220001_create_legal_document_chunks.sql`
 3. `migrations/202606230001_create_price_stats.sql`
 4. `migrations/202606230002_cleanup_region_price_stat_codes.sql`
+5. `migrations/202606230003_create_property_score_stat.sql`
 
 ## Data Loading Policy
 
@@ -27,6 +28,7 @@ The pipeline upserts into:
 - `transaction_history`
 - `region_price_stat`
 - `building_price_stat`
+- `property_score_stat`
 - `properties`
 
 It does not truncate existing rows by default. It accumulates and updates rows
