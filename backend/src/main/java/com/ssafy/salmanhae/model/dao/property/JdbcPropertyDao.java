@@ -2,6 +2,7 @@ package com.ssafy.salmanhae.model.dao.property;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,13 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ssafy.salmanhae.model.dto.property.BuildingPriceStatResponse;
+import com.ssafy.salmanhae.model.dto.property.PropertySafetySummaryResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyRow;
 import com.ssafy.salmanhae.model.dto.property.PropertySearchCriteria;
+import com.ssafy.salmanhae.model.dto.property.PropertyTransactionResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyType;
+import com.ssafy.salmanhae.model.dto.property.RegionPriceStatResponse;
 import com.ssafy.salmanhae.model.dto.property.TransactionType;
 
 @Repository
@@ -90,8 +95,164 @@ public class JdbcPropertyDao implements PropertyDao {
 		return rows.stream().findFirst();
 	}
 
+	@Override
+	public List<PropertyTransactionResponse> findComparableTransactions(PropertyRow property, String minContractYearMonth) {
+		String sql = """
+				SELECT transaction_type, contract_year_month, deposit, monthly_rent, price, area_m2, floor,
+				       CASE WHEN building_key = :buildingKey THEN 0 ELSE 1 END AS match_rank
+				FROM transaction_history
+				WHERE contract_year_month >= :minContractYearMonth
+				  AND transaction_type = :transactionType
+				  AND property_type = :propertyType
+				  AND (
+				        building_key = :buildingKey
+				        OR (
+				             legal_dong_code = :legalDongCode
+				             AND area_m2 BETWEEN :minAreaM2 AND :maxAreaM2
+				        )
+				  )
+				ORDER BY match_rank ASC, contract_year_month DESC, contract_day DESC NULLS LAST, id DESC
+				LIMIT 20
+				""";
+		BigDecimal areaM2 = property.areaM2();
+		Map<String, Object> params = Map.of(
+				"buildingKey", property.buildingKey(),
+				"minContractYearMonth", minContractYearMonth,
+				"transactionType", property.transactionType().name(),
+				"propertyType", property.propertyType().name(),
+				"legalDongCode", property.legalDongCode(),
+				"minAreaM2", areaM2.subtract(BigDecimal.TEN),
+				"maxAreaM2", areaM2.add(BigDecimal.TEN)
+		);
+		return jdbcTemplate.query(sql, params, propertyTransactionMapper());
+	}
+
+	@Override
+	public Optional<PropertySafetySummaryResponse> findSafetySummary(Long propertyId, Integer radius) {
+		String sql = """
+				SELECT property_id, safety_score, price_score, cctv_count_300m, bell_count_300m,
+				       light_count_300m, police_count_500m
+				FROM property_score_stat
+				WHERE property_id = :propertyId
+				""";
+		List<PropertySafetySummaryResponse> rows = jdbcTemplate.query(
+				sql,
+				Map.of("propertyId", propertyId),
+				(rs, rowNum) -> new PropertySafetySummaryResponse(
+						rs.getLong("property_id"),
+						radius,
+						nullableInteger(rs, "safety_score"),
+						nullableInteger(rs, "price_score"),
+						nullableInteger(rs, "cctv_count_300m"),
+						nullableInteger(rs, "bell_count_300m"),
+						nullableInteger(rs, "light_count_300m"),
+						nullableInteger(rs, "police_count_500m")
+				)
+		);
+		return rows.stream().findFirst();
+	}
+
+	@Override
+	public List<RegionPriceStatResponse> findRegionPriceStats(
+			String legalDongCode,
+			PropertyType propertyType,
+			TransactionType transactionType
+	) {
+		String sql = """
+				SELECT region_level, region_code, sido, sigungu, dong, avg_deposit, median_deposit,
+				       avg_monthly_rent, median_monthly_rent, avg_price, median_price,
+				       transaction_count, sample_from_ym, sample_to_ym
+				FROM region_price_stat
+				WHERE region_code = :legalDongCode
+				  AND property_type = :propertyType
+				  AND transaction_type = :transactionType
+				ORDER BY region_level, region_code
+				""";
+		Map<String, Object> params = Map.of(
+				"legalDongCode", legalDongCode,
+				"propertyType", propertyType.name(),
+				"transactionType", transactionType.name()
+		);
+		return jdbcTemplate.query(sql, params, regionPriceStatMapper());
+	}
+
+	@Override
+	public List<BuildingPriceStatResponse> findBuildingPriceStats(
+			String legalDongCode,
+			PropertyType propertyType,
+			TransactionType transactionType
+	) {
+		String sql = """
+				SELECT building_key, building_name, sido, sigungu, dong, avg_deposit, median_deposit,
+				       avg_monthly_rent, median_monthly_rent, avg_price, median_price,
+				       transaction_count, sample_from_ym, sample_to_ym
+				FROM building_price_stat
+				WHERE legal_dong_code = :legalDongCode
+				  AND property_type = :propertyType
+				  AND transaction_type = :transactionType
+				ORDER BY transaction_count DESC, building_key ASC
+				LIMIT 20
+				""";
+		Map<String, Object> params = Map.of(
+				"legalDongCode", legalDongCode,
+				"propertyType", propertyType.name(),
+				"transactionType", transactionType.name()
+		);
+		return jdbcTemplate.query(sql, params, buildingPriceStatMapper());
+	}
+
 	private RowMapper<PropertyRow> propertyRowMapper() {
 		return (rs, rowNum) -> mapPropertyRow(rs);
+	}
+
+	private RowMapper<PropertyTransactionResponse> propertyTransactionMapper() {
+		return (rs, rowNum) -> new PropertyTransactionResponse(
+				TransactionType.valueOf(rs.getString("transaction_type")),
+				formatYearMonth(rs.getString("contract_year_month")),
+				nullableLong(rs, "deposit"),
+				nullableLong(rs, "monthly_rent"),
+				nullableLong(rs, "price"),
+				rs.getBigDecimal("area_m2"),
+				nullableInteger(rs, "floor")
+		);
+	}
+
+	private RowMapper<RegionPriceStatResponse> regionPriceStatMapper() {
+		return (rs, rowNum) -> new RegionPriceStatResponse(
+				rs.getString("region_level"),
+				rs.getString("region_code"),
+				rs.getString("sido"),
+				rs.getString("sigungu"),
+				rs.getString("dong"),
+				nullableLong(rs, "avg_deposit"),
+				nullableLong(rs, "median_deposit"),
+				nullableLong(rs, "avg_monthly_rent"),
+				nullableLong(rs, "median_monthly_rent"),
+				nullableLong(rs, "avg_price"),
+				nullableLong(rs, "median_price"),
+				nullableInteger(rs, "transaction_count"),
+				formatYearMonth(rs.getString("sample_from_ym")),
+				formatYearMonth(rs.getString("sample_to_ym"))
+		);
+	}
+
+	private RowMapper<BuildingPriceStatResponse> buildingPriceStatMapper() {
+		return (rs, rowNum) -> new BuildingPriceStatResponse(
+				rs.getString("building_key"),
+				rs.getString("building_name"),
+				rs.getString("sido"),
+				rs.getString("sigungu"),
+				rs.getString("dong"),
+				nullableLong(rs, "avg_deposit"),
+				nullableLong(rs, "median_deposit"),
+				nullableLong(rs, "avg_monthly_rent"),
+				nullableLong(rs, "median_monthly_rent"),
+				nullableLong(rs, "avg_price"),
+				nullableLong(rs, "median_price"),
+				nullableInteger(rs, "transaction_count"),
+				formatYearMonth(rs.getString("sample_from_ym")),
+				formatYearMonth(rs.getString("sample_to_ym"))
+		);
 	}
 
 	private PropertyRow mapPropertyRow(ResultSet rs) throws SQLException {
@@ -126,5 +287,12 @@ public class JdbcPropertyDao implements PropertyDao {
 	private Integer nullableInteger(ResultSet rs, String column) throws SQLException {
 		int value = rs.getInt(column);
 		return rs.wasNull() ? null : value;
+	}
+
+	private String formatYearMonth(String yearMonth) {
+		if (yearMonth == null || yearMonth.length() != 6) {
+			return yearMonth;
+		}
+		return yearMonth.substring(0, 4) + "-" + yearMonth.substring(4);
 	}
 }

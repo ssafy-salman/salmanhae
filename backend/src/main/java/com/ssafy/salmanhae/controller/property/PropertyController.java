@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ssafy.salmanhae.common.response.ApiResponse;
 import com.ssafy.salmanhae.common.response.ListResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyDetailResponse;
+import com.ssafy.salmanhae.model.dto.property.PropertySafetySummaryResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertySearchCriteria;
 import com.ssafy.salmanhae.model.dto.property.PropertySummaryResponse;
+import com.ssafy.salmanhae.model.dto.property.PropertyTransactionResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyType;
 import com.ssafy.salmanhae.model.dto.property.TransactionType;
 import com.ssafy.salmanhae.service.property.PropertyService;
@@ -61,5 +63,21 @@ public class PropertyController {
 	@GetMapping("/{propertyId}")
 	public ApiResponse<PropertyDetailResponse> getProperty(@PathVariable Long propertyId) {
 		return ApiResponse.ok(propertyService.getProperty(propertyId));
+	}
+
+	@GetMapping("/{propertyId}/transactions")
+	public ApiResponse<ListResponse<PropertyTransactionResponse>> getPropertyTransactions(
+			@PathVariable Long propertyId,
+			@RequestParam(required = false) Integer years
+	) {
+		return ApiResponse.ok(ListResponse.from(propertyService.getTransactions(propertyId, years)));
+	}
+
+	@GetMapping("/{propertyId}/safety-summary")
+	public ApiResponse<PropertySafetySummaryResponse> getPropertySafetySummary(
+			@PathVariable Long propertyId,
+			@RequestParam(required = false) Integer radius
+	) {
+		return ApiResponse.ok(propertyService.getSafetySummary(propertyId, radius));
 	}
 }

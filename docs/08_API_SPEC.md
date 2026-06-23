@@ -280,6 +280,7 @@ GET /api/v1/properties/{propertyId}/transactions?years=3
         "contractYearMonth": "2026-05",
         "deposit": 10000000,
         "monthlyRent": 520000,
+        "price": null,
         "areaM2": 21.8,
         "floor": 2
       }
@@ -304,6 +305,7 @@ GET /api/v1/properties/{propertyId}/safety-summary?radius=500
     "propertyId": 1,
     "radius": 500,
     "safetyScore": 78,
+    "priceScore": 64,
     "cctvCount300m": 8,
     "bellCount300m": 2,
     "lightCount300m": 14,
@@ -570,6 +572,54 @@ Authorization: Bearer {token}
 ### 지역 시세 분석
 ```http
 GET /api/v1/price-analysis?legalDongCode=1162010200&propertyType=ONE_ROOM&transactionType=MONTHLY_RENT
+```
+
+**Response**
+```json
+{
+  "data": {
+    "legalDongCode": "1162010200",
+    "propertyType": "ONE_ROOM",
+    "transactionType": "MONTHLY_RENT",
+    "regionStats": [
+      {
+        "regionLevel": "DONG",
+        "regionCode": "1162010200",
+        "sido": "서울특별시",
+        "sigungu": "관악구",
+        "dong": "대학동",
+        "avgDeposit": 10500000,
+        "medianDeposit": 10000000,
+        "avgMonthlyRent": 520000,
+        "medianMonthlyRent": 520000,
+        "avgPrice": null,
+        "medianPrice": null,
+        "transactionCount": 3,
+        "sampleFromYm": "2026-03",
+        "sampleToYm": "2026-05"
+      }
+    ],
+    "buildingStats": [
+      {
+        "buildingKey": "1162010200:ONE_ROOM:그린빌:12-3",
+        "buildingName": "그린빌",
+        "sido": "서울특별시",
+        "sigungu": "관악구",
+        "dong": "대학동",
+        "avgDeposit": 11000000,
+        "medianDeposit": 11000000,
+        "avgMonthlyRent": 510000,
+        "medianMonthlyRent": 510000,
+        "avgPrice": null,
+        "medianPrice": null,
+        "transactionCount": 2,
+        "sampleFromYm": "2026-04",
+        "sampleToYm": "2026-05"
+      }
+    ]
+  },
+  "message": "OK"
+}
 ```
 
 ---
