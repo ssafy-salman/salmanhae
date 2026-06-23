@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from app.clients import supabase_client as supabase_module
@@ -171,16 +173,20 @@ def test_supabase_vector_client_sets_connection_and_statement_timeouts(
 def test_parse_pgvector_value_supports_postgrest_vector_strings() -> None:
     assert parse_pgvector_value("[0.1,0.2,-0.3]") == [0.1, 0.2, -0.3]
     assert parse_pgvector_value([1, "2.5"]) == [1.0, 2.5]
+    assert parse_pgvector_value("[0.1,broken,0.3]") == [0.1, 0.3]
 
 
 def test_supabase_vector_client_falls_back_to_rest_when_pg_is_unreachable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("TEST_SUPABASE_DB_URL", "unused-test-db-url")
+    monkeypatch.setenv("TEST_SUPABASE_SERVICE_ROLE_KEY", "unused-test-service-role-key")
+
     class FakeSettings:
-        supabase_db_url = "postgresql://postgres.project-ref:secret@host:6543/postgres"
+        supabase_db_url = os.environ["TEST_SUPABASE_DB_URL"]
         supabase_connect_timeout_seconds = 1
         supabase_statement_timeout_ms = 1000
-        supabase_service_role_key = "service-key"
+        supabase_service_role_key = os.environ["TEST_SUPABASE_SERVICE_ROLE_KEY"]
 
     class FakeResponse:
         def raise_for_status(self) -> None:
@@ -215,6 +221,7 @@ def test_supabase_vector_client_falls_back_to_rest_when_pg_is_unreachable(
         return FakeResponse()
 
     monkeypatch.setattr(supabase_module, "get_settings", lambda: FakeSettings())
+    monkeypatch.setattr(supabase_module, "supabase_project_ref", lambda database_url: "project-ref")
     monkeypatch.setattr(supabase_module.psycopg, "connect", fake_connect)
     monkeypatch.setattr(supabase_module.httpx, "get", fake_get)
 

@@ -10,6 +10,9 @@ from psycopg.rows import dict_row
 from app.core.config import get_settings
 
 
+REST_PAGE_SIZE = 1000
+
+
 class SupabaseVectorClient:
     """Client boundary for Supabase PostgreSQL + pgvector legal search."""
 
@@ -89,37 +92,47 @@ class SupabaseVectorClient:
             raise RuntimeError("Supabase REST fallback is not configured.")
 
         url = f"https://{project_ref}.supabase.co/rest/v1/legal_document_chunks"
-        response = httpx.get(
-            url,
-            headers={
-                "apikey": settings.supabase_service_role_key,
-                "Authorization": f"Bearer {settings.supabase_service_role_key}",
-            },
-            params={
-                "select": "law_name,article_no,article_title,content,embedding",
-                "embedding": "not.is.null",
-                "limit": "1000",
-            },
-            timeout=self.connect_timeout_seconds + 10,
-        )
-        response.raise_for_status()
-
+        headers = {
+            "apikey": settings.supabase_service_role_key,
+            "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        }
         rows: list[dict[str, Any]] = []
-        for row in response.json():
-            if not isinstance(row, dict):
-                continue
-            embedding = parse_pgvector_value(row.get("embedding"))
-            if not embedding:
-                continue
-            rows.append(
-                {
-                    "law_name": row["law_name"],
-                    "article_no": row["article_no"],
-                    "article_title": row["article_title"],
-                    "content": row["content"],
-                    "score": cosine_similarity(query_embedding, embedding),
-                }
+        offset = 0
+        while True:
+            response = httpx.get(
+                url,
+                headers=headers,
+                params={
+                    "select": "law_name,article_no,article_title,content,embedding",
+                    "embedding": "not.is.null",
+                    "limit": str(REST_PAGE_SIZE),
+                    "offset": str(offset),
+                },
+                timeout=self.connect_timeout_seconds + 10,
             )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list) or not payload:
+                break
+
+            for row in payload:
+                if not isinstance(row, dict):
+                    continue
+                embedding = parse_pgvector_value(row.get("embedding"))
+                if not embedding:
+                    continue
+                rows.append(
+                    {
+                        "law_name": row["law_name"],
+                        "article_no": row["article_no"],
+                        "article_title": row["article_title"],
+                        "content": row["content"],
+                        "score": cosine_similarity(query_embedding, embedding),
+                    }
+                )
+            if len(payload) < REST_PAGE_SIZE:
+                break
+            offset += REST_PAGE_SIZE
         return sorted(rows, key=lambda item: item["score"], reverse=True)[:top_k]
 
     def upsert_legal_document_chunks(self, rows: list[dict[str, Any]]) -> int:
@@ -217,7 +230,7 @@ def supabase_project_ref(database_url: str) -> str | None:
 
 def parse_pgvector_value(value: Any) -> list[float]:
     if isinstance(value, list):
-        return [float(item) for item in value]
+        return [parsed for item in value if (parsed := parse_float_value(item)) is not None]
     if not isinstance(value, str):
         return []
     stripped = value.strip()
@@ -226,7 +239,19 @@ def parse_pgvector_value(value: Any) -> list[float]:
     body = stripped[1:-1].strip()
     if not body:
         return []
-    return [float(item.strip()) for item in body.split(",") if item.strip()]
+    return [
+        parsed
+        for item in body.split(",")
+        if item.strip()
+        if (parsed := parse_float_value(item.strip())) is not None
+    ]
+
+
+def parse_float_value(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
