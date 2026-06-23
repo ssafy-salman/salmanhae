@@ -51,6 +51,41 @@
               <p class="mt-2 text-xs leading-5 text-slate-600">{{ card.content }}</p>
             </article>
           </div>
+
+          <div v-if="message.analysisCards?.length" class="mt-3 space-y-2">
+            <article
+              v-for="card in message.analysisCards"
+              :key="`${card.type}-${card.title}`"
+              class="rounded-lg border border-slate-200 bg-white p-3 text-slate-800"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-black tracking-normal text-brand-dark">{{ analysisLabel(card.type) }}</p>
+                  <h3 class="mt-1 text-sm font-black text-slate-900">{{ card.title || analysisTitle(card.type) }}</h3>
+                </div>
+                <span
+                  v-if="card.score !== null"
+                  :class="[
+                    'shrink-0 rounded-md px-2 py-1 text-[11px] font-black',
+                    card.type === 'SAFETY' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                  ]"
+                >
+                  {{ card.score }}점
+                </span>
+              </div>
+              <p v-if="card.summary" class="mt-2 text-xs leading-5 text-slate-600">{{ card.summary }}</p>
+              <dl v-if="analysisMetricEntries(card).length" class="mt-3 grid grid-cols-2 gap-2">
+                <div
+                  v-for="metric in analysisMetricEntries(card)"
+                  :key="metric.key"
+                  class="rounded-md border border-slate-100 bg-slate-50 px-2 py-2"
+                >
+                  <dt class="text-[11px] font-bold text-slate-500">{{ metric.label }}</dt>
+                  <dd class="mt-1 text-xs font-black text-slate-900">{{ metric.value }}</dd>
+                </div>
+              </dl>
+            </article>
+          </div>
         </article>
       </div>
 
@@ -108,6 +143,75 @@ const quickQuestions = [
   '전세 보증금을 돌려받으려면 어떤 순서를 확인해야 하나요?',
   '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?'
 ]
+
+const analysisLabels = {
+  PRICE: 'PRICE ANALYSIS',
+  SAFETY: 'SAFETY ANALYSIS'
+}
+
+const analysisTitles = {
+  PRICE: '시세 분석',
+  SAFETY: '안전 분석'
+}
+
+const metricLabels = {
+  selectedPropertyId: '선택 매물',
+  comparableTransactionCount: '실거래',
+  regionStatCount: '지역 통계',
+  buildingStatCount: '건물 통계',
+  avgDeposit: '평균 보증금',
+  avgMonthlyRent: '평균 월세',
+  avgSalePrice: '평균 매매가',
+  radius: '반경',
+  safetyScore: '안전 점수',
+  cctvCount300m: 'CCTV',
+  bellCount300m: '비상벨',
+  lightCount300m: '보안등',
+  policeCount500m: '파출소'
+}
+
+const metricOrder = [
+  'comparableTransactionCount',
+  'avgDeposit',
+  'avgMonthlyRent',
+  'avgSalePrice',
+  'radius',
+  'safetyScore',
+  'cctvCount300m',
+  'bellCount300m',
+  'lightCount300m',
+  'policeCount500m'
+]
+
+const analysisLabel = (type) => analysisLabels[type] || 'ANALYSIS'
+const analysisTitle = (type) => analysisTitles[type] || '분석 결과'
+
+const formatWon = (value) => {
+  const numberValue = Number(value)
+  if (!Number.isFinite(numberValue)) return String(value)
+  return `${numberValue.toLocaleString()}원`
+}
+
+const formatMetricValue = (key, value) => {
+  if (['avgDeposit', 'avgMonthlyRent', 'avgSalePrice'].includes(key)) return formatWon(value)
+  if (key === 'radius') return `${value}m`
+  if (key === 'safetyScore') return `${value}점`
+  if (key === 'comparableTransactionCount' || key === 'regionStatCount' || key === 'buildingStatCount') return `${value}건`
+  if (['cctvCount300m', 'bellCount300m', 'lightCount300m', 'policeCount500m'].includes(key)) return `${value}개`
+  return String(value)
+}
+
+const analysisMetricEntries = (card) => {
+  const metrics = card?.metrics && typeof card.metrics === 'object' ? card.metrics : {}
+  return metricOrder
+    .filter((key) => metrics[key] !== null && metrics[key] !== undefined && metrics[key] !== '')
+    .slice(0, 4)
+    .map((key) => ({
+      key,
+      label: metricLabels[key] || key,
+      value: formatMetricValue(key, metrics[key])
+    }))
+}
 
 const scrollToBottom = async () => {
   await nextTick()
