@@ -391,17 +391,17 @@ Authorization: Bearer {token}
       {
         "id": 1,
         "title": "대학동 그린빌",
-        "buildingName": "대학동 그린빌",
+        "building_name": "대학동 그린빌",
         "address": "서울특별시 관악구 대학동 123",
-        "propertyType": "ONE_ROOM",
-        "transactionType": "MONTHLY_RENT",
+        "property_type": "ONE_ROOM",
+        "transaction_type": "MONTHLY_RENT",
         "deposit": 5000000,
-        "monthlyRent": 480000,
+        "monthly_rent": 480000,
         "price": null,
-        "areaM2": "23.14",
+        "area_m2": "23.14",
         "floor": 3,
-        "latitude": 37.470123,
-        "longitude": 126.936456
+        "latitude": "37.470123",
+        "longitude": "126.936456"
       }
     ],
     "legalCards": [],
