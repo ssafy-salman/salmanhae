@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import jakarta.validation.ConstraintViolationException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -19,7 +21,8 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler({
 			MissingServletRequestParameterException.class,
-			MethodArgumentTypeMismatchException.class
+			MethodArgumentTypeMismatchException.class,
+			ConstraintViolationException.class
 	})
 	public ResponseEntity<ErrorResponse> handleBadRequest(Exception exception) {
 		return ResponseEntity

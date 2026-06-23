@@ -39,4 +39,15 @@ class PriceAnalysisControllerTest {
 				.andExpect(jsonPath("$.data.buildingStats[0].buildingKey").value("1162010200:ONE_ROOM:그린빌:12-3"))
 				.andExpect(jsonPath("$.data.buildingStats[0].medianDeposit").value(11000000));
 	}
+
+	@Test
+	void getPriceAnalysisRejectsBlankLegalDongCodeAtController() throws Exception {
+		mockMvc.perform(get("/api/v1/price-analysis")
+						.param("legalDongCode", "")
+						.param("propertyType", "ONE_ROOM")
+						.param("transactionType", "MONTHLY_RENT"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
 }

@@ -19,9 +19,15 @@ import com.ssafy.salmanhae.model.dto.property.PropertyTransactionResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyType;
 import com.ssafy.salmanhae.model.dto.property.TransactionType;
 import com.ssafy.salmanhae.service.property.PropertyService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/api/v1/properties")
+@Validated
 public class PropertyController {
 
 	private final PropertyService propertyService;
@@ -61,22 +67,22 @@ public class PropertyController {
 	}
 
 	@GetMapping("/{propertyId}")
-	public ApiResponse<PropertyDetailResponse> getProperty(@PathVariable Long propertyId) {
+	public ApiResponse<PropertyDetailResponse> getProperty(@PathVariable @NotNull @Positive Long propertyId) {
 		return ApiResponse.ok(propertyService.getProperty(propertyId));
 	}
 
 	@GetMapping("/{propertyId}/transactions")
 	public ApiResponse<ListResponse<PropertyTransactionResponse>> getPropertyTransactions(
-			@PathVariable Long propertyId,
-			@RequestParam(required = false) Integer years
+			@PathVariable @NotNull @Positive Long propertyId,
+			@RequestParam(required = false) @Min(1) @Max(10) Integer years
 	) {
 		return ApiResponse.ok(ListResponse.from(propertyService.getTransactions(propertyId, years)));
 	}
 
 	@GetMapping("/{propertyId}/safety-summary")
 	public ApiResponse<PropertySafetySummaryResponse> getPropertySafetySummary(
-			@PathVariable Long propertyId,
-			@RequestParam(required = false) Integer radius
+			@PathVariable @NotNull @Positive Long propertyId,
+			@RequestParam(required = false) @Min(300) @Max(500) Integer radius
 	) {
 		return ApiResponse.ok(propertyService.getSafetySummary(propertyId, radius));
 	}

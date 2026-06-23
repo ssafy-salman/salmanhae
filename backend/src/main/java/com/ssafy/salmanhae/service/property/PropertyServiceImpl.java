@@ -57,7 +57,7 @@ public class PropertyServiceImpl implements PropertyService {
 	public PropertySafetySummaryResponse getSafetySummary(Long propertyId, Integer radius) {
 		getActiveProperty(propertyId);
 		Integer lookupRadius = radius == null ? 500 : radius;
-		if (lookupRadius < 1) {
+		if (lookupRadius != 300 && lookupRadius != 500) {
 			throw new ApiException(ErrorCode.INVALID_REQUEST);
 		}
 		return propertyDao.findSafetySummary(propertyId, lookupRadius)

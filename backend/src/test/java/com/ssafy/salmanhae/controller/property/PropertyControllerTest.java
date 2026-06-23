@@ -146,6 +146,15 @@ class PropertyControllerTest {
 	}
 
 	@Test
+	void getPropertyTransactionsRejectsInvalidYearsAtController() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/transactions", 1)
+						.param("years", "0"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
 	void getPropertySafetySummaryReturnsPrecomputedScore() throws Exception {
 		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 1)
 						.param("radius", "500"))
@@ -166,5 +175,14 @@ class PropertyControllerTest {
 		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 999))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("PROPERTY_NOT_FOUND"));
+	}
+
+	@Test
+	void getPropertySafetySummaryRejectsUnsupportedRadius() throws Exception {
+		mockMvc.perform(get("/api/v1/properties/{propertyId}/safety-summary", 1)
+						.param("radius", "400"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
 	}
 }

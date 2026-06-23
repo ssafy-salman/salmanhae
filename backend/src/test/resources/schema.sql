@@ -80,11 +80,14 @@ CREATE TABLE property_score_stat (
     property_id BIGINT PRIMARY KEY,
     safety_score INT,
     price_score INT,
-    cctv_count_300m INT,
-    bell_count_300m INT,
-    light_count_300m INT,
-    police_count_500m INT,
-    updated_at TIMESTAMP
+    cctv_count_300m INT NOT NULL DEFAULT 0,
+    bell_count_300m INT NOT NULL DEFAULT 0,
+    light_count_300m INT NOT NULL DEFAULT 0,
+    police_count_500m INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_property_score_stat_property
+        FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 );
 
 CREATE TABLE region_price_stat (
