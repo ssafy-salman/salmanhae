@@ -151,6 +151,58 @@ class ChatControllerTest {
 		assertEquals(1L, requestCaptor.getValue().selectedPropertyId());
 	}
 
+	@Test
+	void chatReturnsSafetyAnalysisCardForAuthenticatedUser() throws Exception {
+		when(chatService.sendMessage(any(User.class), any()))
+				.thenReturn(new ChatResponse(
+						"SAFETY_ANALYSIS",
+						"선택한 매물 주변 안전 데이터를 확인했습니다.",
+						null,
+						List.of(),
+						List.of(),
+						List.of(new AnalysisCardResponse(
+								"SAFETY",
+								"안전 분석",
+								"반경 500m 기준 안전 점수는 78점입니다.",
+								78,
+								Map.of(
+										"selectedPropertyId", "1",
+										"radius", 500,
+										"safetyScore", 78,
+										"cctvCount300m", 8,
+										"bellCount300m", 0,
+										"lightCount300m", 14,
+										"policeCount500m", 1
+								)
+						))
+				));
+
+		mockMvc.perform(post("/api/v1/chat")
+						.header("Authorization", "Bearer " + loginAccessToken())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"message": "이 매물 주변 안전은 어때?", "sessionId": null, "selectedPropertyId": 1}
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.intent").value("SAFETY_ANALYSIS"))
+				.andExpect(jsonPath("$.data.analysisCards", hasSize(1)))
+				.andExpect(jsonPath("$.data.analysisCards[0].type").value("SAFETY"))
+				.andExpect(jsonPath("$.data.analysisCards[0].title").value("안전 분석"))
+				.andExpect(jsonPath("$.data.analysisCards[0].summary").isNotEmpty())
+				.andExpect(jsonPath("$.data.analysisCards[0].score").value(78))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.selectedPropertyId").value("1"))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.radius").value(500))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.safetyScore").value(78))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.cctvCount300m").value(8))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.bellCount300m").value(0))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.lightCount300m").value(14))
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.policeCount500m").value(1));
+
+		ArgumentCaptor<ChatRequest> requestCaptor = ArgumentCaptor.forClass(ChatRequest.class);
+		verify(chatService).sendMessage(any(User.class), requestCaptor.capture());
+		assertEquals(1L, requestCaptor.getValue().selectedPropertyId());
+	}
+
 	private String loginAccessToken() throws Exception {
 		String email = "chat-user@example.com";
 		String password = "password123";
