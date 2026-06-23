@@ -347,6 +347,18 @@ GET /api/v1/safety/facilities?types=CCTV,EMERGENCY_BELL&west=126.91&east=127.02&
 
 ## AI 에이전트 API
 
+**intent 값 목록**
+
+| intent | 설명 |
+| --- | --- |
+| `PROPERTY_SEARCH` | 매물 추천·검색 (Text-to-SQL → Supabase 직접 조회) |
+| `LEGAL_CONSULT` | 임대차 법률 상담 (pgvector RAG) |
+| `PRICE_ANALYSIS` | 시세·실거래가 분석 (Spring Boot API) |
+| `SAFETY_ANALYSIS` | 주변 안전시설·치안 분석 (Spring Boot API) |
+| `HUG_CALC` | HUG 보증보험 가입 가능 여부 (MVP 미구현, FALLBACK 처리) |
+| `GENERAL_CHAT` | 인사·잡담 등 부동산 무관 질문 (FALLBACK 처리) |
+| `FALLBACK` | 분류 불가 또는 LLM 호출 실패 |
+
 ### 챗봇 메시지 전송 (인증 필요)
 ```http
 POST /api/v1/chat
@@ -379,9 +391,15 @@ Authorization: Bearer {token}
       {
         "id": 1,
         "title": "대학동 그린빌",
+        "buildingName": "대학동 그린빌",
+        "address": "서울특별시 관악구 대학동 123",
+        "propertyType": "ONE_ROOM",
+        "transactionType": "MONTHLY_RENT",
         "deposit": 5000000,
         "monthlyRent": 480000,
-        "safetyScore": 78,
+        "price": null,
+        "areaM2": "23.14",
+        "floor": 3,
         "latitude": 37.470123,
         "longitude": 126.936456
       }

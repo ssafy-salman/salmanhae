@@ -26,7 +26,7 @@
 **트레이드오프**: 비밀번호 해싱(BCrypt), 토큰 발급·검증 로직을 직접 관리해야 한다. 리프레시 토큰은 Redis에 저장하며 Token Rotation 방식으로 관리한다 (ADR-011 참고).
 
 ### ADR-006: LangGraph 의도 분류를 단일 노드에서 처리
-**결정**: 사용자 입력을 4가지 의도(매물 추천/법률 상담/시세 분석/안전 분석)로 분류하는 노드를 LangGraph 그래프 진입점에 배치하고, 의도에 따라 엣지가 분기된다.  
+**결정**: 사용자 입력을 6가지 의도(매물 추천/법률 상담/시세 분석/안전 분석/HUG 계산/일반 대화)로 분류하는 노드를 LangGraph 그래프 진입점에 배치하고, 의도에 따라 엣지가 분기된다.  
 **이유**: 의도별 툴이 달라 단일 ReAct 루프보다 명시적 그래프 분기가 디버깅과 유지보수에 유리하다.  
 **트레이드오프**: 의도 분류 실패 시 잘못된 툴 호출. 모호한 질문(예: "강남 안전한가요?"가 안전 분석인지 매물 추천인지)은 추가 처리 필요.
 
@@ -49,6 +49,16 @@
 **결정**: 이메일 인증 코드(`email:verify:{email}`, TTL 5분), 인증 완료 플래그(`email:verified:{email}`, TTL 10분), 리프레시 토큰(`refresh:{email}`, TTL 7일)을 모두 Redis에 저장한다. 리프레시 토큰 갱신 시 Token Rotation(새 액세스 + 새 리프레시 동시 발급)을 적용한다.  
 **이유**: 이메일 인증 코드는 단기 TTL과 자동 삭제가 핵심이라 RDB보다 Redis가 적합하다. 리프레시 토큰을 Redis에 저장하면 로그아웃 시 즉시 무효화가 가능하고, Token Rotation으로 탈취된 토큰 재사용을 탐지할 수 있다.  
 **트레이드오프**: Redis가 로컬 인프라에 추가된다. Redis 장애 시 로그인·회원가입 불가. 로컬 개발 환경에서 Redis 실행이 필수(`redis-server` 또는 Docker).
+
+### ADR-012: 의도 분류를 키워드 매칭에서 LLM Structured Output으로 전환
+**결정**: `classify_intent` 노드에서 키워드 리스트 순차 체크 대신 LLM에게 `RouteDecision` JSON을 반환하도록 프롬프트하고, Pydantic으로 파싱·검증한다. LLM 호출 실패 시 `FALLBACK` intent를 반환한다.  
+**이유**: 키워드 매칭은 복합 의도("강남구 오피스텔 가장 싼거 추천해줘"에서 "싼"이 PRICE_KEYWORDS에 걸려 PRICE_ANALYSIS로 오분류)와 키워드 우선순위 문제를 해결하기 어렵다. LLM은 문장 전체 맥락을 이해해 분류 정확도가 높다.  
+**트레이드오프**: LLM 호출 시간(~1-2초) 추가. LLM 장애 시 모든 요청이 FALLBACK으로 처리됨.
+
+### ADR-013: 매물 검색을 Text-to-SQL로 구현 (Supabase 직접 조회)
+**결정**: `property_search` 노드에서 Spring Boot API를 호출하는 대신, LLM이 자연어에서 검색 조건 JSON을 추출하고 FastAPI가 Supabase DB를 직접 쿼리한다.  
+**이유**: CLAUDE.md 원칙("pgvector 유사도 검색은 FastAPI에서만 수행")과 같은 맥락으로, FastAPI가 이미 Supabase에 직접 연결되어 있어 Spring Boot를 거칠 이유가 없다. 또한 Spring Boot를 거치면 불필요한 직렬화·역직렬화와 1홉 레이턴시가 추가된다.  
+**트레이드오프**: FastAPI가 properties 테이블 스키마에 직접 의존하게 됨. 스키마 변경 시 FastAPI와 Spring Boot 양쪽 모두 수정 필요.
 
 ### ADR-010: 지도 줌 레벨별 표시 데이터를 서버에서 결정한다
 **결정**: 프론트는 네이버지도 bounds와 zoom을 Spring Boot에 전달하고, 서버는 시/도·시/군/구·읍/면/동 평균 또는 매물/클러스터 데이터를 선택해 반환한다.  

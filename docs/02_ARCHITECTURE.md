@@ -84,13 +84,14 @@ salmanhae/
 
 ### Python FastAPI + LangGraph (Cloud Run)
 
-- 사용자 입력 의도 분류 (매물 추천 / 법률 상담 / 시세 분석 / 안전 분석)
+- 사용자 입력 의도 분류 — LLM Structured Output (6종: 매물 추천 / 법률 상담 / 시세 분석 / 안전 분석 / HUG 계산 / 일반 대화)
+  - `RouteDecision` Pydantic 스키마로 파싱·검증, LLM 실패 시 `FALLBACK` 반환
 - 의도별 툴 실행:
-  - `search_properties` → Spring Boot API 호출
-  - `legal_rag` → pgvector 법률 문서 검색
+  - `search_properties` → LLM이 조건 추출(Text-to-SQL) 후 Supabase DB 직접 조회
+  - `legal_rag` → pgvector 법률 문서 유사도 검색
   - `analyze_price` → Spring Boot API 호출
   - `analyze_safety` → Spring Boot API 호출
-- Claude API로 최종 자연어 응답 생성
+- GMS API(OpenAI-compatible)로 최종 자연어 응답 생성
 
 ### Redis
 
