@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.api.routes import get_agent_graph
 from app.core.config import get_settings
 from app.graph.nodes import legal_rag as legal_rag_module
-from app.graph.nodes.classify_intent import classify_message
+from app.graph.nodes.classify_intent import classify_intent_fallback
 from app.graph.state import Intent
 from app.main import app
 
@@ -89,12 +89,12 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
     assert isinstance(card["score"], (int, float))
 
 
-def test_classify_intent_examples() -> None:
-    assert classify_message("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
-    assert classify_message("계약 전에 법을 확인하고 싶어") == Intent.LEGAL_CONSULT
-    assert classify_message("이 매물 가격이 비싼 편이야?") == Intent.PRICE_ANALYSIS
-    assert classify_message("주변 cctv는 괜찮아?") == Intent.SAFETY_ANALYSIS
-    assert classify_message("hug 보증보험 가능해?") == Intent.HUG_CALC
+def test_classify_intent_fallback_examples() -> None:
+    assert classify_intent_fallback("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
+    assert classify_intent_fallback("계약 전에 법을 확인하고 싶어") == Intent.LEGAL_CONSULT
+    assert classify_intent_fallback("이 매물 가격이 비싼 편이야?") == Intent.PRICE_ANALYSIS
+    assert classify_intent_fallback("주변 cctv는 괜찮아?") == Intent.SAFETY_ANALYSIS
+    assert classify_intent_fallback("hug 보증보험 가능해?") == Intent.HUG_CALC
 
 
 def card_text_in_answer(answer: str, card: dict) -> bool:
