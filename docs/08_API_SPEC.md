@@ -438,8 +438,8 @@ Authorization: Bearer {token}
 ```json
 {
   "data": {
-    "intent": "PRICE_ANALYSIS",
-    "message": "선택한 매물의 실거래가를 기준으로 시세를 분석했습니다.",
+    "intent": "SAFETY_ANALYSIS",
+    "message": "선택한 매물의 실거래가와 주변 안전시설 데이터를 기준으로 분석했습니다.",
     "sessionId": null,
     "properties": [],
     "legalCards": [],
@@ -450,7 +450,27 @@ Authorization: Bearer {token}
         "summary": "주변 실거래가 대비 가격 적정성을 확인했습니다.",
         "score": null,
         "metrics": {
-          "selectedPropertyId": "1"
+          "selectedPropertyId": "1",
+          "comparableTransactionCount": 2,
+          "regionStatCount": 1,
+          "buildingStatCount": 1,
+          "avgDeposit": 10500000,
+          "avgMonthlyRent": 520000
+        }
+      },
+      {
+        "type": "SAFETY",
+        "title": "안전 분석",
+        "summary": "반경 500m 기준 안전 점수와 주요 안전시설 개수를 확인했습니다.",
+        "score": 78,
+        "metrics": {
+          "selectedPropertyId": "1",
+          "radius": 500,
+          "safetyScore": 78,
+          "cctvCount300m": 8,
+          "bellCount300m": 0,
+          "lightCount300m": 14,
+          "policeCount500m": 1
         }
       }
     ]
@@ -458,6 +478,8 @@ Authorization: Bearer {token}
   "message": "OK"
 }
 ```
+
+`analysisCards[].metrics`는 카드 유형에 따라 달라질 수 있으며, 프론트엔드는 알 수 없는 metric key를 무시하고 위 표준 key를 우선 표시합니다.
 
 ---
 
