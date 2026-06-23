@@ -28,27 +28,8 @@ class SpringClient:
 
     def search_properties(self, message: str, context: dict[str, Any]) -> dict[str, Any]:
         return {
-            "properties": [
-                {
-                    "id": 1,
-                    "buildingName": "관악 샘플 원룸",
-                    "address": "서울특별시 관악구 대학동",
-                    "propertyType": "ONE_ROOM",
-                    "transactionType": "MONTHLY_RENT",
-                    "deposit": 5000000,
-                    "monthlyRent": 480000,
-                    "areaM2": 22.5,
-                    "safetyScore": 78,
-                    "latitude": 37.470123,
-                    "longitude": 126.936456,
-                }
-            ],
-            "meta": {
-                "baseUrl": self.base_url,
-                "query": message,
-                "selectedPropertyId": context.get("selectedPropertyId"),
-                "stub": True,
-            },
+            "properties": [],
+            "meta": {"baseUrl": self.base_url, "query": message, "stub": True},
         }
 
     def analyze_price(self, message: str, context: dict[str, Any]) -> dict[str, Any]:

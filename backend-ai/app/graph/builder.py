@@ -17,6 +17,7 @@ def route_by_intent(state: AgentState) -> str:
         Intent.PRICE_ANALYSIS: "price_analysis",
         Intent.SAFETY_ANALYSIS: "safety_analysis",
         Intent.HUG_CALC: "fallback",
+        Intent.GENERAL_CHAT: "fallback",
         Intent.FALLBACK: "fallback",
     }[intent]
 

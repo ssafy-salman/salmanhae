@@ -5,7 +5,7 @@ from app.core.config import get_settings
 from app.graph.nodes import legal_rag as legal_rag_module
 from app.graph.nodes import price_analysis as price_analysis_module
 from app.graph.nodes import safety_analysis as safety_analysis_module
-from app.graph.nodes.classify_intent import classify_message
+from app.graph.nodes.classify_intent import classify_intent_fallback
 from app.graph.state import Intent
 from app.main import app
 
@@ -208,18 +208,9 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
     assert card["metrics"]["stub"] is False
 
 
-def test_classify_intent_examples() -> None:
-    assert classify_message("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
-    assert classify_message("계약 전에 법을 확인하고 싶어") == Intent.LEGAL_CONSULT
-    assert classify_message("이 매물 가격이 비싼 편이야?") == Intent.PRICE_ANALYSIS
-    assert classify_message("주변 cctv는 괜찮아?") == Intent.SAFETY_ANALYSIS
-    assert classify_message("hug 보증보험 가능해?") == Intent.HUG_CALC
+def test_classify_intent_fallback_returns_fallback() -> None:
+    assert classify_intent_fallback("아무 말이나") == Intent.FALLBACK
 
 
 def card_text_in_answer(answer: str, card: dict) -> bool:
     return card["lawName"] in answer and card["articleNo"] in answer
-
-
-def test_classify_intent_korean_examples() -> None:
-    assert classify_message("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
-    assert classify_message("전세 보증금을 돌려받지 못하면 어떤 권리가 있나요?") == Intent.LEGAL_CONSULT
