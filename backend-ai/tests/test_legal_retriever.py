@@ -1,7 +1,7 @@
 import pytest
 
 from app.clients import supabase_client as supabase_module
-from app.clients.supabase_client import SupabaseVectorClient
+from app.clients.supabase_client import SupabaseVectorClient, parse_pgvector_value
 from app.graph.nodes import legal_rag as legal_rag_module
 from app.graph.state import Intent
 from app.rag.retriever import LegalRetriever
@@ -166,3 +166,68 @@ def test_supabase_vector_client_sets_connection_and_statement_timeouts(
     assert calls["connect_kwargs"]["connect_timeout"] == 7
     assert len(calls.get("executes", [])) >= 1
     assert calls["executes"][0] == ("set local statement_timeout = %s", (3000,))
+
+
+def test_parse_pgvector_value_supports_postgrest_vector_strings() -> None:
+    assert parse_pgvector_value("[0.1,0.2,-0.3]") == [0.1, 0.2, -0.3]
+    assert parse_pgvector_value([1, "2.5"]) == [1.0, 2.5]
+
+
+def test_supabase_vector_client_falls_back_to_rest_when_pg_is_unreachable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeSettings:
+        supabase_db_url = "postgresql://postgres.project-ref:secret@host:6543/postgres"
+        supabase_connect_timeout_seconds = 1
+        supabase_statement_timeout_ms = 1000
+        supabase_service_role_key = "service-key"
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> list[dict]:
+            return [
+                {
+                    "law_name": "주택임대차보호법",
+                    "article_no": "제3조의2",
+                    "article_title": "보증금의 회수",
+                    "content": "임차인은 보증금을 우선변제 받을 권리가 있다.",
+                    "embedding": "[1,0]",
+                },
+                {
+                    "law_name": "전세사기피해자 지원 및 주거안정에 관한 특별법",
+                    "article_no": "제1조",
+                    "article_title": "목적",
+                    "content": "전세사기피해자를 지원한다.",
+                    "embedding": "[0,1]",
+                },
+            ]
+
+    calls: dict[str, object] = {}
+
+    def fake_connect(*args, **kwargs):
+        raise supabase_module.psycopg.OperationalError("blocked")
+
+    def fake_get(url, **kwargs):
+        calls["url"] = url
+        calls["kwargs"] = kwargs
+        return FakeResponse()
+
+    monkeypatch.setattr(supabase_module, "get_settings", lambda: FakeSettings())
+    monkeypatch.setattr(supabase_module.psycopg, "connect", fake_connect)
+    monkeypatch.setattr(supabase_module.httpx, "get", fake_get)
+
+    client = SupabaseVectorClient()
+    rows = client.similarity_search_legal_documents([1, 0], top_k=1)
+
+    assert rows == [
+        {
+            "law_name": "주택임대차보호법",
+            "article_no": "제3조의2",
+            "article_title": "보증금의 회수",
+            "content": "임차인은 보증금을 우선변제 받을 권리가 있다.",
+            "score": 1.0,
+        }
+    ]
+    assert calls["url"].startswith("https://project-ref.supabase.co/rest/v1/legal_document_chunks")
