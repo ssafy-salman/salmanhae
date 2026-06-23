@@ -142,16 +142,22 @@ region_price_stat
 - id
 - region_level            ← SIDO / SIGUNGU / DONG
 - region_code
-- region_name
+- sido
+- sigungu
+- dong
 - property_type
 - transaction_type
 - avg_deposit
+- median_deposit
 - avg_monthly_rent
-- avg_sale_price
+- median_monthly_rent
+- avg_price
+- median_price
 - transaction_count
-- latitude
-- longitude
-- calculated_at
+- sample_from_ym
+- sample_to_ym
+- created_at
+- updated_at
 ```
 
 ---
