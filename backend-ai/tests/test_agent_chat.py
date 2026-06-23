@@ -114,6 +114,24 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
                     "regionStatCount": 1,
                     "buildingStatCount": 1,
                 },
+                "transactions": [
+                    {
+                        "contractYearMonth": "2026-05",
+                        "deposit": 10000000,
+                        "monthlyRent": 520000,
+                        "areaM2": 21.8,
+                    }
+                ],
+                "priceAnalysis": {
+                    "regionStats": [
+                        {
+                            "avgDeposit": 10500000,
+                            "avgMonthlyRent": 520000,
+                            "transactionCount": 3,
+                        }
+                    ],
+                    "buildingStats": [],
+                },
                 "stub": False,
             }
 
@@ -142,6 +160,8 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
     assert card["metrics"]["selectedPropertyId"] == "1"
     assert card["metrics"]["comparableTransactionCount"] == 2
     assert card["metrics"]["stub"] is False
+    assert "최근 실거래 2건" in body["answer"]
+    assert "지역 평균 보증금 10,500,000원" in body["answer"]
 
 
 def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch) -> None:
@@ -187,6 +207,16 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
                 "metrics": {
                     "radius": 500,
                     "cctvCount300m": 8,
+                    "bellCount300m": 2,
+                    "lightCount300m": 14,
+                    "policeCount500m": 1,
+                },
+                "safetySummary": {
+                    "radius": 500,
+                    "safetyScore": 78,
+                    "cctvCount300m": 8,
+                    "bellCount300m": 2,
+                    "lightCount300m": 14,
                     "policeCount500m": 1,
                 },
                 "stub": False,
@@ -218,6 +248,8 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
     assert card["score"] == 78
     assert card["metrics"]["radius"] == 500
     assert card["metrics"]["stub"] is False
+    assert "안전 점수 78점" in body["answer"]
+    assert "CCTV 8개" in body["answer"]
 
 
 def test_classify_intent_fallback_returns_fallback() -> None:
