@@ -6,7 +6,12 @@ import httpx
 
 from app.core.config import get_settings
 from app.graph.state import AgentState, Intent
-from app.rag.prompts import build_legal_rag_prompt, format_legal_context
+from app.rag.prompts import (
+    build_analysis_answer_prompt,
+    build_legal_rag_prompt,
+    format_legal_context,
+)
+from app.services.analysis_answer_service import AnalysisAnswerService
 
 
 HttpPost = Callable[..., httpx.Response]
@@ -125,9 +130,15 @@ class LLMClient:
             count = len(state.get("properties", []))
             return f"조건에 맞는 매물 {count}개를 찾았습니다."
         if intent == Intent.PRICE_ANALYSIS:
-            return "선택한 매물 또는 지역의 실거래가를 기준으로 시세 적정성을 분석했습니다."
+            live_answer = self._generate_live_analysis_answer(state)
+            if live_answer:
+                return live_answer
+            return AnalysisAnswerService().generate_price_answer(state)
         if intent == Intent.SAFETY_ANALYSIS:
-            return "주변 안전시설 반경과 안전 점수를 기준으로 생활 안전성을 분석했습니다."
+            live_answer = self._generate_live_analysis_answer(state)
+            if live_answer:
+                return live_answer
+            return AnalysisAnswerService().generate_safety_answer(state)
         if intent == Intent.HUG_CALC:
             return "HUG 보증 가입 계산은 1.5차 범위입니다. MVP에서는 관련 조건 안내까지만 제공합니다."
         return "질문 의도를 조금 더 구체화해 주세요. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
@@ -159,6 +170,36 @@ class LLMClient:
                         {"role": "user", "content": prompt},
                     ],
                     "max_completion_tokens": 700,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            return extract_chat_completion_text(response.json())
+        except (httpx.HTTPError, KeyError, TypeError, ValueError):
+            return None
+
+    def _generate_live_analysis_answer(self, state: AgentState) -> str | None:
+        analysis_cards = state.get("analysis_cards", [])
+        tool_results = state.get("tool_results", {})
+        if not self.api_key or not self.model or not analysis_cards or not tool_results:
+            return None
+
+        try:
+            prompt = build_analysis_answer_prompt(
+                state["message"],
+                analysis_cards,
+                json.dumps(tool_results, ensure_ascii=False),
+            )
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_completion_tokens": 500,
                 },
                 timeout=self.timeout_seconds,
             )
