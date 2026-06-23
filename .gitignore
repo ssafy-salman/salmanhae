@@ -18,6 +18,7 @@ data/output/
 # Local run logs
 run-logs/
 .codex/run-logs/
+.tmp/
 
 # Generated SQL seed artifacts
 database/seed/

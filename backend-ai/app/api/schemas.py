@@ -31,6 +31,7 @@ class AgentChatResponse(BaseModel):
     answer: str
     properties: list[dict[str, Any]] = Field(default_factory=list)
     legal_cards: list[dict[str, Any]] = Field(default_factory=list, alias="legalCards")
+    analysis_cards: list[dict[str, Any]] = Field(default_factory=list, alias="analysisCards")
     tool_results: dict[str, Any] = Field(default_factory=dict, alias="toolResults")
     next_actions: list[dict[str, Any]] = Field(default_factory=list, alias="nextActions")
 

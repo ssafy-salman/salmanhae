@@ -33,6 +33,7 @@ def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
         "context": request.context.model_dump(by_alias=True),
         "properties": [],
         "legal_cards": [],
+        "analysis_cards": [],
         "tool_results": {},
         "next_actions": [],
     }
@@ -42,6 +43,7 @@ def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
         answer=result["answer"],
         properties=result.get("properties", []),
         legalCards=result.get("legal_cards", []),
+        analysisCards=result.get("analysis_cards", []),
         toolResults=result.get("tool_results", {}),
         nextActions=result.get("next_actions", []),
     )
