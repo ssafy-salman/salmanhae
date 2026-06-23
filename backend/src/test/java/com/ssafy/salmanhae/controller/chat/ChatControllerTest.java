@@ -128,7 +128,7 @@ class ChatControllerTest {
 								"시세 분석",
 								"주변 실거래가 대비 가격 적정성을 확인했습니다.",
 								null,
-								Map.of("selectedPropertyId", 1, "stub", true)
+								Map.of("selectedPropertyId", "1", "stub", true)
 						))
 				));
 
@@ -144,7 +144,7 @@ class ChatControllerTest {
 				.andExpect(jsonPath("$.data.analysisCards[0].type").value("PRICE"))
 				.andExpect(jsonPath("$.data.analysisCards[0].title").value("시세 분석"))
 				.andExpect(jsonPath("$.data.analysisCards[0].summary").isNotEmpty())
-				.andExpect(jsonPath("$.data.analysisCards[0].metrics.selectedPropertyId").value(1));
+				.andExpect(jsonPath("$.data.analysisCards[0].metrics.selectedPropertyId").value("1"));
 
 		ArgumentCaptor<ChatRequest> requestCaptor = ArgumentCaptor.forClass(ChatRequest.class);
 		verify(chatService).sendMessage(any(User.class), requestCaptor.capture());

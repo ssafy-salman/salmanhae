@@ -1,5 +1,7 @@
 package com.ssafy.salmanhae.model.dto.chat;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public record AnalysisCardResponse(
@@ -10,6 +12,6 @@ public record AnalysisCardResponse(
 		Map<String, Object> metrics
 ) {
 	public AnalysisCardResponse {
-		metrics = metrics == null ? Map.of() : Map.copyOf(metrics);
+		metrics = metrics == null ? Map.of() : Collections.unmodifiableMap(new HashMap<>(metrics));
 	}
 }

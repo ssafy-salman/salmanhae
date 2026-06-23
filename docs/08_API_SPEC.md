@@ -430,7 +430,7 @@ Authorization: Bearer {token}
         "summary": "주변 실거래가 대비 가격 적정성을 확인했습니다.",
         "score": null,
         "metrics": {
-          "selectedPropertyId": 1
+          "selectedPropertyId": "1"
         }
       }
     ]
