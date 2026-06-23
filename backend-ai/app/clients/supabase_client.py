@@ -45,6 +45,9 @@ class SupabaseVectorClient:
                 top_k=top_k,
             )
         except psycopg.OperationalError:
+            settings = get_settings()
+            if settings.app_env.lower() in {"prod", "production"}:
+                raise
             return self._similarity_search_legal_documents_rest(
                 query_embedding=query_embedding,
                 top_k=top_k,

@@ -183,6 +183,7 @@ def test_supabase_vector_client_falls_back_to_rest_when_pg_is_unreachable(
     monkeypatch.setenv("TEST_SUPABASE_SERVICE_ROLE_KEY", "unused-test-service-role-key")
 
     class FakeSettings:
+        app_env = "local"
         supabase_db_url = os.environ["TEST_SUPABASE_DB_URL"]
         supabase_connect_timeout_seconds = 1
         supabase_statement_timeout_ms = 1000
@@ -238,3 +239,29 @@ def test_supabase_vector_client_falls_back_to_rest_when_pg_is_unreachable(
         }
     ]
     assert calls["url"].startswith("https://project-ref.supabase.co/rest/v1/legal_document_chunks")
+
+
+def test_supabase_vector_client_does_not_fallback_to_rest_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeSettings:
+        app_env = "production"
+        supabase_db_url = "unused-test-db-url"
+        supabase_connect_timeout_seconds = 1
+        supabase_statement_timeout_ms = 1000
+        supabase_service_role_key = ""
+
+    def fake_connect(*args, **kwargs):
+        raise supabase_module.psycopg.OperationalError("blocked")
+
+    def fake_get(*args, **kwargs):
+        raise AssertionError("REST fallback must not run in production.")
+
+    monkeypatch.setattr(supabase_module, "get_settings", lambda: FakeSettings())
+    monkeypatch.setattr(supabase_module.psycopg, "connect", fake_connect)
+    monkeypatch.setattr(supabase_module.httpx, "get", fake_get)
+
+    client = SupabaseVectorClient()
+
+    with pytest.raises(supabase_module.psycopg.OperationalError):
+        client.similarity_search_legal_documents([1, 0], top_k=1)
