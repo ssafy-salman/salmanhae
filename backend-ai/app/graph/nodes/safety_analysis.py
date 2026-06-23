@@ -8,15 +8,20 @@ def safety_analysis(state: AgentState) -> AgentState:
         message=state["message"],
         context=state.get("context", {}),
     )
+    metrics = {
+        "selectedPropertyId": result.get("selectedPropertyId"),
+        "stub": result.get("stub", False),
+        **result.get("metrics", {}),
+    }
+    if result.get("error"):
+        metrics["error"] = result["error"]
+
     analysis_card = {
         "type": "SAFETY",
         "title": "안전 분석",
         "summary": result["summary"],
         "score": result.get("score"),
-        "metrics": {
-            "selectedPropertyId": result.get("selectedPropertyId"),
-            "stub": result.get("stub", False),
-        },
+        "metrics": metrics,
     }
     return {
         **state,
