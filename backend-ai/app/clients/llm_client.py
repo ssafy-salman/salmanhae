@@ -86,7 +86,8 @@ class LLMClient:
             )
             response.raise_for_status()
             text = extract_chat_completion_text(response.json()) or "{}"
-            return json.loads(text)
+            parsed = json.loads(text)
+            return parsed if isinstance(parsed, dict) else None
         except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return None
 
@@ -108,7 +109,8 @@ class LLMClient:
             )
             response.raise_for_status()
             text = extract_chat_completion_text(response.json()) or "{}"
-            return json.loads(text)
+            parsed = json.loads(text)
+            return parsed if isinstance(parsed, dict) else {}
         except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
             return {}
 
