@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.api.routes import get_agent_graph
+from app.clients.llm_client import LLMClient
 from app.core.config import get_settings
 from app.graph.nodes import legal_rag as legal_rag_module
 from app.graph.nodes import price_analysis as price_analysis_module
@@ -17,6 +18,15 @@ def internal_api_headers() -> dict[str, str]:
     return {"X-Internal-Api-Key": get_settings().internal_api_key}
 
 
+def route_as(monkeypatch, intent: Intent) -> None:
+    monkeypatch.setattr(
+        LLMClient,
+        "classify",
+        lambda self, message: {"intent": intent.value, "reasoning": "test route"},
+    )
+    get_agent_graph.cache_clear()
+
+
 def test_agent_chat_requires_internal_api_key() -> None:
     response = client.post(
         "/internal/agent/chat",
@@ -31,7 +41,9 @@ def test_agent_chat_requires_internal_api_key() -> None:
     assert response.status_code == 401
 
 
-def test_agent_chat_returns_intent_and_answer() -> None:
+def test_agent_chat_returns_intent_and_answer(monkeypatch) -> None:
+    route_as(monkeypatch, Intent.PROPERTY_SEARCH)
+
     response = client.post(
         "/internal/agent/chat",
         headers=internal_api_headers(),
@@ -64,7 +76,7 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
             ]
 
     monkeypatch.setattr(legal_rag_module, "LegalRetriever", FakeRetriever)
-    get_agent_graph.cache_clear()
+    route_as(monkeypatch, Intent.LEGAL_CONSULT)
 
     response = client.post(
         "/internal/agent/chat",
@@ -106,7 +118,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
             }
 
     monkeypatch.setattr(price_analysis_module, "SpringClient", FakeSpringClient)
-    get_agent_graph.cache_clear()
+    route_as(monkeypatch, Intent.PRICE_ANALYSIS)
 
     response = client.post(
         "/internal/agent/chat",
@@ -144,7 +156,7 @@ def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch)
             }
 
     monkeypatch.setattr(price_analysis_module, "SpringClient", FakeSpringClient)
-    get_agent_graph.cache_clear()
+    route_as(monkeypatch, Intent.PRICE_ANALYSIS)
 
     response = client.post(
         "/internal/agent/chat",
@@ -181,7 +193,7 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
             }
 
     monkeypatch.setattr(safety_analysis_module, "SpringClient", FakeSpringClient)
-    get_agent_graph.cache_clear()
+    route_as(monkeypatch, Intent.SAFETY_ANALYSIS)
 
     response = client.post(
         "/internal/agent/chat",
