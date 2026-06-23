@@ -124,3 +124,48 @@ def test_llm_client_analysis_answer_uses_controlled_fallback_without_facts() -> 
 
     assert "분석할 근거 데이터가 부족합니다" in answer
     assert "HUG" not in answer
+
+
+def test_llm_client_analysis_answer_prefers_current_tool_result_metrics() -> None:
+    answer = LLMClient(api_key="").generate_answer(
+        {
+            "user_id": "user-1",
+            "session_id": None,
+            "message": "주변 안전은 어때?",
+            "context": {"selectedPropertyId": "1"},
+            "intent": Intent.SAFETY_ANALYSIS,
+            "analysis_cards": [
+                {
+                    "type": "SAFETY",
+                    "score": 12,
+                    "metrics": {
+                        "radius": 300,
+                        "cctvCount300m": 99,
+                    },
+                },
+                {
+                    "type": "SAFETY",
+                    "score": 34,
+                    "metrics": {
+                        "radius": 400,
+                        "cctvCount300m": 55,
+                    },
+                },
+            ],
+            "tool_results": {
+                "safetyAnalysis": {
+                    "selectedPropertyId": "1",
+                    "score": 78,
+                    "metrics": {
+                        "radius": 500,
+                        "cctvCount300m": 8,
+                    },
+                }
+            },
+        }
+    )
+
+    assert "안전 점수 78점" in answer
+    assert "반경 500m" in answer
+    assert "CCTV 8개" in answer
+    assert "CCTV 99개" not in answer
