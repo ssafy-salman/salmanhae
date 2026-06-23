@@ -160,7 +160,9 @@ class SpringClient:
 
     @staticmethod
     def _selected_property_id(context: dict[str, Any]) -> str | None:
-        value = context.get("selectedPropertyId") or context.get("selected_property_id")
+        value = context.get("selectedPropertyId")
+        if value is None:
+            value = context.get("selected_property_id")
         if value is None:
             return None
         selected_property_id = str(value).strip()

@@ -132,6 +132,39 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
     assert card["metrics"]["stub"] is False
 
 
+def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch) -> None:
+    class FakeSpringClient:
+        def analyze_price(self, message: str, context: dict) -> dict:
+            return {
+                "selectedPropertyId": context["selectedPropertyId"],
+                "summary": "시세 데이터를 불러오지 못했습니다.",
+                "error": "SPRING_API_UNAVAILABLE",
+                "metrics": {},
+                "stub": False,
+            }
+
+    monkeypatch.setattr(price_analysis_module, "SpringClient", FakeSpringClient)
+    get_agent_graph.cache_clear()
+
+    response = client.post(
+        "/internal/agent/chat",
+        headers=internal_api_headers(),
+        json={
+            "userId": "user-1",
+            "sessionId": None,
+            "message": "이 매물 가격 분석해줘",
+            "context": {"selectedPropertyId": "1", "recentMessages": []},
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["intent"] == "PRICE_ANALYSIS"
+    card = body["analysisCards"][0]
+    assert card["metrics"]["error"] == "SPRING_API_UNAVAILABLE"
+    assert card["metrics"]["stub"] is False
+
+
 def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypatch) -> None:
     class FakeSpringClient:
         def analyze_safety(self, message: str, context: dict) -> dict:
