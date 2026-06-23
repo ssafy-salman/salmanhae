@@ -50,7 +50,8 @@ export default defineStore('map', {
       {
         role: 'bot',
         text: '계약서, 보증금 회수, 확정일자처럼 헷갈리는 전월세 법률 질문을 물어보세요.',
-        legalCards: []
+        legalCards: [],
+        analysisCards: []
       }
     ],
     lastFetchedAt: null,
@@ -197,7 +198,8 @@ export default defineStore('map', {
       try {
         const response = await sendChatMessage({
           message: text,
-          sessionId: this.chatSessionId
+          sessionId: this.chatSessionId,
+          selectedPropertyId: this.selectedPropertyId
         })
 
         if (seq !== this.chatRequestSeq) return
@@ -208,6 +210,7 @@ export default defineStore('map', {
           text: response.message,
           intent: response.intent,
           legalCards: response.legalCards,
+          analysisCards: response.analysisCards,
           properties: response.properties
         })
       } catch (error) {
@@ -217,7 +220,8 @@ export default defineStore('map', {
           role: 'bot',
           text: this.chatError,
           isError: true,
-          legalCards: []
+          legalCards: [],
+          analysisCards: []
         })
       } finally {
         if (seq === this.chatRequestSeq) {
