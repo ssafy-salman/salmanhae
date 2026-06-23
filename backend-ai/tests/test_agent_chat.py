@@ -99,3 +99,8 @@ def test_classify_intent_examples() -> None:
 
 def card_text_in_answer(answer: str, card: dict) -> bool:
     return card["lawName"] in answer and card["articleNo"] in answer
+
+
+def test_classify_intent_korean_examples() -> None:
+    assert classify_message("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
+    assert classify_message("전세 보증금을 돌려받지 못하면 어떤 권리가 있나요?") == Intent.LEGAL_CONSULT

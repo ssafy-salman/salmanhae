@@ -1,6 +1,35 @@
 from app.graph.state import AgentState, Intent
 
 
+KOREAN_LEGAL_KEYWORDS = [
+    "법",
+    "권리",
+    "돌려받",
+    "반환",
+    "대항력",
+    "우선변제",
+    "최우선변제",
+    "임대차",
+    "임차권",
+    "임대인",
+    "임차인",
+    "계약갱신",
+    "묵시적 갱신",
+    "전세사기",
+]
+KOREAN_PROPERTY_KEYWORDS = [
+    "추천",
+    "찾아",
+    "매물",
+    "원룸",
+    "오피스텔",
+    "아파트",
+    "월세",
+    "전세",
+    "관악구",
+]
+
+
 LEGAL_KEYWORDS = [
     "법",
     "계약",
@@ -19,6 +48,8 @@ PROPERTY_KEYWORDS = ["추천", "찾아", "매물", "원룸", "오피스텔", "�
 
 def classify_message(message: str) -> Intent:
     normalized = message.lower()
+    if any(keyword in normalized for keyword in KOREAN_LEGAL_KEYWORDS):
+        return Intent.LEGAL_CONSULT
     if any(keyword in normalized for keyword in LEGAL_KEYWORDS):
         return Intent.LEGAL_CONSULT
     if any(keyword in normalized for keyword in HUG_KEYWORDS):
@@ -27,6 +58,8 @@ def classify_message(message: str) -> Intent:
         return Intent.PRICE_ANALYSIS
     if any(keyword in normalized for keyword in SAFETY_KEYWORDS):
         return Intent.SAFETY_ANALYSIS
+    if any(keyword in normalized for keyword in KOREAN_PROPERTY_KEYWORDS):
+        return Intent.PROPERTY_SEARCH
     if any(keyword in normalized for keyword in PROPERTY_KEYWORDS):
         return Intent.PROPERTY_SEARCH
     return Intent.FALLBACK
