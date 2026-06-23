@@ -15,8 +15,14 @@ class AnalysisAnswerService:
         region_stats = self._items(price_analysis.get("regionStats"))
 
         facts: list[str] = []
-        comparable_count = metrics.get("comparableTransactionCount") or len(transactions)
-        if comparable_count:
+        comparable_count_metric = metrics.get("comparableTransactionCount")
+        if comparable_count_metric is not None:
+            comparable_count = comparable_count_metric
+        elif transactions:
+            comparable_count = len(transactions)
+        else:
+            comparable_count = None
+        if comparable_count is not None:
             facts.append(f"최근 실거래 {comparable_count}건을 기준으로 확인했습니다.")
 
         if transactions:
@@ -47,7 +53,7 @@ class AnalysisAnswerService:
             if avg_monthly_rent:
                 parts.append(f"지역 평균 월세 {avg_monthly_rent}")
             transaction_count = region_stat.get("transactionCount")
-            if transaction_count:
+            if transaction_count is not None:
                 parts.append(f"통계 표본 {transaction_count}건")
             if parts:
                 facts.append(", ".join(parts) + "입니다.")
@@ -63,15 +69,23 @@ class AnalysisAnswerService:
         safety_summary = result.get("safetySummary", {})
         if not isinstance(safety_summary, dict):
             safety_summary = {}
-        metrics = {**safety_summary, **self._combined_metrics(result, card)}
+        result_metrics = result.get("metrics", {})
+        if not isinstance(result_metrics, dict):
+            result_metrics = {}
+        metrics = {
+            **self._combined_metrics(result, card),
+            **safety_summary,
+            **result_metrics,
+        }
 
         facts: list[str] = []
-        score = (
-            result.get("score")
-            or card.get("score")
-            or safety_summary.get("safetyScore")
-            or metrics.get("safetyScore")
-        )
+        score = result.get("score")
+        if score is None:
+            score = safety_summary.get("safetyScore")
+        if score is None:
+            score = metrics.get("safetyScore")
+        if score is None:
+            score = card.get("score")
         if score is not None:
             facts.append(f"안전 점수 {score}점")
 
