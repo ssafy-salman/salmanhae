@@ -2,6 +2,7 @@ package com.ssafy.salmanhae.service.chat;
 
 import com.ssafy.salmanhae.common.exception.ApiException;
 import com.ssafy.salmanhae.common.exception.ErrorCode;
+import com.ssafy.salmanhae.model.dto.chat.AnalysisCardResponse;
 import com.ssafy.salmanhae.model.dto.chat.ChatRequest;
 import com.ssafy.salmanhae.model.dto.chat.ChatResponse;
 import com.ssafy.salmanhae.model.dto.chat.LegalCardResponse;
@@ -46,7 +47,7 @@ public class AiAgentClient {
 							userId,
 							request.sessionId(),
 							request.message(),
-							new ChatContext(null, List.of())
+							new ChatContext(selectedPropertyId(request), List.of())
 					))
 					.retrieve()
 					.body(AgentChatResponse.class);
@@ -63,8 +64,13 @@ public class AiAgentClient {
 				response.answer(),
 				request.sessionId(),
 				response.properties(),
-				response.legalCards()
+				response.legalCards(),
+				response.analysisCards()
 		);
+	}
+
+	private String selectedPropertyId(ChatRequest request) {
+		return request.selectedPropertyId() == null ? null : String.valueOf(request.selectedPropertyId());
 	}
 
 	private record AgentChatRequest(
@@ -85,7 +91,8 @@ public class AiAgentClient {
 			String intent,
 			String answer,
 			List<Map<String, Object>> properties,
-			List<LegalCardResponse> legalCards
+			List<LegalCardResponse> legalCards,
+			List<AnalysisCardResponse> analysisCards
 	) {
 	}
 }

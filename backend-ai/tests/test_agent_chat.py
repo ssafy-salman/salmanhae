@@ -89,6 +89,52 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
     assert isinstance(card["score"], (int, float))
 
 
+def test_agent_chat_returns_price_analysis_card_for_selected_property() -> None:
+    response = client.post(
+        "/internal/agent/chat",
+        headers=internal_api_headers(),
+        json={
+            "userId": "user-1",
+            "sessionId": None,
+            "message": "이 매물 가격이 비싼 편이야?",
+            "context": {"selectedPropertyId": "1", "recentMessages": []},
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["intent"] == "PRICE_ANALYSIS"
+    assert body["analysisCards"]
+    card = body["analysisCards"][0]
+    assert card["type"] == "PRICE"
+    assert card["title"]
+    assert card["summary"]
+    assert card["metrics"]["selectedPropertyId"] == "1"
+
+
+def test_agent_chat_returns_safety_analysis_card_for_selected_property() -> None:
+    response = client.post(
+        "/internal/agent/chat",
+        headers=internal_api_headers(),
+        json={
+            "userId": "user-1",
+            "sessionId": None,
+            "message": "주변 cctv는 괜찮아?",
+            "context": {"selectedPropertyId": "1", "recentMessages": []},
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["intent"] == "SAFETY_ANALYSIS"
+    assert body["analysisCards"]
+    card = body["analysisCards"][0]
+    assert card["type"] == "SAFETY"
+    assert card["title"]
+    assert card["summary"]
+    assert card["metrics"]["selectedPropertyId"] == "1"
+
+
 def test_classify_intent_examples() -> None:
     assert classify_message("관악구 보증금 5천 이하 원룸 추천해줘") == Intent.PROPERTY_SEARCH
     assert classify_message("계약 전에 법을 확인하고 싶어") == Intent.LEGAL_CONSULT
