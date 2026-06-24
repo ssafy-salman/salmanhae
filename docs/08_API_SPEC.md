@@ -373,17 +373,17 @@ GET /api/v1/safety/facilities?types=CCTV,EMERGENCY_BELL&west=126.91&east=127.02&
 
 ## AI 에이전트 API
 
-**intent 값 목록**
+Supervisor 패턴으로 구현되어 있으며, 복합 질문 시 여러 워커를 순차 실행하고 `workersCalled` 배열로 반환합니다.
 
-| intent | 설명 |
+**워커(worker) 목록**
+
+| worker | 설명 |
 | --- | --- |
 | `PROPERTY_SEARCH` | 매물 추천·검색 (Text-to-SQL → Supabase 직접 조회) |
 | `LEGAL_CONSULT` | 임대차 법률 상담 (pgvector RAG) |
 | `PRICE_ANALYSIS` | 시세·실거래가 분석 (Spring Boot API) |
 | `SAFETY_ANALYSIS` | 주변 안전시설·치안 분석 (Spring Boot API) |
-| `HUG_CALC` | HUG 보증보험 가입 가능 여부 (MVP 미구현, FALLBACK 처리) |
-| `GENERAL_CHAT` | 인사·잡담 등 부동산 무관 질문 (FALLBACK 처리) |
-| `FALLBACK` | 분류 불가 또는 LLM 호출 실패 |
+| `GENERAL_CHAT` | 인사·잡담 등 부동산 무관 일반 대화 |
 
 ### 챗봇 메시지 전송 (인증 필요)
 ```http
@@ -406,11 +406,11 @@ Authorization: Bearer {token}
 | `sessionId` | — | 대화 세션 ID. MVP에서는 `null` 허용 |
 | `selectedPropertyId` | — | 지도/매물 상세에서 선택한 매물 ID. 시세·안전 분석 질문에서 사용 |
 
-**Response**
+**Response — 매물 검색**
 ```json
 {
   "data": {
-    "intent": "PROPERTY_SEARCH",
+    "workersCalled": ["PROPERTY_SEARCH"],
     "message": "관악구에서 조건에 맞는 매물 3개를 찾았습니다.",
     "sessionId": "session-uuid",
     "properties": [
@@ -441,7 +441,7 @@ Authorization: Bearer {token}
 ```json
 {
   "data": {
-    "intent": "LEGAL_CONSULT",
+    "workersCalled": ["LEGAL_CONSULT"],
     "message": "관련 법령 근거 2개를 확인했습니다. 실제 계약 전에는 전문가 검토도 함께 권장합니다.",
     "sessionId": null,
     "properties": [],
@@ -460,11 +460,11 @@ Authorization: Bearer {token}
 }
 ```
 
-**Response — 시세·안전 분석**
+**Response — 시세·안전 분석 (복합 의도 예시)**
 ```json
 {
   "data": {
-    "intent": "SAFETY_ANALYSIS",
+    "workersCalled": ["SAFETY_ANALYSIS", "PRICE_ANALYSIS"],
     "message": "선택한 매물의 실거래가와 주변 안전시설 데이터를 기준으로 분석했습니다.",
     "sessionId": null,
     "properties": [],

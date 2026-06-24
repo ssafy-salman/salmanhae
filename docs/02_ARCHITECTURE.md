@@ -10,13 +10,19 @@
        │
        ├─ ② Spring Security JWT 검증 + 메시지 로깅
        │
-       ▼ ③ RAG 답변 요청 (HTTP POST, 내부망)
+       ▼ ③ AI 에이전트 요청 (HTTP POST, 내부망)
 [Python FastAPI + LangGraph — Cloud Run]
        │
-       ├─ ④ 질문 임베딩 → Supabase pgvector 유사도 검색 (Top 3~5)
-       ├─ ⑤ Claude API 호출 (프롬프트: [참고 문서] + [질문] + [툴 결과])
+       ├─ ④ supervisor (LLM) → 워커 선택
+       │      ├─ PROPERTY_SEARCH → Text-to-SQL → Supabase 직접 조회
+       │      ├─ LEGAL_CONSULT   → pgvector RAG (법률 문서 유사도 검색)
+       │      ├─ PRICE_ANALYSIS  → Spring Boot API 호출
+       │      ├─ SAFETY_ANALYSIS → Spring Boot API 호출
+       │      └─ GENERAL_CHAT    → pass-through
+       │      ↑── 워커 완료 후 supervisor로 복귀 (workers_called 누적)
+       ├─ ⑤ FINISH → generate_answer (GMS API 호출)
        │
-       ▼ ⑥ 생성된 답변 반환
+       ▼ ⑥ 생성된 답변 + workersCalled 반환
 [Spring Boot] ──▶ ⑦ 최종 답변 출력 ──▶ [사용자]
 ```
 
@@ -84,14 +90,15 @@ salmanhae/
 
 ### Python FastAPI + LangGraph (Cloud Run)
 
-- 사용자 입력 의도 분류 — LLM Structured Output (6종: 매물 추천 / 법률 상담 / 시세 분석 / 안전 분석 / HUG 계산 / 일반 대화)
-  - `RouteDecision` Pydantic 스키마로 파싱·검증, LLM 실패 시 `FALLBACK` 반환
-- 의도별 툴 실행:
-  - `search_properties` → LLM이 조건 추출(Text-to-SQL) 후 Supabase DB 직접 조회
-  - `legal_rag` → pgvector 법률 문서 유사도 검색
-  - `analyze_price` → Spring Boot API 호출
-  - `analyze_safety` → Spring Boot API 호출
+- **Supervisor 패턴** (LangGraph 순환 그래프): LLM이 워커를 하나씩 선택·실행하고 `workers_called`에 누적한 뒤 다시 supervisor로 돌아가 다음 워커를 결정하는 루프. `FINISH` 결정 시 `generate_answer`로 이동
+- 사용 가능한 워커 (5종):
+  - `PROPERTY_SEARCH` → LLM이 조건 추출(Text-to-SQL) 후 Supabase DB 직접 조회
+  - `LEGAL_CONSULT` → pgvector 법률 문서 유사도 검색
+  - `PRICE_ANALYSIS` → Spring Boot API 호출
+  - `SAFETY_ANALYSIS` → Spring Boot API 호출
+  - `GENERAL_CHAT` → pass-through (인사·잡담 등 부동산 무관 대화)
 - GMS API(OpenAI-compatible)로 최종 자연어 응답 생성
+- 응답에 `workersCalled` 배열 포함 (단일 의도: 1개, 복합 의도: 2~3개)
 
 ### Redis
 
@@ -147,7 +154,7 @@ Spring Scheduler
 | 패턴                                 | 적용 위치                                   |
 | ------------------------------------ | ------------------------------------------- |
 | Controller → Service → DAO (MyBatis) | Spring Boot 전 도메인                       |
-| LangGraph State Machine              | AI 에이전트 의도 분류 → 툴 선택 → 응답 생성 |
+| LangGraph Supervisor 패턴            | supervisor → 워커(다중) → supervisor 루프 → 응답 생성 |
 | Pinia Store per Feature              | Frontend (map, chat, auth, wishlist)        |
 | Axios Interceptor                    | JWT 자동 첨부, 401 처리                     |
 | Batch → DB 캐싱                      | 공공 API 데이터 — 런타임에 외부 호출 없음   |
