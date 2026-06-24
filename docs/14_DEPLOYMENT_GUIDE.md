@@ -16,6 +16,7 @@ Supabase PostgreSQL    서비스 DB, pgvector
 
 - Upstash TCP 연결값을 Spring Boot 환경변수로 받을 수 있도록 Redis 설정을 확장했습니다.
 - `backend/.env.example`에 Cloud Run에서 사용할 Spring Boot 환경변수 예시를 추가했습니다.
+- `backend/Dockerfile`과 `backend/.dockerignore`를 추가해 Spring Boot Cloud Run 빌드 방식을 고정했습니다.
 
 ```properties
 spring.data.redis.host=${REDIS_HOST:localhost}
@@ -67,6 +68,8 @@ Cloud Run 서비스명 예시: `salmanhae-api`
 | `INTERNAL_API_KEY` | Spring Boot와 FastAPI가 공유하는 내부 API 키 |
 | `AI_AGENT_CONNECT_TIMEOUT_MS` | FastAPI 연결 타임아웃. 기본 `2000` |
 | `AI_AGENT_READ_TIMEOUT_MS` | FastAPI 응답 타임아웃. 기본 `10000` |
+
+Spring Boot 이미지는 `backend/Dockerfile` 기준으로 빌드합니다. `.dockerignore`에서 `.env`와 `target/`을 제외하므로 로컬 비밀값과 기존 빌드 산출물이 이미지에 섞이지 않습니다.
 
 배포 예시:
 
@@ -201,7 +204,7 @@ https://<frontend>.vercel.app
 
 ## 다음에 남은 작업
 
-- Spring Boot용 `backend/Dockerfile`을 추가해 Cloud Run 배포 방식을 고정합니다.
-- 운영 secret은 `--set-env-vars` 대신 Secret Manager로 옮기는 것을 검토합니다.
+- 운영 secret을 `--set-env-vars` 대신 Secret Manager로 옮길지 결정합니다.
 - FastAPI Cloud Run을 공개 URL + 내부 API 키 방식에서 IAM 비공개 호출 방식으로 강화할지 결정합니다.
 - Spring Scheduler 배치는 운영 중복 실행 위험이 있으므로 Cloud Scheduler + Cloud Run Job 분리를 검토합니다.
+- Vercel, Cloud Run, Upstash, Supabase 값을 실제 운영 환경에 넣고 smoke test를 수행합니다.
