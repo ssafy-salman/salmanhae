@@ -82,7 +82,7 @@
 
       <div class="absolute bottom-3 left-3 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold text-slate-600 shadow-sm backdrop-blur">
         <MapPin class="h-4 w-4 text-brand" aria-hidden="true" />
-        <span>{{ store.totalCount.toLocaleString() }}개 매물</span>
+        <span>{{ viewportCountLabel }}</span>
         <span v-if="store.lastFetchedAt" class="text-slate-400">{{ formattedFetchedAt }}</span>
       </div>
     </section>
@@ -116,8 +116,8 @@
         <div v-else-if="store.filteredProperties.length === 0" class="flex h-full items-center justify-center p-6 text-center">
           <div>
             <Home class="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
-            <p class="mt-3 text-sm font-black text-slate-900">표시할 매물이 없습니다</p>
-            <p class="mt-2 text-xs leading-5 text-slate-500">지도를 조금 넓히거나 필터를 초기화해보세요.</p>
+            <p class="mt-3 text-sm font-black text-slate-900">{{ emptyListText.title }}</p>
+            <p class="mt-2 text-xs leading-5 text-slate-500">{{ emptyListText.description }}</p>
           </div>
         </div>
 
@@ -234,6 +234,7 @@ import {
 } from '@lucide/vue'
 import useMapStore from '../store/mapStore'
 import { loadNaverMaps } from '../utils/naverMaps'
+import { VIEWPORT_MODES, viewportMarkerAnchor, viewportMarkerKind, viewportMarkerLabel } from '../utils/mapViewport'
 
 const store = useMapStore()
 const mapElement = ref(null)
@@ -252,6 +253,32 @@ const formattedFetchedAt = computed(() => {
     hour: '2-digit',
     minute: '2-digit'
   }).format(new Date(store.lastFetchedAt))
+})
+
+const isPropertyMode = computed(() => store.viewportMode === VIEWPORT_MODES.PROPERTY_MARKER)
+
+const visibleMapItems = computed(() => (
+  isPropertyMode.value ? store.filteredProperties : store.viewportItems
+))
+
+const viewportCountLabel = computed(() => {
+  const count = store.totalCount.toLocaleString()
+  if (store.viewportMode === VIEWPORT_MODES.PROPERTY_CLUSTER) return `${count}개 그룹`
+  if ([VIEWPORT_MODES.SIGUNGU_AVG, VIEWPORT_MODES.DONG_AVG].includes(store.viewportMode)) return `${count}개 지역`
+  return `${count}개 매물`
+})
+
+const emptyListText = computed(() => {
+  if (!isPropertyMode.value && store.viewportItems.length > 0) {
+    return {
+      title: '상세 매물은 확대 후 표시됩니다',
+      description: '현재 줌에서는 지역 평균 또는 매물 묶음을 지도에 표시합니다.'
+    }
+  }
+  return {
+    title: '표시할 매물이 없습니다',
+    description: '지도를 조금 넓히거나 필터를 초기화해보세요.'
+  }
 })
 
 const displayTitle = (property) => property.title || property.buildingName || `매물 ${property.id}`
@@ -299,6 +326,13 @@ const floorText = (property) => {
   return property.totalFloor ? `${floor} / ${property.totalFloor}층` : floor
 }
 
+const escapeHtml = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;')
+
 const getMapBounds = () => {
   const bounds = map.getBounds()
   const sw = bounds.getSW()
@@ -311,7 +345,7 @@ const getMapBounds = () => {
   }
 }
 
-const markerContent = (property, isSelected) => {
+const propertyMarkerContent = (property, isSelected) => {
   const background = isSelected ? '#101311' : '#1ABC9C'
   const label = property.transactionType === 'SALE' ? formatWons(property.price) : formatWons(property.deposit)
 
@@ -331,7 +365,7 @@ const markerContent = (property, isSelected) => {
       cursor: pointer;
       white-space: nowrap;
     ">
-      ${transactionLabel(property.transactionType)} ${label}
+      ${escapeHtml(transactionLabel(property.transactionType))} ${escapeHtml(label)}
       <span style="
         position: absolute;
         left: 50%;
@@ -347,6 +381,74 @@ const markerContent = (property, isSelected) => {
   `
 }
 
+const regionMarkerContent = (item) => {
+  const label = viewportMarkerLabel(item, { formatWons, transactionLabel })
+  return `
+    <button type="button" style="
+      position: relative;
+      max-width: 116px;
+      border: 2px solid #fff;
+      border-radius: 12px;
+      background: #17283A;
+      color: #fff;
+      padding: 7px 10px 8px;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.15;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+    ">
+      <span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(label.title)}</span>
+      <span style="display:block; margin-top:3px; color:#D9F3DD;">${escapeHtml(label.value)}</span>
+      <span style="
+        position: absolute;
+        left: 50%;
+        bottom: -6px;
+        width: 10px;
+        height: 10px;
+        transform: translateX(-50%) rotate(45deg);
+        background: #17283A;
+        border-right: 2px solid #fff;
+        border-bottom: 2px solid #fff;
+      "></span>
+    </button>
+  `
+}
+
+const clusterMarkerContent = (item) => {
+  const label = viewportMarkerLabel(item, { formatWons, transactionLabel })
+  return `
+    <button type="button" style="
+      width: 84px;
+      height: 84px;
+      border: 3px solid #fff;
+      border-radius: 999px;
+      background: rgba(26, 188, 156, 0.92);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+      cursor: pointer;
+      text-align: center;
+      line-height: 1.1;
+    ">
+      <span style="font-size: 16px; font-weight: 950;">${escapeHtml(label.eyebrow)}</span>
+      <span style="margin-top:4px; max-width:68px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 11px; font-weight: 900;">${escapeHtml(label.value)}</span>
+    </button>
+  `
+}
+
+const markerContent = (item) => {
+  const kind = viewportMarkerKind(item)
+  if (kind === 'region') return regionMarkerContent(item)
+  if (kind === 'cluster') return clusterMarkerContent(item)
+  return propertyMarkerContent(item, store.selectedPropertyId === item.id)
+}
+
 const clearMarkers = () => {
   markerListeners.forEach((listener) => mapsApi?.Event.removeListener(listener))
   markerListeners = []
@@ -358,21 +460,33 @@ const renderMarkers = () => {
   if (!mapsApi || !map) return
   clearMarkers()
 
-  store.filteredProperties.forEach((property) => {
-    if (!property.latitude || !property.longitude) return
+  visibleMapItems.value.forEach((item) => {
+    if (!item.latitude || !item.longitude) return
+    const anchor = viewportMarkerAnchor(item)
 
     const marker = new mapsApi.Marker({
-      position: new mapsApi.LatLng(property.latitude, property.longitude),
+      position: new mapsApi.LatLng(item.latitude, item.longitude),
       map,
       icon: {
-        content: markerContent(property, store.selectedPropertyId === property.id),
-        anchor: new mapsApi.Point(42, 44)
+        content: markerContent(item),
+        anchor: new mapsApi.Point(anchor.x, anchor.y)
       }
     })
-    const listener = mapsApi.Event.addListener(marker, 'click', () => store.selectProperty(property.id))
+    const listener = mapsApi.Event.addListener(marker, 'click', () => handleMarkerClick(item))
     markers.push(marker)
     markerListeners.push(listener)
   })
+}
+
+const handleMarkerClick = (item) => {
+  if (item.type === 'PROPERTY') {
+    store.selectProperty(item.id)
+    return
+  }
+  if (!mapsApi || !map || !item.latitude || !item.longitude) return
+  map.panTo(new mapsApi.LatLng(item.latitude, item.longitude))
+  const zoomIncrement = item.type === 'CLUSTER' ? 1 : 2
+  map.setZoom(Math.min(21, map.getZoom() + zoomIncrement))
 }
 
 const refreshFromMapBounds = async () => {
@@ -399,7 +513,7 @@ const resetFilters = async () => {
 }
 
 watch(
-  [() => store.filteredProperties, () => store.selectedPropertyId],
+  [() => store.viewportItems, () => store.filteredProperties, () => store.selectedPropertyId],
   () => renderMarkers(),
   { deep: true }
 )

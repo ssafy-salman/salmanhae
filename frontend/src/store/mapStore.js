@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { sendChatMessage } from '../api/chat'
 import { fetchMapViewport, fetchPropertyDetail } from '../api/properties'
+import { isPropertyItem } from '../utils/mapViewport'
 
 const DEFAULT_BOUNDS = {
   west: 126.76,
@@ -145,7 +146,7 @@ export default defineStore('map', {
 
         this.viewportMode = data.mode || ''
         this.viewportItems = data.items || []
-        this.properties = this.viewportItems.filter((item) => item.type === 'PROPERTY')
+        this.properties = this.viewportItems.filter(isPropertyItem)
         this.totalCount = data.totalCount ?? this.viewportItems.length
         this.lastFetchedAt = new Date().toISOString()
 
