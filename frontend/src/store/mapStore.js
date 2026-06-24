@@ -26,6 +26,7 @@ export default defineStore('map', {
     currentRegion: 'seoul',
     selectedPropertyId: null,
     selectedProperty: null,
+    selectedViewportItem: null,
     viewportMode: '',
     viewportItems: [],
     properties: [],
@@ -128,6 +129,7 @@ export default defineStore('map', {
         maxPrice: ''
       }
       this.searchKeyword = ''
+      this.selectedViewportItem = null
     },
     async fetchViewport(bounds = this.bounds) {
       const seq = ++this.requestSeq
@@ -173,6 +175,7 @@ export default defineStore('map', {
     async selectProperty(id) {
       const seq = ++this.detailRequestSeq
       this.selectedPropertyId = id
+      this.selectedViewportItem = null
       this.detailError = ''
       this.selectedProperty = this.properties.find((property) => property.id === id) || null
       this.isDetailLoading = true
@@ -196,6 +199,14 @@ export default defineStore('map', {
       this.selectedProperty = null
       this.detailError = ''
       this.isDetailLoading = false
+    },
+    selectViewportItem(item) {
+      this.detailRequestSeq += 1
+      this.selectedPropertyId = null
+      this.selectedProperty = null
+      this.detailError = ''
+      this.isDetailLoading = false
+      this.selectedViewportItem = item
     },
     async sendChat(message) {
       const text = String(message || '').trim()

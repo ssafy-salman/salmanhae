@@ -21,8 +21,23 @@ class MapViewportControllerTest {
 	private MockMvc mockMvc;
 
 	@Test
-	void getViewportIsPublicAndReturnsSigunguModeAtWideZoom() throws Exception {
+	void getViewportIsPublicAndReturnsRegionModesAtWideZoom() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "0"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("SIDO_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("SIDO"))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(550000))
+				.andExpect(jsonPath("$.data.items[0].avgSalePrice").value(720000000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(2));
+
+		mockMvc.perform(baseViewportRequest().param("zoom", "9"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("SIDO_AVG"));
+
+		mockMvc.perform(baseViewportRequest().param("zoom", "10"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"))
 				.andExpect(jsonPath("$.data.totalCount").value(1))
@@ -63,7 +78,9 @@ class MapViewportControllerTest {
 				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
 				.andExpect(jsonPath("$.data.items[0].regionLevel").value("DONG"))
 				.andExpect(jsonPath("$.data.items[0].regionName").value("대학동"))
-				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(520000));
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(550000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(1));
 
 		mockMvc.perform(baseViewportRequest().param("zoom", "13"))
 				.andExpect(status().isOk())
@@ -80,9 +97,9 @@ class MapViewportControllerTest {
 				.andExpect(jsonPath("$.data.totalCount").value(1))
 				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
 				.andExpect(jsonPath("$.data.items[0].regionLevel").value("DONG"))
-				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10500000))
-				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(520000))
-				.andExpect(jsonPath("$.data.items[0].transactionCount").value(3));
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(550000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(1));
 	}
 
 	@Test
