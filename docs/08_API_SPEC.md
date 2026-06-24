@@ -190,12 +190,12 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
         "regionLevel": "SIGUNGU",
         "regionCode": "11620",
         "regionName": "관악구",
-        "avgDeposit": 98000000,
-        "avgMonthlyRent": 620000,
+        "avgDeposit": 10000000,
+        "avgMonthlyRent": 550000,
         "avgSalePrice": 720000000,
-        "transactionCount": 1240,
-        "latitude": 37.478406,
-        "longitude": 126.951613
+        "transactionCount": 2,
+        "latitude": 37.4705615,
+        "longitude": 126.936728
       }
     ],
     "totalCount": 1
