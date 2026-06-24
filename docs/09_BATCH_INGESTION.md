@@ -177,3 +177,28 @@ disabled by default so local and test profiles never call public APIs unexpected
 logged and recorded in `SafetyFacilityIngestionResult`, while the remaining sources continue. Stored
 rows are accumulated through `SafetyFacilityDao.upsertAll`, so rerunning the batch is idempotent for
 the unique `(type, source, source_id)` safety facility key.
+
+## F-4 Property Safety Score Calculation Scheduler
+
+Phase 5 recalculates `property_score_stat.safety_score` from stored `safety_facility` rows. It never
+calls public APIs during user requests; user-facing safety summary APIs read only precomputed DB rows.
+
+| Metric | Radius | Full-score cap | Weight |
+| --- | --- | --- | --- |
+| CCTV | 300m | 10 facilities | 30% |
+| Emergency bell | 300m | 3 facilities | 25% |
+| Security light | 300m | 20 facilities | 25% |
+| Police/security facility | 500m | 1 facility | 20% |
+
+Each metric is normalized as `min(count / full-score-cap, 1.0)`, then multiplied by its weight. The
+weighted total is rounded to the nearest integer and clamped to `0..100`. If no facility data exists
+for a metric, that metric contributes `0`.
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `safety.score.scheduler.enabled` / `SAFETY_SCORE_SCHEDULER_ENABLED` | `false` | Enables the monthly safety score scheduler when set to `true`. |
+| `safety.score.scheduler.cron` / `SAFETY_SCORE_SCHEDULER_CRON` | `0 30 3 1 * *` | Runs after the safety facility refresh by default. |
+| `safety.score.scheduler.zone` / `SAFETY_SCORE_SCHEDULER_ZONE` | `Asia/Seoul` | Scheduler timezone. |
+
+The upsert updates `safety_score` and safety facility counts while preserving existing `price_score`.
+New rows are inserted with `price_score = null` until a price scoring batch fills that value.

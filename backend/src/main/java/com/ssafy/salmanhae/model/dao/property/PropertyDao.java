@@ -14,6 +14,7 @@ import com.ssafy.salmanhae.model.dto.property.RegionPriceStatResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyRow;
 import com.ssafy.salmanhae.model.dto.property.PropertySearchCriteria;
 import com.ssafy.salmanhae.model.dto.property.TransactionType;
+import com.ssafy.salmanhae.model.dto.safety.PropertySafetyScoreResult;
 
 public interface PropertyDao {
 
@@ -35,9 +36,13 @@ public interface PropertyDao {
 
 	Optional<PropertyRow> findActiveById(Long propertyId);
 
+	List<PropertyRow> findActivePropertiesForSafetyScoring();
+
 	List<PropertyTransactionResponse> findComparableTransactions(PropertyRow property, String minContractYearMonth);
 
 	Optional<PropertySafetySummaryResponse> findSafetySummary(Long propertyId, Integer radius);
+
+	int upsertSafetyScoreStats(List<PropertySafetyScoreResult> results);
 
 	List<RegionPriceStatResponse> findRegionPriceStats(
 			String legalDongCode,

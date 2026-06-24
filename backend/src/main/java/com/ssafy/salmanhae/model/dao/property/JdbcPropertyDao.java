@@ -23,6 +23,7 @@ import com.ssafy.salmanhae.model.dto.property.PropertyTransactionResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyType;
 import com.ssafy.salmanhae.model.dto.property.RegionPriceStatResponse;
 import com.ssafy.salmanhae.model.dto.property.TransactionType;
+import com.ssafy.salmanhae.model.dto.safety.PropertySafetyScoreResult;
 
 @Repository
 public class JdbcPropertyDao implements PropertyDao {
@@ -312,6 +313,19 @@ public class JdbcPropertyDao implements PropertyDao {
 	}
 
 	@Override
+	public List<PropertyRow> findActivePropertiesForSafetyScoring() {
+		String sql = """
+				SELECT %s
+				FROM properties
+				WHERE is_active = true
+				  AND latitude IS NOT NULL
+				  AND longitude IS NOT NULL
+				ORDER BY id ASC
+				""".formatted(PROPERTY_COLUMNS);
+		return jdbcTemplate.query(sql, Map.of(), propertyRowMapper());
+	}
+
+	@Override
 	public List<PropertyTransactionResponse> findComparableTransactions(PropertyRow property, String minContractYearMonth) {
 		String sql = """
 				SELECT transaction_type, contract_year_month, deposit, monthly_rent, price, area_m2, floor,
@@ -366,6 +380,48 @@ public class JdbcPropertyDao implements PropertyDao {
 				)
 		);
 		return rows.stream().findFirst();
+	}
+
+	@Override
+	public int upsertSafetyScoreStats(List<PropertySafetyScoreResult> results) {
+		if (results == null || results.isEmpty()) {
+			return 0;
+		}
+		return results.stream()
+				.mapToInt(this::upsertSafetyScoreStat)
+				.sum();
+	}
+
+	private int upsertSafetyScoreStat(PropertySafetyScoreResult result) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("propertyId", result.propertyId());
+		params.put("safetyScore", result.safetyScore());
+		params.put("cctvCount300m", result.cctvCount300m());
+		params.put("bellCount300m", result.bellCount300m());
+		params.put("lightCount300m", result.lightCount300m());
+		params.put("policeCount500m", result.policeCount500m());
+		int updated = jdbcTemplate.update("""
+				UPDATE property_score_stat
+				SET safety_score = :safetyScore,
+				    cctv_count_300m = :cctvCount300m,
+				    bell_count_300m = :bellCount300m,
+				    light_count_300m = :lightCount300m,
+				    police_count_500m = :policeCount500m,
+				    updated_at = CURRENT_TIMESTAMP
+				WHERE property_id = :propertyId
+				""", params);
+		if (updated > 0) {
+			return updated;
+		}
+		return jdbcTemplate.update("""
+				INSERT INTO property_score_stat (
+				    property_id, safety_score, cctv_count_300m, bell_count_300m,
+				    light_count_300m, police_count_500m, created_at, updated_at
+				) VALUES (
+				    :propertyId, :safetyScore, :cctvCount300m, :bellCount300m,
+				    :lightCount300m, :policeCount500m, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+				)
+				""", params);
 	}
 
 	@Override
