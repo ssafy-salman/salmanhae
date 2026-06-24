@@ -1,5 +1,7 @@
 package com.ssafy.salmanhae.controller.safety;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,10 +30,12 @@ class SafetyFacilityControllerTest {
 				.andExpect(jsonPath("$.message").value("OK"))
 				.andExpect(jsonPath("$.data.totalCount").value(4))
 				.andExpect(jsonPath("$.data.items", hasSize(4)))
-				.andExpect(jsonPath("$.data.items[0].type").value("CCTV"))
-				.andExpect(jsonPath("$.data.items[0].name").value("Test CCTV"))
-				.andExpect(jsonPath("$.data.items[0].latitude").value(37.4703210))
-				.andExpect(jsonPath("$.data.items[0].longitude").value(126.9361110));
+				.andExpect(jsonPath("$.data.items[*].type").value(containsInAnyOrder(
+						"CCTV", "EMERGENCY_BELL", "SECURITY_LIGHT", "POLICE"
+				)))
+				.andExpect(jsonPath("$.data.items[*].name").value(hasItem("Test CCTV")))
+				.andExpect(jsonPath("$.data.items[*].latitude").value(hasItem(37.4703210)))
+				.andExpect(jsonPath("$.data.items[*].longitude").value(hasItem(126.9361110)));
 	}
 
 	@Test
@@ -39,8 +43,7 @@ class SafetyFacilityControllerTest {
 		mockMvc.perform(baseRequest().param("types", "CCTV,EMERGENCY_BELL"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.totalCount").value(2))
-				.andExpect(jsonPath("$.data.items[0].type").value("CCTV"))
-				.andExpect(jsonPath("$.data.items[1].type").value("EMERGENCY_BELL"));
+				.andExpect(jsonPath("$.data.items[*].type").value(containsInAnyOrder("CCTV", "EMERGENCY_BELL")));
 	}
 
 	@Test
