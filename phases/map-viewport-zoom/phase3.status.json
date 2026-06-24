@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "phase": "phase3-frontend-map-viewport-api.md",
+  "issue_number": 57,
+  "timestamp": "2026-06-24T16:08:44+09:00",
+  "detail": "Switched visible map loading to /api/v1/map/viewport, preserved filters and legacy property detail flows, and added frontend API coverage.",
+  "runner": "codex"
+}
