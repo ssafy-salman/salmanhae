@@ -27,6 +27,7 @@ SUPERVISOR_PROMPT = """\
 - LEGAL_CONSULT: 임대차 법률, 계약, 보증금, 대항력, 갱신 등 법률 질문
 - PRICE_ANALYSIS: 특정 지역·매물의 시세·실거래가·가격 적정성 분석
 - SAFETY_ANALYSIS: 주변 치안, CCTV, 안전시설, 범죄율 등 생활 안전 분석
+- GENERAL_CHAT: 인사, 잡담, 서비스 소개 등 부동산과 무관한 일반 대화
 - FINISH: 충분한 정보가 모였으므로 답변 생성 단계로 이동
 
 규칙:
@@ -100,7 +101,7 @@ class LLMClient:
             message=message,
             workers_called=", ".join(workers_called) if workers_called else "없음",
         )
-        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "FINISH"}
+        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "GENERAL_CHAT", "FINISH"}
         try:
             response = self.http_post(
                 f"{self.base_url}/chat/completions",
@@ -173,6 +174,11 @@ class LLMClient:
 
     def generate_answer(self, state: AgentState) -> str:
         workers_called = state.get("workers_called", [])
+        if "GENERAL_CHAT" in workers_called:
+            live = self._generate_live_general_chat_answer(state)
+            if live:
+                return live
+            return "안녕하세요! 살만해 부동산 AI입니다. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
         if "LEGAL_CONSULT" in workers_called:
             live_answer = self._generate_live_legal_answer(state)
             if live_answer:
@@ -192,6 +198,39 @@ class LLMClient:
                 return live_answer
             return AnalysisAnswerService().generate_safety_answer(state)
         return "질문 의도를 조금 더 구체화해 주세요. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
+
+    def _generate_live_general_chat_answer(self, state: AgentState) -> str | None:
+        if not self.api_key or not self.model:
+            return None
+        try:
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "당신은 살만해 부동산 AI 어시스턴트입니다. "
+                                "매물 추천, 임대차 법률 상담, 시세 분석, 안전 분석을 도와줍니다. "
+                                "일반 대화나 인사에는 친절하게 응답하고, 부동산 관련 질문으로 자연스럽게 유도하세요. "
+                                "한국어로 간결하게 답변하세요."
+                            ),
+                        },
+                        {"role": "user", "content": state["message"]},
+                    ],
+                    "max_completion_tokens": 300,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            return extract_chat_completion_text(response.json())
+        except (httpx.HTTPError, KeyError, TypeError, ValueError):
+            return None
 
     def _generate_live_legal_answer(self, state: AgentState) -> str | None:
         legal_cards = state.get("legal_cards", [])
