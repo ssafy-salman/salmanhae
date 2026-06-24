@@ -161,3 +161,19 @@ python scripts/data_pipeline/pipeline.py run --months 12 --scope nationwide --mi
 - 기존 DB 데이터 처리: truncate 없이 unique key 기준 누적 upsert
 
 이 방식은 데모/MVP에서 안정적인 지도 매물 탐색과 시세 비교를 제공하기 위한 bootstrap 방식입니다. 운영 단계에서 주기적 최신화가 필요해지면 같은 정규화/적재 로직을 Spring Scheduler 또는 별도 job으로 옮깁니다.
+
+## F-4 Safety Facility Ingestion Scheduler
+
+Phase 4 wires the safety source clients into a Spring service and scheduler. The scheduler is
+disabled by default so local and test profiles never call public APIs unexpectedly.
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `safety.ingestion.scheduler.enabled` / `SAFETY_INGESTION_SCHEDULER_ENABLED` | `false` | Enables the monthly scheduler when set to `true`. |
+| `safety.ingestion.scheduler.cron` / `SAFETY_INGESTION_SCHEDULER_CRON` | `0 0 3 1 * *` | Runs at 03:00 on the first day of every month. |
+| `safety.ingestion.scheduler.zone` / `SAFETY_INGESTION_SCHEDULER_ZONE` | `Asia/Seoul` | Scheduler timezone. |
+
+`SafetyFacilityIngestionService` runs each source independently. If one source fails, the failure is
+logged and recorded in `SafetyFacilityIngestionResult`, while the remaining sources continue. Stored
+rows are accumulated through `SafetyFacilityDao.upsertAll`, so rerunning the batch is idempotent for
+the unique `(type, source, source_id)` safety facility key.

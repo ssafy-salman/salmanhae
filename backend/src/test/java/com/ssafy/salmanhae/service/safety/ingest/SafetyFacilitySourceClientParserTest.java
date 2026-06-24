@@ -42,7 +42,7 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(facility.name()).isEqualTo("Test CCTV");
 		assertThat(facility.source()).isEqualTo(CctvCsvClient.SOURCE);
 		assertThat(facility.sourceId()).isEqualTo("cctv-1");
-		assertThat(facility.description()).isEqualTo("fixture cctv\nwith newline");
+		assertThat(facility.description().replace("\r\n", "\n")).isEqualTo("fixture cctv\nwith newline");
 		assertThat(facility.latitude()).isEqualByComparingTo("37.4703210");
 		assertThat(facility.longitude()).isEqualByComparingTo("126.9361110");
 	}
