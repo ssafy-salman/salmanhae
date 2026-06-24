@@ -24,13 +24,15 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from pydantic import ValidationError
 
 from app.clients.llm_client import CLASSIFY_INTENT_PROMPT, extract_chat_completion_text
 from app.core.config import get_settings
-from app.graph.nodes.classify_intent import RouteDecision
-from app.graph.state import Intent
 from tests.eval.eval_set import EVAL_SET
+
+_VALID_INTENTS = {
+    "PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS",
+    "SAFETY_ANALYSIS", "GENERAL_CHAT", "HUG_CALC",
+}
 
 
 def _classify_with_usage(
@@ -39,7 +41,7 @@ def _classify_with_usage(
     api_key: str,
     model: str,
     timeout: float = 20.0,
-) -> tuple[Intent, dict[str, int]]:
+) -> tuple[str, dict[str, int]]:
     """classify_intent_llm과 동일한 로직이지만 token usage도 함께 반환한다."""
     prompt = CLASSIFY_INTENT_PROMPT.format(message=message)
     usage: dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -67,11 +69,13 @@ def _classify_with_usage(
 
         text = extract_chat_completion_text(payload) or "{}"
         parsed = json.loads(text)
-        decision = RouteDecision.model_validate(parsed)
-        return Intent(decision.intent), usage
+        intent = parsed.get("intent", "FALLBACK")
+        if intent not in _VALID_INTENTS:
+            intent = "FALLBACK"
+        return intent, usage
 
-    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError, ValidationError):
-        return Intent.FALLBACK, usage
+    except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return "FALLBACK", usage
 
 
 def main() -> None:
@@ -99,7 +103,7 @@ def main() -> None:
         )
         latency_ms = (time.perf_counter() - start) * 1000
 
-        got_str = got.value if hasattr(got, "value") else str(got)
+        got_str = got
         got_set = {got_str}
         expected_set = set(case.expected_workers)
 
@@ -144,15 +148,11 @@ def main() -> None:
     avg_latency = sum(r["latency_ms"] for r in results) / len(results)
 
     all_tokens = [r["tokens"]["total_tokens"] for r in results if r["tokens"]["total_tokens"] > 0]
+    prompt_tokens = [r["tokens"]["prompt_tokens"] for r in results if r["tokens"]["prompt_tokens"] > 0]
+    completion_tokens = [r["tokens"]["completion_tokens"] for r in results if r["tokens"]["completion_tokens"] > 0]
     avg_tokens = sum(all_tokens) / len(all_tokens) if all_tokens else 0
-    avg_prompt_tokens = (
-        sum(r["tokens"]["prompt_tokens"] for r in results if r["tokens"]["prompt_tokens"] > 0)
-        / len(all_tokens) if all_tokens else 0
-    )
-    avg_completion_tokens = (
-        sum(r["tokens"]["completion_tokens"] for r in results if r["tokens"]["completion_tokens"] > 0)
-        / len(all_tokens) if all_tokens else 0
-    )
+    avg_prompt_tokens = sum(prompt_tokens) / len(prompt_tokens) if prompt_tokens else 0
+    avg_completion_tokens = sum(completion_tokens) / len(completion_tokens) if completion_tokens else 0
 
     summary = {
         "single_intent_total": len(single_results),

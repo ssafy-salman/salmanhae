@@ -5,13 +5,13 @@
     "model": "gpt-5.4-mini"
   },
   "summary": {
-    "single_intent_total": 21,
-    "single_intent_correct": 21,
+    "single_intent_total": 22,
+    "single_intent_correct": 22,
     "single_intent_accuracy": 1.0,
-    "complex_total": 17,
+    "complex_total": 16,
     "complex_fully_correct": 0,
     "complex_full_accuracy": 0.0,
-    "complex_avg_recall": 0.412,
+    "complex_avg_recall": 0.406,
     "avg_latency_ms": 1542.8,
     "avg_tokens_per_turn": 268.4,
     "avg_prompt_tokens": 224.6,
@@ -378,14 +378,13 @@
     {
       "message": "강남구 오피스텔 가장 싼 거 추천해줘",
       "expected_workers": [
-        "PRICE_ANALYSIS",
         "PROPERTY_SEARCH"
       ],
-      "is_complex": true,
-      "note": "시세 파악 후 조건에 맞는 매물 검색",
+      "is_complex": false,
+      "note": "가장 싼 거 = 가격 조건 필터링, 시세 조회 불필요",
       "got_intent": "PROPERTY_SEARCH",
-      "fully_correct": false,
-      "recall": 0.5,
+      "fully_correct": true,
+      "recall": 1.0,
       "latency_ms": 1489.1,
       "tokens": {
         "prompt_tokens": 225,
