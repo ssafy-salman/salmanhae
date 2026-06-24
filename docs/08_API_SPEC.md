@@ -165,7 +165,17 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
 | `SIDO_AVG` | 시/도 수준 | 시/도 실거래가 평균 |
 | `SIGUNGU_AVG` | 시/군/구 수준 | 시/군/구 실거래가 평균 |
 | `DONG_AVG` | 읍/면/동 수준 | 읍/면/동 실거래가 평균 |
-| `PROPERTY_MARKER` | 상세 확대 | 개별 매물 또는 원형 클러스터 |
+| `PROPERTY_CLUSTER` | 거리/밀집 수준 | 원형 클러스터 |
+| `PROPERTY_MARKER` | 상세 확대 | 개별 매물 |
+
+초기 운영 threshold는 네이버지도 zoom 숫자를 기준으로 서버에서 결정합니다.
+
+| zoom | mode | 설명 |
+| --- | --- | --- |
+| `<= 11` | `SIGUNGU_AVG` | 시/군/구 평균 표시 |
+| `12`-`13` | `DONG_AVG` | 읍/면/동 평균 표시 |
+| `14`-`15` | `PROPERTY_CLUSTER` | 거리 수준 밀집 매물 클러스터 표시 |
+| `>= 16` | `PROPERTY_MARKER` | 개별 매물 마커 표시 |
 
 **지역 평균 Response**
 ```json
