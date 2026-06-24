@@ -140,7 +140,7 @@ F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물
 
 ### 지도 줌 레벨별 표시 데이터 조회
 ```http
-GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
+GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 ```
 
 프론트는 네이버지도 SDK의 현재 bounds와 zoom을 전달하고, 백엔드는 줌 레벨에 맞춰 지역 평균 또는 매물/클러스터 데이터를 반환합니다.

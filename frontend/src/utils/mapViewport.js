@@ -23,7 +23,7 @@ export const getPrimaryPriceValue = (item) => {
 }
 
 export const regionLevelLabel = (level) => ({
-  SIDO: '도',
+  SIDO: '시/도',
   SIGUNGU: '시/군/구',
   DONG: '읍/면/동'
 }[level] || '지역')

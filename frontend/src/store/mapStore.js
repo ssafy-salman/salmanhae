@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { sendChatMessage } from '../api/chat'
-import { fetchMapViewport, fetchPropertyDetail } from '../api/properties'
-import { isPropertyItem } from '../utils/mapViewport'
+import { sendChatMessage } from '../api/chat.js'
+import { fetchMapViewport, fetchPropertyDetail } from '../api/properties.js'
+import { isPropertyItem, VIEWPORT_MODES } from '../utils/mapViewport.js'
 
 const DEFAULT_BOUNDS = {
   west: 126.76,
@@ -131,6 +131,17 @@ export default defineStore('map', {
       this.searchKeyword = ''
       this.selectedViewportItem = null
     },
+    applyViewportData(data) {
+      this.viewportMode = data.mode || ''
+      this.viewportItems = data.items || []
+      this.properties = this.viewportItems.filter(isPropertyItem)
+      this.totalCount = data.totalCount ?? this.viewportItems.length
+      this.lastFetchedAt = new Date().toISOString()
+
+      if (this.viewportMode === VIEWPORT_MODES.PROPERTY_MARKER || this.properties.length > 0) {
+        this.selectedViewportItem = null
+      }
+    },
     async fetchViewport(bounds = this.bounds) {
       const seq = ++this.requestSeq
       this.isLoading = true
@@ -146,11 +157,7 @@ export default defineStore('map', {
 
         if (seq !== this.requestSeq) return
 
-        this.viewportMode = data.mode || ''
-        this.viewportItems = data.items || []
-        this.properties = this.viewportItems.filter(isPropertyItem)
-        this.totalCount = data.totalCount ?? this.viewportItems.length
-        this.lastFetchedAt = new Date().toISOString()
+        this.applyViewportData(data)
 
         if (this.selectedPropertyId && !this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null

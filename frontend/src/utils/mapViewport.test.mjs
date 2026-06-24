@@ -92,7 +92,7 @@ test('property marker keeps transaction label behavior', () => {
 })
 
 test('viewport labels translate region levels and property types', () => {
-  assert.equal(regionLevelLabel('SIDO'), '도')
+  assert.equal(regionLevelLabel('SIDO'), '시/도')
   assert.equal(regionLevelLabel('SIGUNGU'), '시/군/구')
   assert.equal(regionLevelLabel('DONG'), '읍/면/동')
   assert.equal(propertyTypeLabel('MULTI_FAMILY'), '다세대주택')
