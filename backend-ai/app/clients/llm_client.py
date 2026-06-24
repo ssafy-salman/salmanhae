@@ -124,6 +124,11 @@ class LLMClient:
                 return "FINISH"
             return next_worker
         except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+            # 아직 아무 워커도 실행되지 않은 첫 호출에서 장애가 나면 FINISH로 보내면
+            # workers_called=[]인 채로 generate_answer에 도달해 fallback 메시지만 반환됨.
+            # 기본 워커로 라우팅해 최소한의 응답을 보장한다.
+            if not workers_called:
+                return "PROPERTY_SEARCH"
             return "FINISH"
 
     def classify(self, message: str) -> dict[str, Any] | None:
