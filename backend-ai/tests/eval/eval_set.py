@@ -51,9 +51,8 @@ EVAL_SET: list[EvalCase] = [
     # ── 복합: PROPERTY_SEARCH + PRICE_ANALYSIS ────────────────────────────────
     EvalCase(
         "강남구 오피스텔 가장 싼 거 추천해줘",
-        ["PRICE_ANALYSIS", "PROPERTY_SEARCH"],
-        is_complex=True,
-        note="시세 파악 후 조건에 맞는 매물 검색",
+        ["PROPERTY_SEARCH"],
+        note="가장 싼 거 = 가격 조건 필터링, 시세 조회 불필요",
     ),
     EvalCase(
         "시세 대비 저렴하게 나온 신림동 원룸 찾아줘",
