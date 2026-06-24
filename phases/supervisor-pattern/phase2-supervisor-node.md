@@ -11,7 +11,7 @@ LLM이 workers_called를 보고 다음 워커를 동적으로 결정하는 super
 - [ ] `supervisor.py`가 존재하고 `supervisor(state)` 함수를 export함
 - [ ] `LLMClient.decide_next_worker(message, workers_called)` 메서드가 존재함
 - [ ] workers_called에 이미 있는 워커는 다시 선택하지 않음
-- [ ] LLM 호출 실패 시 "FINISH"를 반환하는 안전 폴백이 있음
+- [ ] LLM 호출 실패 시 workers_called가 비어 있으면 "PROPERTY_SEARCH", 아니면 "FINISH"를 반환하는 안전 폴백이 있음
 - [ ] `cd backend-ai && .venv/bin/python -c "from app.graph.nodes.supervisor import supervisor; print('ok')"` 성공
 
 ## Architecture Rules
