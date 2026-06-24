@@ -377,7 +377,7 @@ const renderMarkers = () => {
 
 const refreshFromMapBounds = async () => {
   if (!map) {
-    await store.fetchProperties()
+    await store.fetchViewport()
     return
   }
 
@@ -386,7 +386,7 @@ const refreshFromMapBounds = async () => {
     longitude: map.getCenter().lng()
   })
   store.setZoom(map.getZoom())
-  await store.fetchProperties(getMapBounds())
+  await store.fetchViewport(getMapBounds())
 }
 
 const refreshFromFilters = async () => {
@@ -430,7 +430,7 @@ onMounted(async () => {
     await refreshFromMapBounds()
   } catch (error) {
     mapError.value = error.message || '지도 SDK 설정을 확인해주세요.'
-    await store.fetchProperties()
+    await store.fetchViewport()
   } finally {
     isMapLoading.value = false
   }

@@ -4,15 +4,17 @@
 Switch the map frontend from loading all properties with `/api/v1/properties` to loading zoom-aware viewport items with `/api/v1/map/viewport`.
 
 ## Files
-- `frontend/src/api/*` - Add a map viewport API function using current bounds, zoom, and filters
-- `frontend/src/stores/*` - Store viewport mode, viewport items, loading/error state, and selected property state
-- `frontend/src/components/map/*` - Wire map idle/zoom/filter changes to the new API call
+- `frontend/src/api/properties.js` - Add a map viewport API function using current bounds, zoom, and filters
+- `frontend/src/api/properties.test.mjs` - Verify the viewport API endpoint and cleaned query params
+- `frontend/src/store/mapStore.js` - Store viewport mode, viewport items, loading/error state, and selected property state
+- `frontend/src/views/MapExplorer.vue` - Wire map idle/zoom/filter changes to the new API call
+- `frontend/package.json` - Run all API tests through `pnpm test`
 
 ## Done When
-- [ ] map movement and zoom call `/api/v1/map/viewport` instead of loading every property.
-- [ ] requests are debounced or triggered on map idle to avoid excessive network calls.
-- [ ] property filters are preserved in viewport requests.
-- [ ] API errors show the existing map error UI without breaking the page.
+- [x] map movement and zoom call `/api/v1/map/viewport` instead of loading every property.
+- [x] requests are debounced or triggered on map idle to avoid excessive network calls.
+- [x] property filters are preserved in viewport requests.
+- [x] API errors show the existing map error UI without breaking the page.
 
 ## Architecture Rules
 - Frontend calls Spring Boot REST APIs only.

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { sendChatMessage } from '../api/chat'
-import { fetchProperties, fetchPropertyDetail } from '../api/properties'
+import { fetchMapViewport, fetchPropertyDetail } from '../api/properties'
 
 const DEFAULT_BOUNDS = {
   west: 126.76,
@@ -25,6 +25,8 @@ export default defineStore('map', {
     currentRegion: 'seoul',
     selectedPropertyId: null,
     selectedProperty: null,
+    viewportMode: '',
+    viewportItems: [],
     properties: [],
     totalCount: 0,
     bounds: { ...DEFAULT_BOUNDS },
@@ -126,22 +128,25 @@ export default defineStore('map', {
       }
       this.searchKeyword = ''
     },
-    async fetchProperties(bounds = this.bounds) {
+    async fetchViewport(bounds = this.bounds) {
       const seq = ++this.requestSeq
       this.isLoading = true
       this.error = ''
       this.setBounds(bounds)
 
       try {
-        const data = await fetchProperties({
+        const data = await fetchMapViewport({
           ...this.bounds,
+          zoom: this.zoom,
           ...this.filters
         })
 
         if (seq !== this.requestSeq) return
 
-        this.properties = data.items || []
-        this.totalCount = data.totalCount ?? this.properties.length
+        this.viewportMode = data.mode || ''
+        this.viewportItems = data.items || []
+        this.properties = this.viewportItems.filter((item) => item.type === 'PROPERTY')
+        this.totalCount = data.totalCount ?? this.viewportItems.length
         this.lastFetchedAt = new Date().toISOString()
 
         if (this.selectedPropertyId && !this.properties.some((property) => property.id === this.selectedPropertyId)) {
@@ -151,6 +156,8 @@ export default defineStore('map', {
       } catch (error) {
         if (seq !== this.requestSeq) return
         this.error = error.response?.data?.message || '매물 데이터를 불러오지 못했습니다.'
+        this.viewportMode = ''
+        this.viewportItems = []
         this.properties = []
         this.totalCount = 0
       } finally {
@@ -158,6 +165,9 @@ export default defineStore('map', {
           this.isLoading = false
         }
       }
+    },
+    async fetchProperties(bounds = this.bounds) {
+      await this.fetchViewport(bounds)
     },
     async selectProperty(id) {
       const seq = ++this.detailRequestSeq
