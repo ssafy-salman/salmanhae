@@ -62,7 +62,7 @@ def test_agent_chat_returns_workers_called_and_answer(monkeypatch) -> None:
 
     body = response.json()
     assert response.status_code == 200
-    assert "PROPERTY_SEARCH" in body["workersCalled"]
+    assert body["workersCalled"] == ["PROPERTY_SEARCH"]
     assert body["answer"]
     assert "properties" in body
 
@@ -96,7 +96,7 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
 
     body = response.json()
     assert response.status_code == 200
-    assert "LEGAL_CONSULT" in body["workersCalled"]
+    assert body["workersCalled"] == ["LEGAL_CONSULT"]
     assert body["answer"]
     assert len(body["legalCards"]) >= 1
     card = body["legalCards"][0]
@@ -156,7 +156,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
 
     body = response.json()
     assert response.status_code == 200
-    assert "PRICE_ANALYSIS" in body["workersCalled"]
+    assert body["workersCalled"] == ["PRICE_ANALYSIS"]
     assert body["analysisCards"]
     card = body["analysisCards"][0]
     assert card["type"] == "PRICE"
@@ -196,7 +196,7 @@ def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch)
 
     body = response.json()
     assert response.status_code == 200
-    assert "PRICE_ANALYSIS" in body["workersCalled"]
+    assert body["workersCalled"] == ["PRICE_ANALYSIS"]
     card = body["analysisCards"][0]
     assert card["metrics"]["error"] == "SPRING_API_UNAVAILABLE"
     assert card["metrics"]["stub"] is False
@@ -243,7 +243,7 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
 
     body = response.json()
     assert response.status_code == 200
-    assert "SAFETY_ANALYSIS" in body["workersCalled"]
+    assert body["workersCalled"] == ["SAFETY_ANALYSIS"]
     assert body["analysisCards"]
     card = body["analysisCards"][0]
     assert card["type"] == "SAFETY"
