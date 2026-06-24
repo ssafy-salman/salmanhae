@@ -38,6 +38,31 @@ INSERT INTO properties (
     'MVP_SYNTHETIC', 'synthetic-4', DATE '2026-06-01', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 );
 
+INSERT INTO safety_facility (
+    id, type, name, address, latitude, longitude, source, source_id, description,
+    created_at, updated_at
+) VALUES
+(
+    201, 'CCTV', 'Test CCTV', 'test cctv address',
+    37.4703210, 126.9361110, 'TEST', 'cctv-1', 'fixture cctv',
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+),
+(
+    202, 'EMERGENCY_BELL', 'Test Emergency Bell', 'test bell address',
+    37.4705000, 126.9363000, 'TEST', 'bell-1', 'fixture bell',
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+),
+(
+    203, 'SECURITY_LIGHT', 'Test Security Light', 'test light address',
+    37.4708000, 126.9367000, 'TEST', 'light-1', 'fixture light',
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+),
+(
+    204, 'POLICE', 'Test Police Box', 'test police address',
+    37.4710000, 126.9370000, 'TEST', 'police-1', 'fixture police',
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+);
+
 INSERT INTO transaction_history (
     id, source_api, source_transaction_key, property_type, transaction_type,
     sido, sigungu, dong, legal_dong_code, jibun, building_name, building_key,
