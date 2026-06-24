@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from app.core.config import get_settings
-from app.graph.state import AgentState, Intent
+from app.graph.state import AgentState
 from app.rag.prompts import (
     build_analysis_answer_prompt,
     build_legal_rag_prompt,
@@ -15,6 +15,28 @@ from app.services.analysis_answer_service import AnalysisAnswerService
 
 
 HttpPost = Callable[..., httpx.Response]
+
+SUPERVISOR_PROMPT = """\
+다음 사용자 메시지와 지금까지 실행된 워커 목록을 보고, 다음에 호출할 워커를 결정해줘.
+
+사용자 메시지: {message}
+이미 실행된 워커: {workers_called}
+
+사용 가능한 워커:
+- PROPERTY_SEARCH: 매물 추천·검색·조건 필터링 (지역, 가격, 면적, 타입 등)
+- LEGAL_CONSULT: 임대차 법률, 계약, 보증금, 대항력, 갱신 등 법률 질문
+- PRICE_ANALYSIS: 특정 지역·매물의 시세·실거래가·가격 적정성 분석
+- SAFETY_ANALYSIS: 주변 치안, CCTV, 안전시설, 범죄율 등 생활 안전 분석
+- FINISH: 충분한 정보가 모였으므로 답변 생성 단계로 이동
+
+규칙:
+- 이미 실행된 워커는 다시 선택하지 마.
+- 사용자 의도를 처리하기에 충분한 워커가 실행됐으면 FINISH를 선택해.
+- 워커가 하나도 실행되지 않았으면 반드시 워커 하나를 선택해.
+
+JSON만 반환해. 설명 없이:
+{{"next_worker": "...", "reasoning": "이유 한 줄"}}\
+"""
 
 CLASSIFY_INTENT_PROMPT = """\
 다음 사용자 메시지를 읽고, 부동산 AI 어시스턴트 관점에서 의도를 분류해줘.
@@ -72,6 +94,36 @@ class LLMClient:
         self.base_url = configured_base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.http_post = http_post
+
+    def decide_next_worker(self, message: str, workers_called: list[str]) -> str:
+        prompt = SUPERVISOR_PROMPT.format(
+            message=message,
+            workers_called=", ".join(workers_called) if workers_called else "없음",
+        )
+        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "FINISH"}
+        try:
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_completion_tokens": 128,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            text = extract_chat_completion_text(response.json()) or "{}"
+            parsed = json.loads(text)
+            next_worker = parsed.get("next_worker", "FINISH")
+            if next_worker not in valid or next_worker in workers_called:
+                return "FINISH"
+            return next_worker
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+            return "FINISH"
 
     def classify(self, message: str) -> dict[str, Any] | None:
         prompt = CLASSIFY_INTENT_PROMPT.format(message=message)
