@@ -49,6 +49,7 @@ def test_analyze_price_calls_spring_property_transactions_and_price_analysis() -
 
     assert result["selectedPropertyId"] == "7"
     assert result["stub"] is False
+    assert result["summary"] == "Green Villa 기준으로 최근 거래 1건과 지역 통계 1건을 확인했습니다."
     assert result["metrics"]["comparableTransactionCount"] == 1
     assert result["metrics"]["regionStatCount"] == 1
     assert result["metrics"]["buildingStatCount"] == 1
@@ -90,6 +91,8 @@ def test_analyze_safety_calls_spring_safety_summary() -> None:
 
     assert result["selectedPropertyId"] == "7"
     assert result["score"] == 78
+    assert result["summary"] == "반경 500m 기준 안전 점수는 78점입니다."
+    assert result["safetySummary"]["safetyScore"] == 78
     assert result["metrics"]["radius"] == 500
     assert result["metrics"]["cctvCount300m"] == 8
     assert calls == [
@@ -110,6 +113,7 @@ def test_analysis_requires_selected_property_without_http_call() -> None:
 
     assert result["requiresSelection"] is True
     assert result["selectedPropertyId"] is None
+    assert result["summary"] == "분석할 매물을 먼저 선택해 주세요."
     assert calls == []
 
 
@@ -124,4 +128,4 @@ def test_analysis_failure_returns_controlled_fallback() -> None:
     assert result["selectedPropertyId"] == "7"
     assert result["error"] == "SPRING_API_UNAVAILABLE"
     assert result["stub"] is False
-    assert result["summary"]
+    assert result["summary"] == "선택한 매물의 안전 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."

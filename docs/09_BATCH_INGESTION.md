@@ -202,3 +202,40 @@ for a metric, that metric contributes `0`.
 
 The upsert updates `safety_score` and safety facility counts while preserving existing `price_score`.
 New rows are inserted with `price_score = null` until a price scoring batch fills that value.
+
+## Phase 6 Safety Batch Runbook
+
+F-4 safety data is now a two-step stored-data flow:
+
+1. Safety facility ingestion reads configured public API sources and upserts normalized point data into `safety_facility`.
+2. Property safety score recalculation reads only `safety_facility` and active geocoded `properties`, then upserts `property_score_stat`.
+
+Recommended monthly production order:
+
+```bash
+SAFETY_INGESTION_SCHEDULER_ENABLED=true
+SAFETY_SCORE_SCHEDULER_ENABLED=true
+```
+
+Default schedule in `Asia/Seoul`:
+
+| Step | Default cron | Purpose |
+| --- | --- | --- |
+| Safety facility ingestion | `0 0 3 1 * *` | Refresh CCTV, emergency bell, security light, and police/security facility point rows. |
+| Property safety score recalculation | `0 30 3 1 * *` | Recalculate per-property safety score and facility counts after ingestion. |
+
+Required keys must be supplied through environment variables or platform secret settings, never committed:
+
+| Environment variable | Used by |
+| --- | --- |
+| `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell and security light when endpoint URLs require a service key. |
+| `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source. |
+
+Verification checklist:
+
+- `GET /api/v1/safety/facilities` returns stored point rows from `safety_facility`.
+- `GET /api/v1/properties/{id}/safety-summary?radius=500` returns `safetyScore`, `priceScore`, and count fields from `property_score_stat`.
+- Backend AI `SAFETY_ANALYSIS` calls Spring Boot `safety-summary` and surfaces the precomputed score/count fields in the analysis card and answer.
+- User-facing APIs must not call public safety APIs directly.
+
+MVP scope is point-data safety facilities only. WMS-only safety layers remain excluded from this batch flow and should be handled as a separate future map-layer feature.

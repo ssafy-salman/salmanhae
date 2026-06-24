@@ -23,7 +23,7 @@ class AnalysisAnswerService:
         else:
             comparable_count = None
         if comparable_count is not None:
-            facts.append(f"최근 실거래 {comparable_count}건을 기준으로 확인했습니다.")
+            facts.append(f"최근 거래 {comparable_count}건을 기준으로 확인했습니다.")
 
         if transactions:
             transaction = transactions[0]
@@ -41,7 +41,7 @@ class AnalysisAnswerService:
             if area_m2 is not None:
                 parts.append(f"전용면적 {area_m2}㎡")
             if parts:
-                facts.append("최근 사례는 " + ", ".join(parts) + "입니다.")
+                facts.append("최근 거래는 " + ", ".join(parts) + "입니다.")
 
         if region_stats:
             region_stat = region_stats[0]
@@ -61,7 +61,7 @@ class AnalysisAnswerService:
         if not facts:
             return "분석할 근거 데이터가 부족합니다. 매물을 선택하거나 시세 데이터가 쌓인 뒤 다시 확인해 주세요."
 
-        return " ".join(facts) + " 보증보험 가능 여부나 법적 판단은 포함하지 않습니다."
+        return " ".join(facts) + " 보증보험 가능 여부나 법적 판단은 포함하지 않았습니다."
 
     def generate_safety_answer(self, state: AgentState) -> str:
         result = self._tool_result(state, "safetyAnalysis")
@@ -97,7 +97,7 @@ class AnalysisAnswerService:
             ("cctvCount300m", "CCTV"),
             ("bellCount300m", "비상벨"),
             ("lightCount300m", "보안등"),
-            ("policeCount500m", "파출소"),
+            ("policeCount500m", "경찰시설"),
         ]
         for key, label in count_specs:
             value = metrics.get(key)

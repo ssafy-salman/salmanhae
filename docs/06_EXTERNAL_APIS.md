@@ -139,3 +139,21 @@ instead of calling public APIs during user requests.
 | SafetyMap police facility IF_0036 | `POLICE` | `safety.data.safemap-police-url`, default `https://www.safemap.go.kr/openapi2/IF_0036` | XML | Uses `safety.data.safemap-service-key` or `SAFEMAP_SERVICE_KEY`; `x` is longitude and `y` is latitude. |
 
 Common paging config: `safety.data.page-size` defaults to `1000`.
+
+## F-4 Safety API Operations
+
+The F-4 MVP uses public safety APIs only in backend batch jobs. Runtime user requests read Spring Boot DB-backed APIs only.
+
+| Data | Public source format | Stored table | Runtime use |
+| --- | --- | --- | --- |
+| CCTV | CSV | `safety_facility` | Map overlay and safety score count within 300m. |
+| Emergency bell | JSON or XML depending on configured endpoint | `safety_facility` | Safety score count within 300m. |
+| Security light | JSON | `safety_facility` | Safety score count within 300m. |
+| Police/security facility | SafetyMap XML | `safety_facility` | Safety score count within 500m. |
+
+Operators must configure service keys as environment variables:
+
+- `PUBLIC_DATA_SERVICE_KEY` for public-data endpoints that require a service key.
+- `SAFEMAP_SERVICE_KEY` for the SafetyMap police/security facility source.
+
+Do not expose these keys to the frontend. The frontend and backend-ai call Spring Boot APIs only. WMS-based safety layers are not part of the MVP stored-data flow.

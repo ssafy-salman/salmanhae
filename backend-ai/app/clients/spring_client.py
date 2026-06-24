@@ -71,7 +71,7 @@ class SpringClient:
             "query": message,
             "selectedPropertyId": selected_property_id,
             "summary": (
-                f"{building_name} 기준으로 최근 실거래 {len(transaction_items)}건과 "
+                f"{building_name} 기준으로 최근 거래 {len(transaction_items)}건과 "
                 f"지역 통계 {len(region_stats)}건을 확인했습니다."
             ),
             "property": property_detail,

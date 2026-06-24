@@ -179,6 +179,9 @@ class LLMClient:
 
     def generate_answer(self, state: AgentState) -> str:
         workers_called = state.get("workers_called", [])
+        if not workers_called and state.get("intent"):
+            intent = state["intent"]
+            workers_called = [str(getattr(intent, "value", intent))]
 
         if "GENERAL_CHAT" in workers_called:
             live = self._generate_live_general_chat_answer(state)

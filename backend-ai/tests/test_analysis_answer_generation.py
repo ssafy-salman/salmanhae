@@ -13,7 +13,7 @@ def test_llm_client_generates_price_answer_from_tool_results() -> None:
             "analysis_cards": [
                 {
                     "type": "PRICE",
-                    "summary": "최근 실거래와 지역 통계를 확인했습니다.",
+                    "summary": "최근 거래와 지역 통계를 확인했습니다.",
                     "metrics": {
                         "selectedPropertyId": "1",
                         "comparableTransactionCount": 2,
@@ -52,7 +52,7 @@ def test_llm_client_generates_price_answer_from_tool_results() -> None:
         }
     )
 
-    assert "최근 실거래 2건" in answer
+    assert "최근 거래 2건" in answer
     assert "2026-05" in answer
     assert "보증금 10,000,000원" in answer
     assert "월세 520,000원" in answer
@@ -105,7 +105,7 @@ def test_llm_client_generates_safety_answer_from_tool_results() -> None:
     assert "CCTV 8개" in answer
     assert "비상벨 2개" in answer
     assert "보안등 14개" in answer
-    assert "파출소 1개" in answer
+    assert "경찰시설 1개" in answer
     assert "확정" not in answer
 
 
@@ -176,7 +176,7 @@ def test_llm_client_price_answer_preserves_zero_comparable_count() -> None:
         {
             "user_id": "user-1",
             "session_id": None,
-            "message": "최근 거래가 있어?",
+            "message": "최근 거래가 없어?",
             "context": {"selectedPropertyId": "1"},
             "intent": Intent.PRICE_ANALYSIS,
             "analysis_cards": [
@@ -204,9 +204,9 @@ def test_llm_client_price_answer_preserves_zero_comparable_count() -> None:
         }
     )
 
-    assert "최근 실거래 0건" in answer
-    assert "최근 실거래 1건" not in answer
-    assert "최근 실거래 7건" not in answer
+    assert "최근 거래 0건" in answer
+    assert "최근 거래 1건" not in answer
+    assert "최근 거래 7건" not in answer
     assert "2026-05" in answer
 
 
