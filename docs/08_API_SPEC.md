@@ -713,3 +713,16 @@ Authorization: Bearer {token}
 GET /api/v1/sessions
 GET /api/v1/sessions/{sessionId}/messages
 ```
+
+## F-4 Safety Analysis Contract
+
+`GET /api/v1/properties/{propertyId}/safety-summary?radius=500` returns stored values from `property_score_stat`. The endpoint must not call public safety APIs at request time.
+
+Backend AI `SAFETY_ANALYSIS` uses Spring Boot only:
+
+1. Read `selectedPropertyId` from the chat context.
+2. Call `GET /api/v1/properties/{propertyId}/safety-summary?radius=500`.
+3. Copy `safetyScore`, `cctvCount300m`, `bellCount300m`, `lightCount300m`, and `policeCount500m` into the safety analysis card metrics.
+4. Generate a Korean answer that clearly shows the score and facility counts when present.
+
+If `selectedPropertyId` is missing, backend-ai returns a selection-required fallback instead of calling Spring. If Spring is unavailable, backend-ai returns a controlled fallback with `error = SPRING_API_UNAVAILABLE`.
