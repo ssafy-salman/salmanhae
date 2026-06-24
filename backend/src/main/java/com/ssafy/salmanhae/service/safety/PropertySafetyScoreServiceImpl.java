@@ -2,6 +2,7 @@ package com.ssafy.salmanhae.service.safety;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -53,9 +54,17 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 	@Override
 	public List<PropertySafetyScoreResult> recalculateAll() {
 		List<PropertyRow> properties = propertyDao.findActivePropertiesForSafetyScoring();
-		List<PropertySafetyScoreResult> results = new ArrayList<>(properties.size());
-		for (int start = 0; start < properties.size(); start += PROPERTY_CHUNK_SIZE) {
-			List<PropertyRow> chunk = properties.subList(start, Math.min(start + PROPERTY_CHUNK_SIZE, properties.size()));
+		List<PropertyRow> spatiallyOrderedProperties = properties.stream()
+				.sorted(Comparator.comparing(PropertyRow::latitude)
+						.thenComparing(PropertyRow::longitude)
+						.thenComparing(PropertyRow::id))
+				.toList();
+		List<PropertySafetyScoreResult> results = new ArrayList<>(spatiallyOrderedProperties.size());
+		for (int start = 0; start < spatiallyOrderedProperties.size(); start += PROPERTY_CHUNK_SIZE) {
+			List<PropertyRow> chunk = spatiallyOrderedProperties.subList(
+					start,
+					Math.min(start + PROPERTY_CHUNK_SIZE, spatiallyOrderedProperties.size())
+			);
 			List<SafetyFacilityRow> facilities = findNearbyCandidates(chunk);
 			results.addAll(chunk.stream()
 					.map(property -> calculateForProperty(property, facilities))
