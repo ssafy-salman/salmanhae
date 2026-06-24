@@ -53,10 +53,10 @@ class PropertySafetyScoreServiceTest {
 		when(propertyDao.findActivePropertiesForSafetyScoring()).thenReturn(List.of(property));
 		when(safetyFacilityDao.findInBounds(
 				argThat(types -> types != null && types.size() == 4),
-				argThat(west -> west.compareTo(new BigDecimal("126.931")) < 0),
-				argThat(east -> east.compareTo(new BigDecimal("126.941")) > 0),
-				argThat(south -> south.compareTo(new BigDecimal("37.466")) < 0),
-				argThat(north -> north.compareTo(new BigDecimal("37.474")) > 0)
+				argThat(west -> west.compareTo(new BigDecimal("-180")) == 0),
+				argThat(east -> east.compareTo(new BigDecimal("180")) == 0),
+				argThat(south -> south.compareTo(new BigDecimal("-90")) == 0),
+				argThat(north -> north.compareTo(new BigDecimal("90")) == 0)
 		)).thenReturn(List.of(
 				facility(SafetyFacilityType.CCTV, "37.4701000", "126.9361000"),
 				facility(SafetyFacilityType.EMERGENCY_BELL, "37.4702000", "126.9361000"),

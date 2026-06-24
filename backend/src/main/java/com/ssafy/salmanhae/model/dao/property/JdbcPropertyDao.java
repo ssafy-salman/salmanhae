@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ssafy.salmanhae.model.dto.map.MapViewportItemType;
 import com.ssafy.salmanhae.model.dto.map.PropertyClusterViewportItem;
@@ -383,6 +385,7 @@ public class JdbcPropertyDao implements PropertyDao {
 	}
 
 	@Override
+	@Transactional
 	public int upsertSafetyScoreStats(List<PropertySafetyScoreResult> results) {
 		if (results == null || results.isEmpty()) {
 			return 0;
@@ -400,6 +403,36 @@ public class JdbcPropertyDao implements PropertyDao {
 		params.put("bellCount300m", result.bellCount300m());
 		params.put("lightCount300m", result.lightCount300m());
 		params.put("policeCount500m", result.policeCount500m());
+		try {
+			return upsertSafetyScoreStatWithOnConflict(params);
+		} catch (BadSqlGrammarException exception) {
+			if (exception.getMessage() != null && exception.getMessage().contains("ON CONFLICT")) {
+				return upsertSafetyScoreStatWithUpdateInsert(params);
+			}
+			throw exception;
+		}
+	}
+
+	private int upsertSafetyScoreStatWithOnConflict(Map<String, Object> params) {
+		return jdbcTemplate.update("""
+				INSERT INTO property_score_stat (
+				    property_id, safety_score, cctv_count_300m, bell_count_300m,
+				    light_count_300m, police_count_500m, created_at, updated_at
+				) VALUES (
+				    :propertyId, :safetyScore, :cctvCount300m, :bellCount300m,
+				    :lightCount300m, :policeCount500m, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+				)
+				ON CONFLICT (property_id) DO UPDATE
+				SET safety_score = EXCLUDED.safety_score,
+				    cctv_count_300m = EXCLUDED.cctv_count_300m,
+				    bell_count_300m = EXCLUDED.bell_count_300m,
+				    light_count_300m = EXCLUDED.light_count_300m,
+				    police_count_500m = EXCLUDED.police_count_500m,
+				    updated_at = CURRENT_TIMESTAMP
+				""", params);
+	}
+
+	private int upsertSafetyScoreStatWithUpdateInsert(Map<String, Object> params) {
 		int updated = jdbcTemplate.update("""
 				UPDATE property_score_stat
 				SET safety_score = :safetyScore,

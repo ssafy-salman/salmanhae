@@ -49,8 +49,15 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 
 	@Override
 	public List<PropertySafetyScoreResult> recalculateAll() {
+		List<SafetyFacilityRow> facilities = safetyFacilityDao.findInBounds(
+				SCORE_TYPES,
+				BigDecimal.valueOf(-180),
+				BigDecimal.valueOf(180),
+				BigDecimal.valueOf(-90),
+				BigDecimal.valueOf(90)
+		);
 		List<PropertySafetyScoreResult> results = propertyDao.findActivePropertiesForSafetyScoring().stream()
-				.map(this::calculateForProperty)
+				.map(property -> calculateForProperty(property, facilities))
 				.toList();
 		int upsertedCount = results.isEmpty() ? 0 : propertyDao.upsertSafetyScoreStats(results);
 		log.info("Property safety score recalculation finished: calculated={}, upserted={}", results.size(), upsertedCount);
@@ -74,8 +81,7 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 		);
 	}
 
-	private PropertySafetyScoreResult calculateForProperty(PropertyRow property) {
-		List<SafetyFacilityRow> facilities = findNearbyCandidates(property);
+	private PropertySafetyScoreResult calculateForProperty(PropertyRow property, List<SafetyFacilityRow> facilities) {
 		int cctvCount300m = 0;
 		int bellCount300m = 0;
 		int lightCount300m = 0;
@@ -83,6 +89,9 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 
 		for (SafetyFacilityRow facility : facilities) {
 			if (facility == null || facility.type() == null || facility.latitude() == null || facility.longitude() == null) {
+				continue;
+			}
+			if (!isWithinCandidateBounds(property, facility)) {
 				continue;
 			}
 			double distanceMeters = distanceMeters(
@@ -113,19 +122,16 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 		));
 	}
 
-	private List<SafetyFacilityRow> findNearbyCandidates(PropertyRow property) {
+	private boolean isWithinCandidateBounds(PropertyRow property, SafetyFacilityRow facility) {
 		BigDecimal latitude = property.latitude();
 		BigDecimal longitude = property.longitude();
 		double latitudeDelta = POLICE_RADIUS_M / METERS_PER_LATITUDE_DEGREE;
 		double longitudeMetersPerDegree = METERS_PER_LATITUDE_DEGREE * Math.cos(Math.toRadians(latitude.doubleValue()));
 		double longitudeDelta = POLICE_RADIUS_M / Math.max(1.0, longitudeMetersPerDegree);
-		return safetyFacilityDao.findInBounds(
-				SCORE_TYPES,
-				longitude.subtract(BigDecimal.valueOf(longitudeDelta)),
-				longitude.add(BigDecimal.valueOf(longitudeDelta)),
-				latitude.subtract(BigDecimal.valueOf(latitudeDelta)),
-				latitude.add(BigDecimal.valueOf(latitudeDelta))
-		);
+		return facility.longitude().compareTo(longitude.subtract(BigDecimal.valueOf(longitudeDelta))) >= 0
+				&& facility.longitude().compareTo(longitude.add(BigDecimal.valueOf(longitudeDelta))) <= 0
+				&& facility.latitude().compareTo(latitude.subtract(BigDecimal.valueOf(latitudeDelta))) >= 0
+				&& facility.latitude().compareTo(latitude.add(BigDecimal.valueOf(latitudeDelta))) <= 0;
 	}
 
 	private double weightedMetric(int count, int fullScoreCount, double weight) {

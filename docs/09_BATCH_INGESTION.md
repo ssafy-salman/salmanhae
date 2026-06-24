@@ -178,7 +178,7 @@ logged and recorded in `SafetyFacilityIngestionResult`, while the remaining sour
 rows are accumulated through `SafetyFacilityDao.upsertAll`, so rerunning the batch is idempotent for
 the unique `(type, source, source_id)` safety facility key.
 
-## F-4 Property Safety Score Calculation Scheduler
+## Phase 5 Property Safety Score Calculation Scheduler
 
 Phase 5 recalculates `property_score_stat.safety_score` from stored `safety_facility` rows. It never
 calls public APIs during user requests; user-facing safety summary APIs read only precomputed DB rows.
