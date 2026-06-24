@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from app.core.config import get_settings
-from app.graph.state import AgentState, Intent
+from app.graph.state import AgentState
 from app.rag.prompts import (
     build_analysis_answer_prompt,
     build_legal_rag_prompt,
@@ -15,6 +15,29 @@ from app.services.analysis_answer_service import AnalysisAnswerService
 
 
 HttpPost = Callable[..., httpx.Response]
+
+SUPERVISOR_PROMPT = """\
+다음 사용자 메시지와 지금까지 실행된 워커 목록을 보고, 다음에 호출할 워커를 결정해줘.
+
+사용자 메시지: {message}
+이미 실행된 워커: {workers_called}
+
+사용 가능한 워커:
+- PROPERTY_SEARCH: 매물 추천·검색·조건 필터링 (지역, 가격, 면적, 타입 등)
+- LEGAL_CONSULT: 임대차 법률, 계약, 보증금, 대항력, 갱신 등 법률 질문
+- PRICE_ANALYSIS: 특정 지역·매물의 시세·실거래가·가격 적정성 분석
+- SAFETY_ANALYSIS: 주변 치안, CCTV, 안전시설, 범죄율 등 생활 안전 분석
+- GENERAL_CHAT: 인사, 잡담, 서비스 소개 등 부동산과 무관한 일반 대화
+- FINISH: 충분한 정보가 모였으므로 답변 생성 단계로 이동
+
+규칙:
+- 이미 실행된 워커는 다시 선택하지 마.
+- 사용자 의도를 처리하기에 충분한 워커가 실행됐으면 FINISH를 선택해.
+- 워커가 하나도 실행되지 않았으면 반드시 워커 하나를 선택해.
+
+JSON만 반환해. 설명 없이:
+{{"next_worker": "...", "reasoning": "이유 한 줄"}}\
+"""
 
 CLASSIFY_INTENT_PROMPT = """\
 다음 사용자 메시지를 읽고, 부동산 AI 어시스턴트 관점에서 의도를 분류해줘.
@@ -73,6 +96,41 @@ class LLMClient:
         self.timeout_seconds = timeout_seconds
         self.http_post = http_post
 
+    def decide_next_worker(self, message: str, workers_called: list[str]) -> str:
+        prompt = SUPERVISOR_PROMPT.format(
+            message=message,
+            workers_called=", ".join(workers_called) if workers_called else "없음",
+        )
+        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "GENERAL_CHAT", "FINISH"}
+        try:
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_completion_tokens": 128,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            text = extract_chat_completion_text(response.json()) or "{}"
+            parsed = json.loads(text)
+            next_worker = parsed.get("next_worker", "FINISH")
+            if next_worker not in valid or next_worker in workers_called:
+                return "FINISH"
+            return next_worker
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+            # 아직 아무 워커도 실행되지 않은 첫 호출에서 장애가 나면 FINISH로 보내면
+            # workers_called=[]인 채로 generate_answer에 도달해 fallback 메시지만 반환됨.
+            # 기본 워커로 라우팅해 최소한의 응답을 보장한다.
+            if not workers_called:
+                return "PROPERTY_SEARCH"
+            return "FINISH"
+
     def classify(self, message: str) -> dict[str, Any] | None:
         prompt = CLASSIFY_INTENT_PROMPT.format(message=message)
         try:
@@ -120,28 +178,71 @@ class LLMClient:
             return {}
 
     def generate_answer(self, state: AgentState) -> str:
-        intent = state.get("intent", Intent.FALLBACK)
-        if intent == Intent.LEGAL_CONSULT:
+        workers_called = state.get("workers_called", [])
+
+        if "GENERAL_CHAT" in workers_called:
+            live = self._generate_live_general_chat_answer(state)
+            if live:
+                return live
+            return "안녕하세요! 살만해 부동산 AI입니다. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
+
+        parts: list[str] = []
+
+        if "LEGAL_CONSULT" in workers_called:
             live_answer = self._generate_live_legal_answer(state)
+            parts.append(live_answer if live_answer else generate_legal_answer(state))
+
+        if "PRICE_ANALYSIS" in workers_called or "SAFETY_ANALYSIS" in workers_called:
+            live_answer = self._generate_live_analysis_answer(state)
             if live_answer:
-                return live_answer
-            return generate_legal_answer(state)
-        if intent == Intent.PROPERTY_SEARCH:
+                parts.append(live_answer)
+            else:
+                if "PRICE_ANALYSIS" in workers_called:
+                    parts.append(AnalysisAnswerService().generate_price_answer(state))
+                if "SAFETY_ANALYSIS" in workers_called:
+                    parts.append(AnalysisAnswerService().generate_safety_answer(state))
+
+        if "PROPERTY_SEARCH" in workers_called:
             count = len(state.get("properties", []))
-            return f"조건에 맞는 매물 {count}개를 찾았습니다."
-        if intent == Intent.PRICE_ANALYSIS:
-            live_answer = self._generate_live_analysis_answer(state)
-            if live_answer:
-                return live_answer
-            return AnalysisAnswerService().generate_price_answer(state)
-        if intent == Intent.SAFETY_ANALYSIS:
-            live_answer = self._generate_live_analysis_answer(state)
-            if live_answer:
-                return live_answer
-            return AnalysisAnswerService().generate_safety_answer(state)
-        if intent == Intent.HUG_CALC:
-            return "HUG 보증 가입 계산은 1.5차 범위입니다. MVP에서는 관련 조건 안내까지만 제공합니다."
+            parts.append(f"조건에 맞는 매물 {count}개를 찾았습니다.")
+
+        if parts:
+            return "\n\n".join(parts)
+
         return "질문 의도를 조금 더 구체화해 주세요. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
+
+    def _generate_live_general_chat_answer(self, state: AgentState) -> str | None:
+        if not self.api_key or not self.model:
+            return None
+        try:
+            response = self.http_post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "당신은 살만해 부동산 AI 어시스턴트입니다. "
+                                "매물 추천, 임대차 법률 상담, 시세 분석, 안전 분석을 도와줍니다. "
+                                "일반 대화나 인사에는 친절하게 응답하고, 부동산 관련 질문으로 자연스럽게 유도하세요. "
+                                "한국어로 간결하게 답변하세요."
+                            ),
+                        },
+                        {"role": "user", "content": state["message"]},
+                    ],
+                    "max_completion_tokens": 300,
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            return extract_chat_completion_text(response.json())
+        except (httpx.HTTPError, KeyError, TypeError, ValueError):
+            return None
 
     def _generate_live_legal_answer(self, state: AgentState) -> str | None:
         legal_cards = state.get("legal_cards", [])

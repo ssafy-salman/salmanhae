@@ -39,7 +39,7 @@ def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
     }
     result = get_agent_graph().invoke(state)
     return AgentChatResponse(
-        intent=result["intent"],
+        workersCalled=result.get("workers_called", []),
         answer=result["answer"],
         properties=result.get("properties", []),
         legalCards=result.get("legal_cards", []),

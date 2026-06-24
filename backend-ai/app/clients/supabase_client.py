@@ -77,10 +77,11 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    "set local statement_timeout = %s",
-                    (self.statement_timeout_ms,),
-                )
+                cursor.execute(f"SET LOCAL statement_timeout = {int(self.statement_timeout_ms)}")
+                # IVFFlat 인덱스가 lists=100으로 설정돼 있으나 데이터 수가 적을 때
+                # 기본 probes=1이면 대부분의 클러스터를 건너뛰어 결과가 0개가 됨.
+                # probes를 lists 값과 동일하게 설정해 전체 인덱스를 탐색하도록 한다.
+                cursor.execute("SET LOCAL ivfflat.probes = 100")
                 cursor.execute(sql, (vector_literal, vector_literal, top_k))
                 return list(cursor.fetchall())
 

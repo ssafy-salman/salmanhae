@@ -6,8 +6,6 @@ from app.core.config import get_settings
 from app.graph.nodes import legal_rag as legal_rag_module
 from app.graph.nodes import price_analysis as price_analysis_module
 from app.graph.nodes import safety_analysis as safety_analysis_module
-from app.graph.nodes.classify_intent import classify_intent_fallback
-from app.graph.state import Intent
 from app.main import app
 
 
@@ -18,12 +16,19 @@ def internal_api_headers() -> dict[str, str]:
     return {"X-Internal-Api-Key": get_settings().internal_api_key}
 
 
-def route_as(monkeypatch, intent: Intent) -> None:
-    monkeypatch.setattr(
-        LLMClient,
-        "classify",
-        lambda self, message: {"intent": intent.value, "reasoning": "test route"},
-    )
+def route_as(monkeypatch, *workers: str) -> None:
+    """supervisor가 지정된 워커들을 순서대로 호출하고 FINISH하도록 mock."""
+    call_count = {"n": 0}
+    worker_list = list(workers)
+
+    def fake_decide(self, message, workers_called):
+        idx = call_count["n"]
+        call_count["n"] += 1
+        if idx < len(worker_list):
+            return worker_list[idx]
+        return "FINISH"
+
+    monkeypatch.setattr(LLMClient, "decide_next_worker", fake_decide)
     get_agent_graph.cache_clear()
 
 
@@ -41,8 +46,8 @@ def test_agent_chat_requires_internal_api_key() -> None:
     assert response.status_code == 401
 
 
-def test_agent_chat_returns_intent_and_answer(monkeypatch) -> None:
-    route_as(monkeypatch, Intent.PROPERTY_SEARCH)
+def test_agent_chat_returns_workers_called_and_answer(monkeypatch) -> None:
+    route_as(monkeypatch, "PROPERTY_SEARCH")
 
     response = client.post(
         "/internal/agent/chat",
@@ -57,7 +62,7 @@ def test_agent_chat_returns_intent_and_answer(monkeypatch) -> None:
 
     body = response.json()
     assert response.status_code == 200
-    assert body["intent"] == "PROPERTY_SEARCH"
+    assert body["workersCalled"] == ["PROPERTY_SEARCH"]
     assert body["answer"]
     assert "properties" in body
 
@@ -76,7 +81,7 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
             ]
 
     monkeypatch.setattr(legal_rag_module, "LegalRetriever", FakeRetriever)
-    route_as(monkeypatch, Intent.LEGAL_CONSULT)
+    route_as(monkeypatch, "LEGAL_CONSULT")
 
     response = client.post(
         "/internal/agent/chat",
@@ -91,7 +96,7 @@ def test_agent_chat_returns_legal_cards_for_legal_question(monkeypatch) -> None:
 
     body = response.json()
     assert response.status_code == 200
-    assert body["intent"] == "LEGAL_CONSULT"
+    assert body["workersCalled"] == ["LEGAL_CONSULT"]
     assert body["answer"]
     assert len(body["legalCards"]) >= 1
     card = body["legalCards"][0]
@@ -136,7 +141,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
             }
 
     monkeypatch.setattr(price_analysis_module, "SpringClient", FakeSpringClient)
-    route_as(monkeypatch, Intent.PRICE_ANALYSIS)
+    route_as(monkeypatch, "PRICE_ANALYSIS")
 
     response = client.post(
         "/internal/agent/chat",
@@ -151,7 +156,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
 
     body = response.json()
     assert response.status_code == 200
-    assert body["intent"] == "PRICE_ANALYSIS"
+    assert body["workersCalled"] == ["PRICE_ANALYSIS"]
     assert body["analysisCards"]
     card = body["analysisCards"][0]
     assert card["type"] == "PRICE"
@@ -176,7 +181,7 @@ def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch)
             }
 
     monkeypatch.setattr(price_analysis_module, "SpringClient", FakeSpringClient)
-    route_as(monkeypatch, Intent.PRICE_ANALYSIS)
+    route_as(monkeypatch, "PRICE_ANALYSIS")
 
     response = client.post(
         "/internal/agent/chat",
@@ -191,7 +196,7 @@ def test_agent_chat_returns_price_analysis_error_metric_on_fallback(monkeypatch)
 
     body = response.json()
     assert response.status_code == 200
-    assert body["intent"] == "PRICE_ANALYSIS"
+    assert body["workersCalled"] == ["PRICE_ANALYSIS"]
     card = body["analysisCards"][0]
     assert card["metrics"]["error"] == "SPRING_API_UNAVAILABLE"
     assert card["metrics"]["stub"] is False
@@ -223,7 +228,7 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
             }
 
     monkeypatch.setattr(safety_analysis_module, "SpringClient", FakeSpringClient)
-    route_as(monkeypatch, Intent.SAFETY_ANALYSIS)
+    route_as(monkeypatch, "SAFETY_ANALYSIS")
 
     response = client.post(
         "/internal/agent/chat",
@@ -238,7 +243,7 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
 
     body = response.json()
     assert response.status_code == 200
-    assert body["intent"] == "SAFETY_ANALYSIS"
+    assert body["workersCalled"] == ["SAFETY_ANALYSIS"]
     assert body["analysisCards"]
     card = body["analysisCards"][0]
     assert card["type"] == "SAFETY"
@@ -250,10 +255,6 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
     assert card["metrics"]["stub"] is False
     assert "안전 점수 78점" in body["answer"]
     assert "CCTV 8개" in body["answer"]
-
-
-def test_classify_intent_fallback_returns_fallback() -> None:
-    assert classify_intent_fallback("아무 말이나") == Intent.FALLBACK
 
 
 def card_text_in_answer(answer: str, card: dict) -> bool:
