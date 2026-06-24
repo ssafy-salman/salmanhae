@@ -48,14 +48,19 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 		if (baseUrl == null || baseUrl.isBlank()) {
 			return List.of();
 		}
+		int pageSize = properties.pageSize();
+		if (pageSize <= 0) {
+			log.warn("Invalid page size {} for {} safety facilities", pageSize, payloadName);
+			return List.of();
+		}
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
 		int totalCount = -1;
-		while (pageNo <= MAX_PAGES && (totalCount < 0 || (pageNo - 1) * properties.pageSize() < totalCount)) {
+		while (pageNo <= MAX_PAGES && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
 			URI uri = UriComponentsBuilder.fromUriString(baseUrl)
 					.queryParam("serviceKey", serviceKey)
 					.queryParam("pageNo", pageNo)
-					.queryParam("numOfRows", properties.pageSize())
+					.queryParam("numOfRows", pageSize)
 					.queryParam("type", "json")
 					.queryParam("returnType", "json")
 					.build()
@@ -81,7 +86,7 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 			ParsedSafetyFacilityPage page;
 			try {
 				page = parsePage(root);
-			} catch (IllegalArgumentException exception) {
+			} catch (RuntimeException exception) {
 				log.warn("Failed to parse {} safety facilities from {}", payloadName, baseUrl, exception);
 				break;
 			}
@@ -92,7 +97,7 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 				break;
 			}
 			facilities.addAll(page.facilities());
-			if (page.rawItemCount() < properties.pageSize()) {
+			if (page.rawItemCount() < pageSize) {
 				break;
 			}
 			pageNo++;
