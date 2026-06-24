@@ -72,7 +72,7 @@ public class SafetyFacilityIngestionServiceImpl implements SafetyFacilityIngesti
 					null
 			);
 		} catch (RuntimeException exception) {
-			log.warn("Safety facility source ingestion failed: source={}, error={}", sourceName, exception.toString());
+			log.warn("Safety facility source ingestion failed: source={}", sourceName, exception);
 			return new SafetyFacilityIngestionResult.SourceResult(
 					sourceName,
 					0,
