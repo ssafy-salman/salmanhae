@@ -19,6 +19,7 @@ data/output/
 run-logs/
 .codex/run-logs/
 .tmp/
+gha-creds-*.json
 
 # Generated SQL seed artifacts
 database/seed/

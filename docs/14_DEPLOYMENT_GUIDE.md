@@ -202,9 +202,39 @@ https://<frontend>.vercel.app
 
 브라우저에서 지도 SDK 로딩, API CORS, 로그인 후 JWT 포함 요청이 정상 동작하는지 확인합니다.
 
+## GitHub Actions 배포
+
+프론트엔드는 Vercel Git 연동으로 배포하고, Cloud Run 백엔드 2개만 GitHub Actions로 배포합니다.
+
+| 변경 경로 | 배포 대상 | 워크플로우 |
+| --- | --- | --- |
+| `backend-ai/**` | Cloud Run `salmanhae-ai` | `.github/workflows/deploy-backend-ai-cloud-run.yml` |
+| `backend/**` | Cloud Run `salmanhae-api` | `.github/workflows/deploy-backend-cloud-run.yml` |
+
+두 워크플로우는 `develop` 브랜치에 push 또는 merge될 때 경로 조건에 맞춰 실행됩니다. GitHub Actions 화면에서 `workflow_dispatch`로 수동 실행할 수도 있습니다.
+
+Cloud Run 서비스 환경변수는 기존 서비스 값을 유지하는 `merge` 방식으로 배포합니다. 새 환경변수가 추가되는 기능을 배포할 때는 Cloud Run 콘솔 또는 `gcloud run services update --update-env-vars`로 먼저 운영 값을 추가합니다.
+
+### GitHub Secret
+
+GitHub repository `Settings > Secrets and variables > Actions > Repository secrets`에 아래 secret을 추가합니다.
+
+| Secret | 내용 |
+| --- | --- |
+| `GCP_SA_KEY` | Cloud Run 배포 권한을 가진 Google Cloud service account key JSON |
+
+서비스 계정에는 최소한 아래 권한이 필요합니다.
+
+- Cloud Run Admin
+- Cloud Build Editor
+- Artifact Registry Writer
+- Service Account User
+
+`Service Account User`는 Cloud Run 런타임 서비스 계정에 대해 부여되어야 합니다. 기본 Compute Engine 서비스 계정을 사용한다면 `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`에 대해 부여합니다.
+
 ## 다음에 남은 작업
 
 - 운영 secret을 `--set-env-vars` 대신 Secret Manager로 옮길지 결정합니다.
 - FastAPI Cloud Run을 공개 URL + 내부 API 키 방식에서 IAM 비공개 호출 방식으로 강화할지 결정합니다.
 - Spring Scheduler 배치는 운영 중복 실행 위험이 있으므로 Cloud Scheduler + Cloud Run Job 분리를 검토합니다.
-- Vercel, Cloud Run, Upstash, Supabase 값을 실제 운영 환경에 넣고 smoke test를 수행합니다.
+- GitHub Actions 인증을 service account key JSON에서 Workload Identity Federation으로 강화할지 검토합니다.
