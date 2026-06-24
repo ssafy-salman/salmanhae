@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,12 +17,14 @@ public class CctvCsvClient implements SafetyFacilitySourceClient {
 
 	static final String SOURCE = "CCTV_CSV";
 
+	private static final Logger log = LoggerFactory.getLogger(CctvCsvClient.class);
+
 	private final SafetyDataProperties properties;
 	private final RestClient restClient;
 
 	public CctvCsvClient(SafetyDataProperties properties, RestClient.Builder restClientBuilder) {
 		this.properties = properties;
-		this.restClient = restClientBuilder.build();
+		this.restClient = SafetyFacilityHttpSupport.restClient(restClientBuilder);
 	}
 
 	@Override
@@ -30,11 +34,19 @@ public class CctvCsvClient implements SafetyFacilitySourceClient {
 
 	@Override
 	public List<NormalizedSafetyFacility> fetchFacilities() {
-		String body = restClient.get()
-				.uri(properties.cctvUrl())
-				.retrieve()
-				.body(String.class);
-		return parseFacilities(body);
+		try {
+			String body = restClient.get()
+					.uri(properties.cctvUrl())
+					.retrieve()
+					.body(String.class);
+			if (body == null || body.isBlank()) {
+				return List.of();
+			}
+			return parseFacilities(body);
+		} catch (RuntimeException exception) {
+			log.warn("Failed to fetch CCTV safety facilities from {}", properties.cctvUrl(), exception);
+			return List.of();
+		}
 	}
 
 	public List<NormalizedSafetyFacility> parseFacilities(String csv) {

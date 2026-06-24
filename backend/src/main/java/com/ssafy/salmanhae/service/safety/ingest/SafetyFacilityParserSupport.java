@@ -15,16 +15,14 @@ final class SafetyFacilityParserSupport {
 	}
 
 	static List<Map<String, String>> parseCsv(String csv) {
-		List<String> lines = csv == null ? List.of() : csv.lines()
-				.filter(line -> !line.isBlank())
-				.toList();
-		if (lines.size() < 2) {
+		List<String> records = parseCsvRecords(csv);
+		if (records.size() < 2) {
 			return List.of();
 		}
-		List<String> headers = parseCsvLine(stripBom(lines.get(0)));
+		List<String> headers = parseCsvLine(stripBom(records.get(0)));
 		List<Map<String, String>> rows = new ArrayList<>();
-		for (int i = 1; i < lines.size(); i++) {
-			List<String> values = parseCsvLine(lines.get(i));
+		for (int i = 1; i < records.size(); i++) {
+			List<String> values = parseCsvLine(records.get(i));
 			Map<String, String> row = new HashMap<>();
 			for (int j = 0; j < headers.size() && j < values.size(); j++) {
 				row.put(normalizeKey(headers.get(j)), values.get(j).trim());
@@ -32,6 +30,44 @@ final class SafetyFacilityParserSupport {
 			rows.add(row);
 		}
 		return rows;
+	}
+
+	private static List<String> parseCsvRecords(String csv) {
+		if (csv == null || csv.isBlank()) {
+			return List.of();
+		}
+		List<String> records = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		boolean inQuotes = false;
+		for (int i = 0; i < csv.length(); i++) {
+			char ch = csv.charAt(i);
+			if (ch == '"') {
+				current.append(ch);
+				if (inQuotes && i + 1 < csv.length() && csv.charAt(i + 1) == '"') {
+					current.append(csv.charAt(i + 1));
+					i++;
+				} else {
+					inQuotes = !inQuotes;
+				}
+			} else if ((ch == '\n' || ch == '\r') && !inQuotes) {
+				if (ch == '\r' && i + 1 < csv.length() && csv.charAt(i + 1) == '\n') {
+					i++;
+				}
+				addCsvRecord(records, current);
+			} else {
+				current.append(ch);
+			}
+		}
+		addCsvRecord(records, current);
+		return records;
+	}
+
+	private static void addCsvRecord(List<String> records, StringBuilder current) {
+		String record = current.toString();
+		if (!record.isBlank()) {
+			records.add(record);
+		}
+		current.setLength(0);
 	}
 
 	static List<String> parseCsvLine(String line) {

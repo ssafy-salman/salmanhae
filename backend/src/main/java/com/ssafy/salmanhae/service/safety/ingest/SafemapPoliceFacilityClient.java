@@ -9,6 +9,8 @@ import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,12 +25,14 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 
 	static final String SOURCE = "IF_0036";
 
+	private static final Logger log = LoggerFactory.getLogger(SafemapPoliceFacilityClient.class);
+
 	private final SafetyDataProperties properties;
 	private final RestClient restClient;
 
 	public SafemapPoliceFacilityClient(SafetyDataProperties properties, RestClient.Builder restClientBuilder) {
 		this.properties = properties;
-		this.restClient = restClientBuilder.build();
+		this.restClient = SafetyFacilityHttpSupport.restClient(restClientBuilder);
 	}
 
 	@Override
@@ -46,16 +50,31 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 					.queryParam("pageNo", pageNo)
 					.queryParam("numOfRows", properties.pageSize())
 					.queryParam("returnType", "xml")
-					.build(true)
+					.build()
+					.encode()
 					.toUri();
-			List<NormalizedSafetyFacility> page = parseFacilities(
-					restClient.get().uri(uri).retrieve().body(String.class)
-			);
-			if (page.isEmpty()) {
+			String body;
+			try {
+				body = restClient.get().uri(uri).retrieve().body(String.class);
+			} catch (RuntimeException exception) {
+				log.warn("Failed to fetch Safemap police safety facilities from {}", properties.safemapPoliceUrl(), exception);
 				break;
 			}
-			facilities.addAll(page);
-			if (page.size() < properties.pageSize()) {
+			if (body == null || body.isBlank()) {
+				break;
+			}
+			ParsedSafetyFacilityPage page;
+			try {
+				page = parsePage(body);
+			} catch (IllegalArgumentException exception) {
+				log.warn("Failed to parse Safemap police safety facilities", exception);
+				break;
+			}
+			if (page.rawItemCount() == 0) {
+				break;
+			}
+			facilities.addAll(page.facilities());
+			if (page.rawItemCount() < properties.pageSize()) {
 				break;
 			}
 			pageNo++;
@@ -64,17 +83,31 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 	}
 
 	public List<NormalizedSafetyFacility> parseFacilities(String xml) {
+		return parsePage(xml).facilities();
+	}
+
+	private ParsedSafetyFacilityPage parsePage(String xml) {
 		try {
-			var documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			factory.setXIncludeAware(false);
+			factory.setExpandEntityReferences(false);
+
+			var documentBuilder = factory.newDocumentBuilder();
 			var document = documentBuilder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 			NodeList itemNodes = document.getElementsByTagName("item");
 			List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 			for (int i = 0; i < itemNodes.getLength(); i++) {
 				facilities.add(toFacility((Element) itemNodes.item(i)));
 			}
-			return facilities.stream()
-					.filter(NormalizedSafetyFacility::hasUsableCoordinates)
-					.toList();
+			return new ParsedSafetyFacilityPage(
+					facilities.stream()
+							.filter(NormalizedSafetyFacility::hasUsableCoordinates)
+							.toList(),
+					itemNodes.getLength()
+			);
 		} catch (Exception exception) {
 			throw new IllegalArgumentException("Invalid Safemap police facility XML payload", exception);
 		}

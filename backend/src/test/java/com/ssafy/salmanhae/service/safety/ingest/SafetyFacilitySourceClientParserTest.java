@@ -5,29 +5,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.salmanhae.config.SafetyDataProperties;
 import com.ssafy.salmanhae.model.dto.safety.SafetyFacilityType;
 
-@SpringBootTest
-@ActiveProfiles("test")
 class SafetyFacilitySourceClientParserTest {
 
-	@Autowired
 	private CctvCsvClient cctvCsvClient;
-
-	@Autowired
 	private EmergencyBellOpenApiClient emergencyBellOpenApiClient;
-
-	@Autowired
 	private SecurityLightOpenApiClient securityLightOpenApiClient;
-
-	@Autowired
 	private SafemapPoliceFacilityClient safemapPoliceFacilityClient;
+
+	@BeforeEach
+	void setUp() {
+		SafetyDataProperties properties = new SafetyDataProperties();
+		RestClient.Builder restClientBuilder = RestClient.builder();
+		ObjectMapper objectMapper = new ObjectMapper();
+		cctvCsvClient = new CctvCsvClient(properties, restClientBuilder);
+		emergencyBellOpenApiClient = new EmergencyBellOpenApiClient(properties, restClientBuilder, objectMapper);
+		securityLightOpenApiClient = new SecurityLightOpenApiClient(properties, restClientBuilder, objectMapper);
+		safemapPoliceFacilityClient = new SafemapPoliceFacilityClient(properties, restClientBuilder);
+	}
 
 	@Test
 	void cctvCsvParserNormalizesRowsAndSkipsInvalidCoordinates() throws Exception {
@@ -39,6 +42,7 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(facility.name()).isEqualTo("Test CCTV");
 		assertThat(facility.source()).isEqualTo(CctvCsvClient.SOURCE);
 		assertThat(facility.sourceId()).isEqualTo("cctv-1");
+		assertThat(facility.description()).isEqualTo("fixture cctv\nwith newline");
 		assertThat(facility.latitude()).isEqualByComparingTo("37.4703210");
 		assertThat(facility.longitude()).isEqualByComparingTo("126.9361110");
 	}
