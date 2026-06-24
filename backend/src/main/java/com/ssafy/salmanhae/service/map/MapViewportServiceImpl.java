@@ -22,8 +22,8 @@ public class MapViewportServiceImpl implements MapViewportService {
 	private static final int REGION_ITEM_LIMIT = 200;
 	private static final int CLUSTER_ITEM_LIMIT = 500;
 	private static final int PROPERTY_ITEM_LIMIT = 500;
-	private static final BigDecimal CLUSTER_GRID_ZOOM_14 = new BigDecimal("0.01");
-	private static final BigDecimal CLUSTER_GRID_ZOOM_15 = new BigDecimal("0.005");
+	private static final BigDecimal CLUSTER_GRID_ZOOM_14 = new BigDecimal("0.005");
+	private static final BigDecimal CLUSTER_GRID_ZOOM_15 = new BigDecimal("0.0025");
 
 	private final PropertyDao propertyDao;
 
@@ -39,6 +39,10 @@ public class MapViewportServiceImpl implements MapViewportService {
 		request.criteria().validateBounds();
 		MapViewportMode mode = resolveMode(request.zoom());
 		return switch (mode) {
+			case SIDO_AVG -> MapViewportResponse.from(
+					mode,
+					propertyDao.findRegionAverageViewportItems(request.criteria(), "SIDO", REGION_ITEM_LIMIT)
+			);
 			case SIGUNGU_AVG -> MapViewportResponse.from(
 					mode,
 					propertyDao.findRegionAverageViewportItems(request.criteria(), "SIGUNGU", REGION_ITEM_LIMIT)
@@ -59,6 +63,9 @@ public class MapViewportServiceImpl implements MapViewportService {
 	}
 
 	private MapViewportMode resolveMode(int zoom) {
+		if (zoom <= 9) {
+			return MapViewportMode.SIDO_AVG;
+		}
 		if (zoom <= 11) {
 			return MapViewportMode.SIGUNGU_AVG;
 		}

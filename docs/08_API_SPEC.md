@@ -140,7 +140,7 @@ F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물
 
 ### 지도 줌 레벨별 표시 데이터 조회
 ```http
-GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
+GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 ```
 
 프론트는 네이버지도 SDK의 현재 bounds와 zoom을 전달하고, 백엔드는 줌 레벨에 맞춰 지역 평균 또는 매물/클러스터 데이터를 반환합니다.
@@ -162,19 +162,20 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
 
 | mode | 지도 범위 | 반환 데이터 |
 | --- | --- | --- |
-| `SIDO_AVG` | 시/도 수준 | 시/도 실거래가 평균 |
-| `SIGUNGU_AVG` | 시/군/구 수준 | 시/군/구 실거래가 평균 |
-| `DONG_AVG` | 읍/면/동 수준 | 읍/면/동 실거래가 평균 |
+| `SIDO_AVG` | 시/도 수준 | 시/도 대표 가격 |
+| `SIGUNGU_AVG` | 시/군/구 수준 | 시/군/구 대표 가격 |
+| `DONG_AVG` | 읍/면/동 수준 | 읍/면/동 대표 가격 |
 | `PROPERTY_CLUSTER` | 거리/밀집 수준 | 원형 클러스터 |
 | `PROPERTY_MARKER` | 상세 확대 | 개별 매물 |
 
-`SIGUNGU_AVG`는 넓은 줌에서 시군구 단위 대표 마커를 안정적으로 표시하기 위해 현재 bounds 안의 활성 매물을 시군구별로 직접 집계합니다. `DONG_AVG`는 사용 가능한 `region_price_stat` 기준 지역 평균을 반환합니다.
+`SIDO_AVG`, `SIGUNGU_AVG`, `DONG_AVG`는 지도에 표시된 지역 마커를 확대했을 때 실제 매물이 비지 않도록 현재 bounds 안의 활성 매물을 행정구역별로 직접 집계합니다. 월세 대표 가격은 보증금이 아니라 `avgMonthlyRent` 기준으로 표시합니다.
 
 초기 운영 threshold는 네이버지도 zoom 숫자를 기준으로 서버에서 결정합니다.
 
 | zoom | mode | 설명 |
 | --- | --- | --- |
-| `<= 11` | `SIGUNGU_AVG` | 시/군/구 평균 표시 |
+| `<= 9` | `SIDO_AVG` | 시/도 대표 가격 표시 |
+| `10`-`11` | `SIGUNGU_AVG` | 시/군/구 대표 가격 표시 |
 | `12`-`13` | `DONG_AVG` | 읍/면/동 평균 표시 |
 | `14`-`15` | `PROPERTY_CLUSTER` | 거리 수준 밀집 매물 클러스터 표시 |
 | `>= 16` | `PROPERTY_MARKER` | 개별 매물 마커 표시 |

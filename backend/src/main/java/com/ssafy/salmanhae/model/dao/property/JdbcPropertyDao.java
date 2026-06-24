@@ -112,8 +112,8 @@ public class JdbcPropertyDao implements PropertyDao {
 			String regionLevel,
 			int limit
 	) {
-		if ("SIGUNGU".equals(regionLevel)) {
-			return findVisibleSigunguAverageViewportItems(criteria, limit);
+		if ("SIDO".equals(regionLevel) || "SIGUNGU".equals(regionLevel) || "DONG".equals(regionLevel)) {
+			return findVisibleRegionAverageViewportItems(criteria, regionLevel, limit);
 		}
 
 		Map<String, Object> params = new HashMap<>();
@@ -192,8 +192,9 @@ public class JdbcPropertyDao implements PropertyDao {
 		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
 	}
 
-	private List<RegionAverageViewportItem> findVisibleSigunguAverageViewportItems(
+	private List<RegionAverageViewportItem> findVisibleRegionAverageViewportItems(
 			PropertySearchCriteria criteria,
+			String regionLevel,
 			int limit
 	) {
 		Map<String, Object> params = new HashMap<>();
@@ -201,12 +202,32 @@ public class JdbcPropertyDao implements PropertyDao {
 		params.put("east", criteria.east());
 		params.put("south", criteria.south());
 		params.put("north", criteria.north());
+		params.put("regionLevel", regionLevel);
 		params.put("limit", limit);
 
+		String regionCodeExpression = switch (regionLevel) {
+			case "SIDO" -> "MIN(SUBSTRING(legal_dong_code, 1, 2))";
+			case "SIGUNGU" -> "MIN(SUBSTRING(legal_dong_code, 1, 5))";
+			case "DONG" -> "legal_dong_code";
+			default -> throw new IllegalArgumentException("Unsupported region level: " + regionLevel);
+		};
+		String regionNameExpression = switch (regionLevel) {
+			case "SIDO" -> "sido";
+			case "SIGUNGU" -> "sigungu";
+			case "DONG" -> "dong";
+			default -> throw new IllegalArgumentException("Unsupported region level: " + regionLevel);
+		};
+		String groupBy = switch (regionLevel) {
+			case "SIDO" -> "sido";
+			case "SIGUNGU" -> "sido, sigungu";
+			case "DONG" -> "sido, sigungu, dong, legal_dong_code";
+			default -> throw new IllegalArgumentException("Unsupported region level: " + regionLevel);
+		};
+
 		StringBuilder sql = new StringBuilder("""
-				SELECT 'SIGUNGU' AS region_level,
-				       MIN(SUBSTRING(legal_dong_code, 1, 5)) AS region_code,
-				       sigungu AS region_name,
+				SELECT :regionLevel AS region_level,
+				       %s AS region_code,
+				       %s AS region_name,
 				       CAST(AVG(deposit) AS BIGINT) AS avg_deposit,
 				       CAST(AVG(monthly_rent) AS BIGINT) AS avg_monthly_rent,
 				       CAST(AVG(price) AS BIGINT) AS avg_sale_price,
@@ -217,15 +238,15 @@ public class JdbcPropertyDao implements PropertyDao {
 				WHERE is_active = true
 				  AND longitude BETWEEN :west AND :east
 				  AND latitude BETWEEN :south AND :north
-				  AND sigungu IS NOT NULL
-				""");
+				  AND %s IS NOT NULL
+				""".formatted(regionCodeExpression, regionNameExpression, regionNameExpression));
 		appendPropertyFilters(sql, params, "", criteria);
 		sql.append("""
 
-				GROUP BY sido, sigungu
+				GROUP BY %s
 				ORDER BY transaction_count DESC, region_name ASC
 				LIMIT :limit
-				""");
+				""".formatted(groupBy));
 		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
 	}
 
