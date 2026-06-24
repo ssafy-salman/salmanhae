@@ -1,0 +1,23 @@
+{
+  "response": {
+    "body": {
+      "totalCount": 2,
+      "items": [
+        {
+          "id": "bell-1",
+          "name": "Test Emergency Bell",
+          "address": "Seoul bell address",
+          "latitude": "37.4705000",
+          "longitude": "126.9363000",
+          "description": "fixture bell"
+        },
+        {
+          "id": "bell-invalid",
+          "name": "Invalid Emergency Bell",
+          "latitude": "",
+          "longitude": "126.9363000"
+        }
+      ]
+    }
+  }
+}

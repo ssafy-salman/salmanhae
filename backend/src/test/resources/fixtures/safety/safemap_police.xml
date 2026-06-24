@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <body>
+    <items>
+      <item>
+        <objt_id>police-1</objt_id>
+        <fclty_ty>POLICE_BOX</fclty_ty>
+        <fclty_cd>POLICE_BOX</fclty_cd>
+        <fclty_nm>Test Police Box</fclty_nm>
+        <adres>Seoul police address</adres>
+        <rn_adres>Seoul road police address</rn_adres>
+        <x>126.9370000</x>
+        <y>37.4710000</y>
+        <ctprvn_cd>11</ctprvn_cd>
+        <sgg_cd>11620</sgg_cd>
+      </item>
+      <item>
+        <objt_id>police-invalid</objt_id>
+        <fclty_nm>Invalid Police Box</fclty_nm>
+        <x>126.9370000</x>
+        <y></y>
+      </item>
+    </items>
+  </body>
+</response>

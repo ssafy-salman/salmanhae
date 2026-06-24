@@ -1,0 +1,4 @@
+id,name,address,latitude,longitude,description
+cctv-1,Test CCTV,Seoul CCTV address,37.4703210,126.9361110,"fixture cctv
+with newline"
+cctv-invalid,Invalid CCTV,Missing latitude,,126.9361110,skip me

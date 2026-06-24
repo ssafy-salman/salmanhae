@@ -1,0 +1,19 @@
+{
+  "totalCount": 2,
+  "data": [
+    {
+      "sourceId": "light-1",
+      "facilityName": "Test Security Light",
+      "address": "Seoul light address",
+      "lat": "37.4708000",
+      "lng": "126.9367000",
+      "remark": "fixture light"
+    },
+    {
+      "sourceId": "light-invalid",
+      "facilityName": "Invalid Security Light",
+      "lat": "37.4708000",
+      "lng": "200.0000000"
+    }
+  ]
+}

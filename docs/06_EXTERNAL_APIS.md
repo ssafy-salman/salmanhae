@@ -124,3 +124,18 @@ Geocoding 호출에는 `NAVER_MAPS_CLIENT_ID`, `NAVER_MAPS_CLIENT_SECRET` 환경
 - 실거래가는 신고와 공개 사이에 시차가 있으므로 신고된 공개 데이터 기준으로 안내합니다.
 - F-1 더미 매물은 `source = MVP_SYNTHETIC`으로 저장하고, `building_key`로 실거래가 건물 anchor와 연결합니다.
 - 운영 매물은 원천별 중복 등록 가능성이 있으므로 `source`, `source_property_id`, `source_url`, `crawled_at` 기준으로 중복을 줄입니다.
+
+## F-4 Safety Facility Source Clients
+
+Phase 3 adds source clients and parsers for safety-facility ingestion. The batch job must load
+these APIs, normalize them into `safety_facility`, and later calculate scores from stored DB rows
+instead of calling public APIs during user requests.
+
+| Source | Type | Default endpoint/config | Format | Notes |
+| --- | --- | --- | --- | --- |
+| CCTV CSV | `CCTV` | `safety.data.cctv-url`, default `https://file.localdata.go.kr/file/cctv_info/info` | CSV | LocalData file export. Invalid or missing coordinates are skipped. |
+| Emergency bell OpenAPI | `EMERGENCY_BELL` | `safety.data.emergency-bell-url` | JSON | Endpoint is environment-specific; uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. |
+| Security light OpenAPI | `SECURITY_LIGHT` | `safety.data.security-light-url` | JSON | Endpoint is environment-specific; uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. |
+| SafetyMap police facility IF_0036 | `POLICE` | `safety.data.safemap-police-url`, default `https://www.safemap.go.kr/openapi2/IF_0036` | XML | Uses `safety.data.safemap-service-key` or `SAFEMAP_SERVICE_KEY`; `x` is longitude and `y` is latitude. |
+
+Common paging config: `safety.data.page-size` defaults to `1000`.
