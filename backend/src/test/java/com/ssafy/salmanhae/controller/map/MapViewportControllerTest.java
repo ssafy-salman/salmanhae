@@ -24,7 +24,14 @@ class MapViewportControllerTest {
 	void getViewportIsPublicAndReturnsSigunguModeAtWideZoom() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "0"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"));
+				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("SIGUNGU"))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(550000))
+				.andExpect(jsonPath("$.data.items[0].avgSalePrice").value(720000000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(2));
 
 		mockMvc.perform(baseViewportRequest()
 						.param("zoom", "11")
@@ -38,8 +45,8 @@ class MapViewportControllerTest {
 				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
 				.andExpect(jsonPath("$.data.items[0].regionLevel").value("SIGUNGU"))
 				.andExpect(jsonPath("$.data.items[0].regionName").value("관악구"))
-				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(98000000))
-				.andExpect(jsonPath("$.data.items[0].transactionCount").value(12))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(1))
 				.andExpect(jsonPath("$.data.items[0].latitude").value(37.4701230))
 				.andExpect(jsonPath("$.data.items[0].longitude").value(126.9364560));
 	}

@@ -10,10 +10,10 @@ Verify the zoom-aware map flow end to end, update documentation if the implement
 - `.github/workflows/*` - No change expected; existing backend/frontend deployment paths should be used
 
 ## Done When
-- [ ] backend tests pass.
-- [ ] frontend tests/build pass.
-- [ ] deployed map no longer attempts to render thousands of markers at broad zoom.
-- [ ] Cloud Run and Vercel deployments use the existing CI/CD flow without secret changes.
+- [x] backend tests pass.
+- [x] frontend tests/build pass.
+- [x] deployed map no longer attempts to render thousands of markers at broad zoom.
+- [x] Cloud Run and Vercel deployments use the existing CI/CD flow without secret changes.
 
 ## Architecture Rules
 - API/domain documentation must stay synchronized with implemented response or schema changes.
@@ -21,3 +21,9 @@ Verify the zoom-aware map flow end to end, update documentation if the implement
 
 ## Implementation Instructions
 Capture before/after behavior on deployed or local production build. If only backend and frontend code changed, rely on the existing GitHub Actions and Vercel integration after merge to `develop`.
+
+## Phase 5 Notes
+- Pre-merge Cloud Run probe found `zoom<=11` returning `401` from the broad `SIGUNGU_AVG` path.
+- The branch changes `SIGUNGU_AVG` to aggregate active visible properties by `sigungu`, keeping broad zoom responses small and avoiding the heavier region-stat join.
+- `deploy-backend-cloud-run.yml` already deploys `salmanhae-api` on `develop` pushes touching `backend/**`.
+- Vercel continues to deploy the frontend from the existing project integration; no workflow or secret change is required.

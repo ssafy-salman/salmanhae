@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "phase": "phase5-qa-docs-deploy.md",
+  "issue_number": 61,
+  "timestamp": "2026-06-24T16:53:00+09:00",
+  "detail": "Verified backend and frontend test/build gates, documented the deployment QA probe, and stabilized broad SIGUNGU viewport aggregation for Cloud Run redeploy via develop CI/CD.",
+  "runner": "codex"
+}
