@@ -52,27 +52,34 @@ def generate_answer(self, state: AgentState) -> str:
 def generate_answer(self, state: AgentState) -> str:
     workers_called = state.get("workers_called", [])
 
+    if "GENERAL_CHAT" in workers_called:
+        live = self._generate_live_general_chat_answer(state)
+        if live:
+            return live
+        return "안녕하세요! 살만해 부동산 AI입니다. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
+
+    parts: list[str] = []
+
     if "LEGAL_CONSULT" in workers_called:
         live_answer = self._generate_live_legal_answer(state)
-        if live_answer:
-            return live_answer
-        return generate_legal_answer(state)
+        parts.append(live_answer if live_answer else generate_legal_answer(state))
 
-    if "PRICE_ANALYSIS" in workers_called:
+    if "PRICE_ANALYSIS" in workers_called or "SAFETY_ANALYSIS" in workers_called:
         live_answer = self._generate_live_analysis_answer(state)
         if live_answer:
-            return live_answer
-        return AnalysisAnswerService().generate_price_answer(state)
-
-    if "SAFETY_ANALYSIS" in workers_called:
-        live_answer = self._generate_live_analysis_answer(state)
-        if live_answer:
-            return live_answer
-        return AnalysisAnswerService().generate_safety_answer(state)
+            parts.append(live_answer)
+        else:
+            if "PRICE_ANALYSIS" in workers_called:
+                parts.append(AnalysisAnswerService().generate_price_answer(state))
+            if "SAFETY_ANALYSIS" in workers_called:
+                parts.append(AnalysisAnswerService().generate_safety_answer(state))
 
     if "PROPERTY_SEARCH" in workers_called:
         count = len(state.get("properties", []))
-        return f"조건에 맞는 매물 {count}개를 찾았습니다."
+        parts.append(f"조건에 맞는 매물 {count}개를 찾았습니다.")
+
+    if parts:
+        return "\n\n".join(parts)
 
     return "질문 의도를 조금 더 구체화해 주세요. 매물 추천, 법률 상담, 시세 분석, 안전 분석을 도와드릴 수 있습니다."
 ```

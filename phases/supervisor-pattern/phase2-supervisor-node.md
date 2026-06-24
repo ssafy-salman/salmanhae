@@ -76,7 +76,7 @@ def decide_next_worker(self, message: str, workers_called: list[str]) -> str:
         text = extract_chat_completion_text(response.json()) or "{}"
         parsed = json.loads(text)
         next_worker = parsed.get("next_worker", "FINISH")
-        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "FINISH"}
+        valid = {"PROPERTY_SEARCH", "LEGAL_CONSULT", "PRICE_ANALYSIS", "SAFETY_ANALYSIS", "GENERAL_CHAT", "FINISH"}
         if next_worker not in valid:
             return "FINISH"
         # 이미 호출된 워커를 다시 선택한 경우 FINISH로 안전 처리
@@ -84,6 +84,8 @@ def decide_next_worker(self, message: str, workers_called: list[str]) -> str:
             return "FINISH"
         return next_worker
     except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        if not workers_called:
+            return "PROPERTY_SEARCH"
         return "FINISH"
 ```
 

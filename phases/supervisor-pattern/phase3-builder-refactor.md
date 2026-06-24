@@ -10,7 +10,7 @@ LangGraph 그래프를 supervisor 순환 패턴으로 재구성하고 classify_i
 ## Done When
 - [ ] `builder.py`에 classify_intent, route_by_intent, fallback 관련 코드가 없음
 - [ ] `builder.py`에 supervisor 노드가 START와 연결됨
-- [ ] 각 워커(property_search, legal_rag, price_analysis, safety_analysis) 완료 후 supervisor로 복귀하는 엣지가 있음
+- [ ] 각 워커(property_search, legal_rag, price_analysis, safety_analysis, general_chat) 완료 후 supervisor로 복귀하는 엣지가 있음
 - [ ] supervisor가 FINISH 결정 시 generate_answer로 진행하는 조건부 엣지가 있음
 - [ ] `classify_intent.py`가 삭제됨
 - [ ] `cd backend-ai && .venv/bin/python -c "from app.graph.builder import build_agent_graph; g = build_agent_graph(); print('ok')"` 성공
@@ -34,6 +34,7 @@ rm backend-ai/app/graph/nodes/classify_intent.py
 ```python
 from langgraph.graph import END, START, StateGraph
 
+from app.graph.nodes.general_chat import general_chat
 from app.graph.nodes.generate_answer import generate_answer
 from app.graph.nodes.legal_rag import legal_rag
 from app.graph.nodes.price_analysis import price_analysis
@@ -49,6 +50,7 @@ def route_after_supervisor(state: AgentState) -> str:
         "LEGAL_CONSULT": "legal_rag",
         "PRICE_ANALYSIS": "price_analysis",
         "SAFETY_ANALYSIS": "safety_analysis",
+        "GENERAL_CHAT": "general_chat",
         "FINISH": "generate_answer",
     }
     return mapping.get(state.get("next_worker", "FINISH"), "generate_answer")
@@ -62,6 +64,7 @@ def build_agent_graph():
     workflow.add_node("legal_rag", legal_rag)
     workflow.add_node("price_analysis", price_analysis)
     workflow.add_node("safety_analysis", safety_analysis)
+    workflow.add_node("general_chat", general_chat)
     workflow.add_node("generate_answer", generate_answer)
 
     workflow.add_edge(START, "supervisor")
@@ -73,11 +76,12 @@ def build_agent_graph():
             "legal_rag": "legal_rag",
             "price_analysis": "price_analysis",
             "safety_analysis": "safety_analysis",
+            "general_chat": "general_chat",
             "generate_answer": "generate_answer",
         },
     )
 
-    for node in ["property_search", "legal_rag", "price_analysis", "safety_analysis"]:
+    for node in ["property_search", "legal_rag", "price_analysis", "safety_analysis", "general_chat"]:
         workflow.add_edge(node, "supervisor")
 
     workflow.add_edge("generate_answer", END)
