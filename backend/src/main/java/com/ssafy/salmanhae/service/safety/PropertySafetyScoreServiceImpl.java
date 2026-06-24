@@ -1,6 +1,7 @@
 package com.ssafy.salmanhae.service.safety;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -26,12 +27,14 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 	private static final int BELL_FULL_SCORE_COUNT = 3;
 	private static final int LIGHT_FULL_SCORE_COUNT = 20;
 	private static final int POLICE_FULL_SCORE_COUNT = 1;
+	private static final int PROPERTY_CHUNK_SIZE = 100;
 	private static final double CCTV_WEIGHT = 30.0;
 	private static final double BELL_WEIGHT = 25.0;
 	private static final double LIGHT_WEIGHT = 25.0;
 	private static final double POLICE_WEIGHT = 20.0;
 	private static final double EARTH_RADIUS_M = 6_371_000.0;
-	private static final double METERS_PER_LATITUDE_DEGREE = 111_320.0;
+	private static final double METERS_PER_DEGREE = Math.toRadians(1.0) * EARTH_RADIUS_M;
+	private static final double BOUNDING_BOX_MARGIN_M = 1.0;
 	private static final List<SafetyFacilityType> SCORE_TYPES = List.of(
 			SafetyFacilityType.CCTV,
 			SafetyFacilityType.EMERGENCY_BELL,
@@ -49,16 +52,15 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 
 	@Override
 	public List<PropertySafetyScoreResult> recalculateAll() {
-		List<SafetyFacilityRow> facilities = safetyFacilityDao.findInBounds(
-				SCORE_TYPES,
-				BigDecimal.valueOf(-180),
-				BigDecimal.valueOf(180),
-				BigDecimal.valueOf(-90),
-				BigDecimal.valueOf(90)
-		);
-		List<PropertySafetyScoreResult> results = propertyDao.findActivePropertiesForSafetyScoring().stream()
-				.map(property -> calculateForProperty(property, facilities))
-				.toList();
+		List<PropertyRow> properties = propertyDao.findActivePropertiesForSafetyScoring();
+		List<PropertySafetyScoreResult> results = new ArrayList<>(properties.size());
+		for (int start = 0; start < properties.size(); start += PROPERTY_CHUNK_SIZE) {
+			List<PropertyRow> chunk = properties.subList(start, Math.min(start + PROPERTY_CHUNK_SIZE, properties.size()));
+			List<SafetyFacilityRow> facilities = findNearbyCandidates(chunk);
+			results.addAll(chunk.stream()
+					.map(property -> calculateForProperty(property, facilities))
+					.toList());
+		}
 		int upsertedCount = results.isEmpty() ? 0 : propertyDao.upsertSafetyScoreStats(results);
 		log.info("Property safety score recalculation finished: calculated={}, upserted={}", results.size(), upsertedCount);
 		return results;
@@ -82,6 +84,7 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 	}
 
 	private PropertySafetyScoreResult calculateForProperty(PropertyRow property, List<SafetyFacilityRow> facilities) {
+		CandidateBounds bounds = candidateBounds(property);
 		int cctvCount300m = 0;
 		int bellCount300m = 0;
 		int lightCount300m = 0;
@@ -91,7 +94,7 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 			if (facility == null || facility.type() == null || facility.latitude() == null || facility.longitude() == null) {
 				continue;
 			}
-			if (!isWithinCandidateBounds(property, facility)) {
+			if (!bounds.contains(facility)) {
 				continue;
 			}
 			double distanceMeters = distanceMeters(
@@ -122,16 +125,30 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 		));
 	}
 
-	private boolean isWithinCandidateBounds(PropertyRow property, SafetyFacilityRow facility) {
+	private List<SafetyFacilityRow> findNearbyCandidates(List<PropertyRow> properties) {
+		if (properties.isEmpty()) {
+			return List.of();
+		}
+		CandidateBounds bounds = properties.stream()
+				.map(this::candidateBounds)
+				.reduce(CandidateBounds::merge)
+				.orElseThrow();
+		return safetyFacilityDao.findInBounds(SCORE_TYPES, bounds.west(), bounds.east(), bounds.south(), bounds.north());
+	}
+
+	private CandidateBounds candidateBounds(PropertyRow property) {
 		BigDecimal latitude = property.latitude();
 		BigDecimal longitude = property.longitude();
-		double latitudeDelta = POLICE_RADIUS_M / METERS_PER_LATITUDE_DEGREE;
-		double longitudeMetersPerDegree = METERS_PER_LATITUDE_DEGREE * Math.cos(Math.toRadians(latitude.doubleValue()));
-		double longitudeDelta = POLICE_RADIUS_M / Math.max(1.0, longitudeMetersPerDegree);
-		return facility.longitude().compareTo(longitude.subtract(BigDecimal.valueOf(longitudeDelta))) >= 0
-				&& facility.longitude().compareTo(longitude.add(BigDecimal.valueOf(longitudeDelta))) <= 0
-				&& facility.latitude().compareTo(latitude.subtract(BigDecimal.valueOf(latitudeDelta))) >= 0
-				&& facility.latitude().compareTo(latitude.add(BigDecimal.valueOf(latitudeDelta))) <= 0;
+		double candidateRadiusM = POLICE_RADIUS_M + BOUNDING_BOX_MARGIN_M;
+		double latitudeDelta = candidateRadiusM / METERS_PER_DEGREE;
+		double longitudeMetersPerDegree = METERS_PER_DEGREE * Math.cos(Math.toRadians(latitude.doubleValue()));
+		double longitudeDelta = candidateRadiusM / Math.max(1.0, longitudeMetersPerDegree);
+		return new CandidateBounds(
+				longitude.subtract(BigDecimal.valueOf(longitudeDelta)),
+				longitude.add(BigDecimal.valueOf(longitudeDelta)),
+				latitude.subtract(BigDecimal.valueOf(latitudeDelta)),
+				latitude.add(BigDecimal.valueOf(latitudeDelta))
+		);
 	}
 
 	private double weightedMetric(int count, int fullScoreCount, double weight) {
@@ -156,5 +173,37 @@ public class PropertySafetyScoreServiceImpl implements PropertySafetyScoreServic
 				+ Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		return EARTH_RADIUS_M * c;
+	}
+
+	private record CandidateBounds(
+			BigDecimal west,
+			BigDecimal east,
+			BigDecimal south,
+			BigDecimal north
+	) {
+
+		private CandidateBounds merge(CandidateBounds other) {
+			return new CandidateBounds(
+					min(west, other.west),
+					max(east, other.east),
+					min(south, other.south),
+					max(north, other.north)
+			);
+		}
+
+		private boolean contains(SafetyFacilityRow facility) {
+			return facility.longitude().compareTo(west) >= 0
+					&& facility.longitude().compareTo(east) <= 0
+					&& facility.latitude().compareTo(south) >= 0
+					&& facility.latitude().compareTo(north) <= 0;
+		}
+
+		private BigDecimal min(BigDecimal first, BigDecimal second) {
+			return first.compareTo(second) <= 0 ? first : second;
+		}
+
+		private BigDecimal max(BigDecimal first, BigDecimal second) {
+			return first.compareTo(second) >= 0 ? first : second;
+		}
 	}
 }

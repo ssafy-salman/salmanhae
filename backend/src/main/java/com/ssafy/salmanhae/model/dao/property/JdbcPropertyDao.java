@@ -5,10 +5,10 @@ import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -38,6 +38,7 @@ public class JdbcPropertyDao implements PropertyDao {
 			""";
 
 	private final NamedParameterJdbcTemplate jdbcTemplate;
+	private volatile Boolean onConflictSupported;
 
 	public JdbcPropertyDao(NamedParameterJdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
@@ -403,14 +404,10 @@ public class JdbcPropertyDao implements PropertyDao {
 		params.put("bellCount300m", result.bellCount300m());
 		params.put("lightCount300m", result.lightCount300m());
 		params.put("policeCount500m", result.policeCount500m());
-		try {
+		if (supportsOnConflict()) {
 			return upsertSafetyScoreStatWithOnConflict(params);
-		} catch (BadSqlGrammarException exception) {
-			if (exception.getMessage() != null && exception.getMessage().contains("ON CONFLICT")) {
-				return upsertSafetyScoreStatWithUpdateInsert(params);
-			}
-			throw exception;
 		}
+		return upsertSafetyScoreStatWithUpdateInsert(params);
 	}
 
 	private int upsertSafetyScoreStatWithOnConflict(Map<String, Object> params) {
@@ -455,6 +452,27 @@ public class JdbcPropertyDao implements PropertyDao {
 				    :lightCount300m, :policeCount500m, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 				)
 				""", params);
+	}
+
+	private boolean supportsOnConflict() {
+		Boolean cached = onConflictSupported;
+		if (cached != null) {
+			return cached;
+		}
+		onConflictSupported = detectOnConflictSupport();
+		return onConflictSupported;
+	}
+
+	private boolean detectOnConflictSupport() {
+		if (jdbcTemplate.getJdbcTemplate().getDataSource() == null) {
+			return true;
+		}
+		try (var connection = jdbcTemplate.getJdbcTemplate().getDataSource().getConnection()) {
+			String productName = connection.getMetaData().getDatabaseProductName();
+			return productName == null || !productName.toLowerCase(Locale.ROOT).contains("h2");
+		} catch (SQLException exception) {
+			return true;
+		}
 	}
 
 	@Override
