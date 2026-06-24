@@ -1,0 +1,688 @@
+{
+  "metadata": {
+    "run_at": "2026-06-24T02:15:11.259428+00:00",
+    "approach": "single_intent_llm",
+    "model": "gpt-5.4-mini"
+  },
+  "summary": {
+    "single_intent_total": 21,
+    "single_intent_correct": 21,
+    "single_intent_accuracy": 1.0,
+    "complex_total": 17,
+    "complex_fully_correct": 0,
+    "complex_full_accuracy": 0.0,
+    "complex_avg_recall": 0.412,
+    "avg_latency_ms": 1542.8,
+    "avg_tokens_per_turn": 268.4,
+    "avg_prompt_tokens": 224.6,
+    "avg_completion_tokens": 43.8
+  },
+  "results": [
+    {
+      "message": "신림동 월세 50만원 이하 원룸 추천해줘",
+      "expected_workers": [
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1491.8,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 37,
+        "total_tokens": 262
+      }
+    },
+    {
+      "message": "관악구 오피스텔 보증금 1000만원 이하 매물 찾아줘",
+      "expected_workers": [
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1537.6,
+      "tokens": {
+        "prompt_tokens": 230,
+        "completion_tokens": 41,
+        "total_tokens": 271
+      }
+    },
+    {
+      "message": "강남역 근처 투룸 전세 있어?",
+      "expected_workers": [
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1158.2,
+      "tokens": {
+        "prompt_tokens": 221,
+        "completion_tokens": 33,
+        "total_tokens": 254
+      }
+    },
+    {
+      "message": "빌라 말고 아파트 월세로 구하고 싶어",
+      "expected_workers": [
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1297.6,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 41,
+        "total_tokens": 266
+      }
+    },
+    {
+      "message": "역세권 오피스텔 전세 매물 보여줘",
+      "expected_workers": [
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1536.3,
+      "tokens": {
+        "prompt_tokens": 224,
+        "completion_tokens": 44,
+        "total_tokens": 268
+      }
+    },
+    {
+      "message": "전세 계약 만료 전에 해지하려면 어떻게 해야 해?",
+      "expected_workers": [
+        "LEGAL_CONSULT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1842.0,
+      "tokens": {
+        "prompt_tokens": 224,
+        "completion_tokens": 45,
+        "total_tokens": 269
+      }
+    },
+    {
+      "message": "보증금 못 받을 것 같은데 어떻게 대응해?",
+      "expected_workers": [
+        "LEGAL_CONSULT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 2456.1,
+      "tokens": {
+        "prompt_tokens": 222,
+        "completion_tokens": 47,
+        "total_tokens": 269
+      }
+    },
+    {
+      "message": "계약갱신청구권 한 번 썼으면 또 쓸 수 있어?",
+      "expected_workers": [
+        "LEGAL_CONSULT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1538.3,
+      "tokens": {
+        "prompt_tokens": 228,
+        "completion_tokens": 41,
+        "total_tokens": 269
+      }
+    },
+    {
+      "message": "확정일자랑 전입신고 뭐가 다른 거야?",
+      "expected_workers": [
+        "LEGAL_CONSULT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1542.1,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 52,
+        "total_tokens": 277
+      }
+    },
+    {
+      "message": "묵시적 갱신이 되면 계약 기간이 어떻게 돼?",
+      "expected_workers": [
+        "LEGAL_CONSULT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1529.7,
+      "tokens": {
+        "prompt_tokens": 227,
+        "completion_tokens": 40,
+        "total_tokens": 267
+      }
+    },
+    {
+      "message": "관악구 오피스텔 요즘 전세 시세 어때?",
+      "expected_workers": [
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PRICE_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1535.4,
+      "tokens": {
+        "prompt_tokens": 226,
+        "completion_tokens": 44,
+        "total_tokens": 270
+      }
+    },
+    {
+      "message": "강남구 아파트 최근 실거래가 추이 알려줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PRICE_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1535.3,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 41,
+        "total_tokens": 266
+      }
+    },
+    {
+      "message": "이 매물 가격이 주변 시세 대비 적정한지 분석해줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PRICE_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1229.8,
+      "tokens": {
+        "prompt_tokens": 227,
+        "completion_tokens": 46,
+        "total_tokens": 273
+      }
+    },
+    {
+      "message": "신림동 원룸 평균 월세가 얼마야?",
+      "expected_workers": [
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "PRICE_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1532.9,
+      "tokens": {
+        "prompt_tokens": 222,
+        "completion_tokens": 36,
+        "total_tokens": 258
+      }
+    },
+    {
+      "message": "신림동 밤에 혼자 다녀도 안전한 동네야?",
+      "expected_workers": [
+        "SAFETY_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1568.3,
+      "tokens": {
+        "prompt_tokens": 226,
+        "completion_tokens": 43,
+        "total_tokens": 269
+      }
+    },
+    {
+      "message": "관악구 CCTV 많이 설치된 동네 알려줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1813.6,
+      "tokens": {
+        "prompt_tokens": 222,
+        "completion_tokens": 47,
+        "total_tokens": 269
+      }
+    },
+    {
+      "message": "이 동네 치안 점수 어때?",
+      "expected_workers": [
+        "SAFETY_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1841.0,
+      "tokens": {
+        "prompt_tokens": 220,
+        "completion_tokens": 43,
+        "total_tokens": 263
+      }
+    },
+    {
+      "message": "반경 500m 내 안전시설 얼마나 있어?",
+      "expected_workers": [
+        "SAFETY_ANALYSIS"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1370.7,
+      "tokens": {
+        "prompt_tokens": 221,
+        "completion_tokens": 40,
+        "total_tokens": 261
+      }
+    },
+    {
+      "message": "안녕",
+      "expected_workers": [
+        "GENERAL_CHAT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "GENERAL_CHAT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 974.8,
+      "tokens": {
+        "prompt_tokens": 213,
+        "completion_tokens": 26,
+        "total_tokens": 239
+      }
+    },
+    {
+      "message": "고마워 도움 많이 됐어",
+      "expected_workers": [
+        "GENERAL_CHAT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "GENERAL_CHAT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1244.7,
+      "tokens": {
+        "prompt_tokens": 219,
+        "completion_tokens": 31,
+        "total_tokens": 250
+      }
+    },
+    {
+      "message": "살만해 서비스가 뭐야?",
+      "expected_workers": [
+        "GENERAL_CHAT"
+      ],
+      "is_complex": false,
+      "note": "",
+      "got_intent": "GENERAL_CHAT",
+      "fully_correct": true,
+      "recall": 1.0,
+      "latency_ms": 1373.3,
+      "tokens": {
+        "prompt_tokens": 218,
+        "completion_tokens": 60,
+        "total_tokens": 278
+      }
+    },
+    {
+      "message": "강남구 오피스텔 가장 싼 거 추천해줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "시세 파악 후 조건에 맞는 매물 검색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1489.1,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 49,
+        "total_tokens": 274
+      }
+    },
+    {
+      "message": "시세 대비 저렴하게 나온 신림동 원룸 찾아줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "시세 비교 후 매물 추천",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1197.2,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 36,
+        "total_tokens": 261
+      }
+    },
+    {
+      "message": "관악구에서 가성비 좋은 오피스텔 매물 알려줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "가성비 = 시세 + 매물",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1875.0,
+      "tokens": {
+        "prompt_tokens": 227,
+        "completion_tokens": 46,
+        "total_tokens": 273
+      }
+    },
+    {
+      "message": "요즘 시세보다 싸게 나온 매물 있어?",
+      "expected_workers": [
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "시세 기준 비교 후 매물 탐색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 2150.1,
+      "tokens": {
+        "prompt_tokens": 222,
+        "completion_tokens": 42,
+        "total_tokens": 264
+      }
+    },
+    {
+      "message": "실거래가 기준으로 합리적인 가격대 오피스텔 추천해줘",
+      "expected_workers": [
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "실거래가 분석 + 매물 검색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1842.5,
+      "tokens": {
+        "prompt_tokens": 229,
+        "completion_tokens": 46,
+        "total_tokens": 275
+      }
+    },
+    {
+      "message": "신림동에서 안전하고 저렴한 원룸 찾아줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "안전 분석 + 매물 검색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1536.4,
+      "tokens": {
+        "prompt_tokens": 224,
+        "completion_tokens": 51,
+        "total_tokens": 275
+      }
+    },
+    {
+      "message": "혼자 사는 여성인데 안전한 동네 오피스텔 구해줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "치안 우선 + 매물 검색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1112.6,
+      "tokens": {
+        "prompt_tokens": 228,
+        "completion_tokens": 40,
+        "total_tokens": 268
+      }
+    },
+    {
+      "message": "CCTV 많고 경찰서 가까운 동네 월세 매물 찾아줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "안전시설 조건 + 매물",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1652.2,
+      "tokens": {
+        "prompt_tokens": 226,
+        "completion_tokens": 46,
+        "total_tokens": 272
+      }
+    },
+    {
+      "message": "밤에 혼자 다녀도 안전한 곳에 있는 원룸 추천해줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "안전 평가 후 매물 추천",
+      "got_intent": "SAFETY_ANALYSIS",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1437.7,
+      "tokens": {
+        "prompt_tokens": 228,
+        "completion_tokens": 51,
+        "total_tokens": 279
+      }
+    },
+    {
+      "message": "관악구에서 전세사기 위험 없는 매물 추천해줘",
+      "expected_workers": [
+        "LEGAL_CONSULT",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "법적 리스크 파악 + 매물 검색",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1633.4,
+      "tokens": {
+        "prompt_tokens": 226,
+        "completion_tokens": 46,
+        "total_tokens": 272
+      }
+    },
+    {
+      "message": "법적으로 안전한 전세 집 구하고 싶어",
+      "expected_workers": [
+        "LEGAL_CONSULT",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "법률 안전성 확인 + 매물 탐색",
+      "got_intent": "LEGAL_CONSULT",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1414.1,
+      "tokens": {
+        "prompt_tokens": 222,
+        "completion_tokens": 54,
+        "total_tokens": 276
+      }
+    },
+    {
+      "message": "확정일자 받기 좋은 조건의 매물 찾아줘",
+      "expected_workers": [
+        "LEGAL_CONSULT",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "법률 조건 + 매물",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.5,
+      "latency_ms": 1444.3,
+      "tokens": {
+        "prompt_tokens": 224,
+        "completion_tokens": 59,
+        "total_tokens": 283
+      }
+    },
+    {
+      "message": "강남구에서 치안 좋고 시세도 합리적인 동네 알려줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": true,
+      "note": "안전 + 시세 지역 분석",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.0,
+      "latency_ms": 1442.6,
+      "tokens": {
+        "prompt_tokens": 229,
+        "completion_tokens": 46,
+        "total_tokens": 275
+      }
+    },
+    {
+      "message": "안전하면서 집값이 너무 비싸지 않은 지역 추천해줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PRICE_ANALYSIS"
+      ],
+      "is_complex": true,
+      "note": "치안 + 가격 지역 비교",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.0,
+      "latency_ms": 1150.2,
+      "tokens": {
+        "prompt_tokens": 225,
+        "completion_tokens": 37,
+        "total_tokens": 262
+      }
+    },
+    {
+      "message": "강남구 치안 좋고 가격 합리적인 오피스텔 추천해줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "치안 + 시세 + 매물 3종",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.333,
+      "latency_ms": 1307.4,
+      "tokens": {
+        "prompt_tokens": 229,
+        "completion_tokens": 47,
+        "total_tokens": 276
+      }
+    },
+    {
+      "message": "보증금 5000만원 이하로 치안 좋은 동네 원룸 구하고 싶어",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "가격 조건 + 안전 + 매물",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.333,
+      "latency_ms": 1841.1,
+      "tokens": {
+        "prompt_tokens": 231,
+        "completion_tokens": 43,
+        "total_tokens": 274
+      }
+    },
+    {
+      "message": "안전하고 시세 대비 저렴한 신림동 매물 보여줘",
+      "expected_workers": [
+        "SAFETY_ANALYSIS",
+        "PRICE_ANALYSIS",
+        "PROPERTY_SEARCH"
+      ],
+      "is_complex": true,
+      "note": "안전 + 시세비교 + 매물",
+      "got_intent": "PROPERTY_SEARCH",
+      "fully_correct": false,
+      "recall": 0.333,
+      "latency_ms": 2152.3,
+      "tokens": {
+        "prompt_tokens": 226,
+        "completion_tokens": 47,
+        "total_tokens": 273
+      }
+    }
+  ]
+}
