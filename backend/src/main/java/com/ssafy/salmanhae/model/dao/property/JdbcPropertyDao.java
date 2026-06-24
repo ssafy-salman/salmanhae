@@ -12,6 +12,9 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ssafy.salmanhae.model.dto.map.MapViewportItemType;
+import com.ssafy.salmanhae.model.dto.map.PropertyClusterViewportItem;
+import com.ssafy.salmanhae.model.dto.map.RegionAverageViewportItem;
 import com.ssafy.salmanhae.model.dto.property.BuildingPriceStatResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertySafetySummaryResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyRow;
@@ -80,6 +83,157 @@ public class JdbcPropertyDao implements PropertyDao {
 
 		sql.append(" ORDER BY id ASC");
 		return jdbcTemplate.query(sql.toString(), params, propertyRowMapper());
+	}
+
+	@Override
+	public List<PropertyRow> findViewportProperties(PropertySearchCriteria criteria, int limit) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("west", criteria.west());
+		params.put("east", criteria.east());
+		params.put("south", criteria.south());
+		params.put("north", criteria.north());
+		params.put("limit", limit);
+
+		StringBuilder sql = new StringBuilder("""
+				SELECT %s
+				FROM properties
+				WHERE is_active = true
+				  AND longitude BETWEEN :west AND :east
+				  AND latitude BETWEEN :south AND :north
+				""".formatted(PROPERTY_COLUMNS));
+		appendPropertyFilters(sql, params, "", criteria);
+		sql.append(" ORDER BY id ASC LIMIT :limit");
+		return jdbcTemplate.query(sql.toString(), params, propertyRowMapper());
+	}
+
+	@Override
+	public List<RegionAverageViewportItem> findRegionAverageViewportItems(
+			PropertySearchCriteria criteria,
+			String regionLevel,
+			int limit
+	) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("west", criteria.west());
+		params.put("east", criteria.east());
+		params.put("south", criteria.south());
+		params.put("north", criteria.north());
+		params.put("regionLevel", regionLevel);
+		params.put("limit", limit);
+
+		String centerColumns;
+		String centerGroupBy;
+		String joinCondition;
+		String regionNameExpression;
+		if ("DONG".equals(regionLevel)) {
+			centerColumns = "sido, sigungu, dong, legal_dong_code AS region_code";
+			centerGroupBy = "sido, sigungu, dong, legal_dong_code, property_type, transaction_type";
+			joinCondition = """
+					rs.region_code = visible.region_code
+					AND rs.property_type = visible.property_type
+					AND rs.transaction_type = visible.transaction_type
+					""";
+			regionNameExpression = "rs.dong";
+		} else {
+			centerColumns = "sido, sigungu, NULL AS dong, NULL AS region_code";
+			centerGroupBy = "sido, sigungu, property_type, transaction_type";
+			joinCondition = """
+					rs.sido = visible.sido
+					AND rs.sigungu = visible.sigungu
+					AND rs.property_type = visible.property_type
+					AND rs.transaction_type = visible.transaction_type
+					""";
+			regionNameExpression = "rs.sigungu";
+		}
+
+		StringBuilder visibleSql = new StringBuilder("""
+				SELECT %s,
+				       property_type,
+				       transaction_type,
+				       COUNT(*) AS visible_count,
+				       AVG(latitude) AS latitude,
+				       AVG(longitude) AS longitude
+				FROM properties
+				WHERE is_active = true
+				  AND longitude BETWEEN :west AND :east
+				  AND latitude BETWEEN :south AND :north
+				""".formatted(centerColumns));
+		appendPropertyFilters(visibleSql, params, "", criteria);
+		visibleSql.append("\nGROUP BY ").append(centerGroupBy);
+
+		StringBuilder sql = new StringBuilder("""
+				WITH visible AS (
+				    %s
+				)
+				SELECT rs.region_level,
+				       rs.region_code,
+				       %s AS region_name,
+				       CAST(SUM(CASE WHEN rs.avg_deposit IS NOT NULL THEN rs.avg_deposit * rs.transaction_count ELSE 0 END)
+				            / NULLIF(SUM(CASE WHEN rs.avg_deposit IS NOT NULL THEN rs.transaction_count ELSE 0 END), 0) AS BIGINT) AS avg_deposit,
+				       CAST(SUM(CASE WHEN rs.avg_monthly_rent IS NOT NULL THEN rs.avg_monthly_rent * rs.transaction_count ELSE 0 END)
+				            / NULLIF(SUM(CASE WHEN rs.avg_monthly_rent IS NOT NULL THEN rs.transaction_count ELSE 0 END), 0) AS BIGINT) AS avg_monthly_rent,
+				       CAST(SUM(CASE WHEN rs.avg_price IS NOT NULL THEN rs.avg_price * rs.transaction_count ELSE 0 END)
+				            / NULLIF(SUM(CASE WHEN rs.avg_price IS NOT NULL THEN rs.transaction_count ELSE 0 END), 0) AS BIGINT) AS avg_sale_price,
+				       SUM(rs.transaction_count) AS transaction_count,
+				       SUM(visible.latitude * visible.visible_count) / NULLIF(SUM(visible.visible_count), 0) AS latitude,
+				       SUM(visible.longitude * visible.visible_count) / NULLIF(SUM(visible.visible_count), 0) AS longitude
+				FROM region_price_stat rs
+				JOIN visible ON %s
+				WHERE rs.region_level = :regionLevel
+				""".formatted(visibleSql, regionNameExpression, joinCondition));
+		appendRegionStatFilters(sql, params, "rs", criteria);
+		sql.append(" \nGROUP BY rs.region_level, rs.region_code, ")
+				.append(regionNameExpression)
+				.append(" \nORDER BY transaction_count DESC, region_name ASC")
+				.append(" \nLIMIT :limit");
+		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
+	}
+
+	@Override
+	public List<PropertyClusterViewportItem> findPropertyClusters(
+			PropertySearchCriteria criteria,
+			BigDecimal gridSize,
+			int limit
+	) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("west", criteria.west());
+		params.put("east", criteria.east());
+		params.put("south", criteria.south());
+		params.put("north", criteria.north());
+		params.put("gridSize", gridSize);
+		params.put("radiusM", gridSize.multiply(BigDecimal.valueOf(111_000)).divide(BigDecimal.valueOf(2)).intValue());
+		params.put("limit", limit);
+
+		StringBuilder bucketedSql = new StringBuilder("""
+				SELECT CAST(FLOOR(latitude / :gridSize) AS BIGINT) AS lat_bucket,
+				       CAST(FLOOR(longitude / :gridSize) AS BIGINT) AS lng_bucket,
+				       latitude, longitude, deposit, monthly_rent, price
+				FROM properties
+				WHERE is_active = true
+				  AND longitude BETWEEN :west AND :east
+				  AND latitude BETWEEN :south AND :north
+				""");
+		appendPropertyFilters(bucketedSql, params, "", criteria);
+		StringBuilder sql = new StringBuilder("""
+				WITH bucketed AS (
+				    %s
+				)
+				SELECT lat_bucket,
+				       lng_bucket,
+				       COUNT(*) AS property_count,
+				       AVG(latitude) AS latitude,
+				       AVG(longitude) AS longitude,
+				       :radiusM AS radius_m,
+				       AVG(deposit) AS avg_deposit,
+				       AVG(monthly_rent) AS avg_monthly_rent,
+				       AVG(price) AS avg_sale_price
+				FROM bucketed
+				""".formatted(bucketedSql));
+		sql.append("""
+				GROUP BY lat_bucket, lng_bucket
+				ORDER BY property_count DESC, latitude ASC, longitude ASC
+				LIMIT :limit
+				""");
+		return jdbcTemplate.query(sql.toString(), params, propertyClusterMapper());
 	}
 
 	@Override
@@ -205,6 +359,35 @@ public class JdbcPropertyDao implements PropertyDao {
 		return (rs, rowNum) -> mapPropertyRow(rs);
 	}
 
+	private RowMapper<RegionAverageViewportItem> regionAverageMapper() {
+		return (rs, rowNum) -> new RegionAverageViewportItem(
+				MapViewportItemType.REGION_AVG,
+				rs.getString("region_level"),
+				rs.getString("region_code"),
+				rs.getString("region_name"),
+				nullableLong(rs, "avg_deposit"),
+				nullableLong(rs, "avg_monthly_rent"),
+				nullableLong(rs, "avg_sale_price"),
+				nullableInteger(rs, "transaction_count"),
+				rs.getBigDecimal("latitude"),
+				rs.getBigDecimal("longitude")
+		);
+	}
+
+	private RowMapper<PropertyClusterViewportItem> propertyClusterMapper() {
+		return (rs, rowNum) -> new PropertyClusterViewportItem(
+				MapViewportItemType.CLUSTER,
+				"cluster-" + rs.getLong("lat_bucket") + "-" + rs.getLong("lng_bucket"),
+				rs.getInt("property_count"),
+				rs.getBigDecimal("latitude"),
+				rs.getBigDecimal("longitude"),
+				rs.getInt("radius_m"),
+				nullableAverageLong(rs, "avg_deposit"),
+				nullableAverageLong(rs, "avg_monthly_rent"),
+				nullableAverageLong(rs, "avg_sale_price")
+		);
+	}
+
 	private RowMapper<PropertyTransactionResponse> propertyTransactionMapper() {
 		return (rs, rowNum) -> new PropertyTransactionResponse(
 				TransactionType.valueOf(rs.getString("transaction_type")),
@@ -294,5 +477,60 @@ public class JdbcPropertyDao implements PropertyDao {
 			return yearMonth;
 		}
 		return yearMonth.substring(0, 4) + "-" + yearMonth.substring(4);
+	}
+
+	private void appendPropertyFilters(
+			StringBuilder sql,
+			Map<String, Object> params,
+			String alias,
+			PropertySearchCriteria criteria
+	) {
+		String prefix = alias == null || alias.isBlank() ? "" : alias + ".";
+		if (criteria.transactionType() != null) {
+			sql.append(" AND ").append(prefix).append("transaction_type = :transactionType");
+			params.put("transactionType", criteria.transactionType().name());
+		}
+		if (criteria.propertyType() != null) {
+			sql.append(" AND ").append(prefix).append("property_type = :propertyType");
+			params.put("propertyType", criteria.propertyType().name());
+		}
+		if (criteria.minDeposit() != null) {
+			sql.append(" AND ").append(prefix).append("deposit >= :minDeposit");
+			params.put("minDeposit", criteria.minDeposit());
+		}
+		if (criteria.maxDeposit() != null) {
+			sql.append(" AND ").append(prefix).append("deposit <= :maxDeposit");
+			params.put("maxDeposit", criteria.maxDeposit());
+		}
+		if (criteria.minPrice() != null) {
+			sql.append(" AND ").append(prefix).append("price >= :minPrice");
+			params.put("minPrice", criteria.minPrice());
+		}
+		if (criteria.maxPrice() != null) {
+			sql.append(" AND ").append(prefix).append("price <= :maxPrice");
+			params.put("maxPrice", criteria.maxPrice());
+		}
+	}
+
+	private void appendRegionStatFilters(
+			StringBuilder sql,
+			Map<String, Object> params,
+			String alias,
+			PropertySearchCriteria criteria
+	) {
+		String prefix = alias == null || alias.isBlank() ? "" : alias + ".";
+		if (criteria.transactionType() != null) {
+			sql.append(" AND ").append(prefix).append("transaction_type = :transactionType");
+			params.put("transactionType", criteria.transactionType().name());
+		}
+		if (criteria.propertyType() != null) {
+			sql.append(" AND ").append(prefix).append("property_type = :propertyType");
+			params.put("propertyType", criteria.propertyType().name());
+		}
+	}
+
+	private Long nullableAverageLong(ResultSet rs, String column) throws SQLException {
+		BigDecimal value = rs.getBigDecimal(column);
+		return value == null ? null : value.longValue();
 	}
 }

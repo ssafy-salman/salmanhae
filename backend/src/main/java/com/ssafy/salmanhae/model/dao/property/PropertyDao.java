@@ -1,8 +1,11 @@
 package com.ssafy.salmanhae.model.dao.property;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.ssafy.salmanhae.model.dto.map.PropertyClusterViewportItem;
+import com.ssafy.salmanhae.model.dto.map.RegionAverageViewportItem;
 import com.ssafy.salmanhae.model.dto.property.BuildingPriceStatResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertySafetySummaryResponse;
 import com.ssafy.salmanhae.model.dto.property.PropertyTransactionResponse;
@@ -15,6 +18,20 @@ import com.ssafy.salmanhae.model.dto.property.TransactionType;
 public interface PropertyDao {
 
 	List<PropertyRow> findInBounds(PropertySearchCriteria criteria);
+
+	List<PropertyRow> findViewportProperties(PropertySearchCriteria criteria, int limit);
+
+	List<RegionAverageViewportItem> findRegionAverageViewportItems(
+			PropertySearchCriteria criteria,
+			String regionLevel,
+			int limit
+	);
+
+	List<PropertyClusterViewportItem> findPropertyClusters(
+			PropertySearchCriteria criteria,
+			BigDecimal gridSize,
+			int limit
+	);
 
 	Optional<PropertyRow> findActiveById(Long propertyId);
 
