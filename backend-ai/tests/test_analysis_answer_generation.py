@@ -249,3 +249,20 @@ def test_llm_client_safety_answer_preserves_zero_score_from_tool_result() -> Non
     assert "88점" not in answer
     assert "77점" not in answer
     assert "반경 300m" not in answer
+
+
+def test_llm_client_does_not_promote_hug_calc_intent_to_renderable_worker() -> None:
+    answer = LLMClient(api_key="").generate_answer(
+        {
+            "user_id": "user-1",
+            "session_id": None,
+            "message": "HUG 보증 가능해?",
+            "context": {},
+            "intent": Intent.HUG_CALC,
+            "analysis_cards": [],
+            "tool_results": {},
+        }
+    )
+
+    assert "질문 의도를" in answer
+    assert "HUG 보증 가능" not in answer
