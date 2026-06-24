@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { sendChatMessage } from '../api/chat'
-import { fetchMapViewport, fetchPropertyDetail } from '../api/properties'
-import { isPropertyItem } from '../utils/mapViewport'
+import { sendChatMessage } from '../api/chat.js'
+import { fetchMapViewport, fetchPropertyDetail } from '../api/properties.js'
+import { isPropertyItem, VIEWPORT_MODES } from '../utils/mapViewport.js'
 
 const DEFAULT_BOUNDS = {
   west: 126.76,
@@ -26,6 +26,7 @@ export default defineStore('map', {
     currentRegion: 'seoul',
     selectedPropertyId: null,
     selectedProperty: null,
+    selectedViewportItem: null,
     viewportMode: '',
     viewportItems: [],
     properties: [],
@@ -128,6 +129,18 @@ export default defineStore('map', {
         maxPrice: ''
       }
       this.searchKeyword = ''
+      this.selectedViewportItem = null
+    },
+    applyViewportData(data) {
+      this.viewportMode = data.mode || ''
+      this.viewportItems = data.items || []
+      this.properties = this.viewportItems.filter(isPropertyItem)
+      this.totalCount = data.totalCount ?? this.viewportItems.length
+      this.lastFetchedAt = new Date().toISOString()
+
+      if (this.viewportMode === VIEWPORT_MODES.PROPERTY_MARKER || this.properties.length > 0) {
+        this.selectedViewportItem = null
+      }
     },
     async fetchViewport(bounds = this.bounds) {
       const seq = ++this.requestSeq
@@ -144,11 +157,7 @@ export default defineStore('map', {
 
         if (seq !== this.requestSeq) return
 
-        this.viewportMode = data.mode || ''
-        this.viewportItems = data.items || []
-        this.properties = this.viewportItems.filter(isPropertyItem)
-        this.totalCount = data.totalCount ?? this.viewportItems.length
-        this.lastFetchedAt = new Date().toISOString()
+        this.applyViewportData(data)
 
         if (this.selectedPropertyId && !this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null
@@ -173,6 +182,7 @@ export default defineStore('map', {
     async selectProperty(id) {
       const seq = ++this.detailRequestSeq
       this.selectedPropertyId = id
+      this.selectedViewportItem = null
       this.detailError = ''
       this.selectedProperty = this.properties.find((property) => property.id === id) || null
       this.isDetailLoading = true
@@ -196,6 +206,14 @@ export default defineStore('map', {
       this.selectedProperty = null
       this.detailError = ''
       this.isDetailLoading = false
+    },
+    selectViewportItem(item) {
+      this.detailRequestSeq += 1
+      this.selectedPropertyId = null
+      this.selectedProperty = null
+      this.detailError = ''
+      this.isDetailLoading = false
+      this.selectedViewportItem = item
     },
     async sendChat(message) {
       const text = String(message || '').trim()

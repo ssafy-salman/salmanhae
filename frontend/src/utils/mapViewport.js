@@ -5,6 +5,7 @@ export const VIEWPORT_ITEM_TYPES = {
 }
 
 export const VIEWPORT_MODES = {
+  SIDO_AVG: 'SIDO_AVG',
   SIGUNGU_AVG: 'SIGUNGU_AVG',
   DONG_AVG: 'DONG_AVG',
   PROPERTY_CLUSTER: 'PROPERTY_CLUSTER',
@@ -15,8 +16,25 @@ export const isPropertyItem = (item) => item?.type === VIEWPORT_ITEM_TYPES.PROPE
 
 export const getPrimaryPriceValue = (item) => {
   if (!item) return null
-  return item.avgSalePrice ?? item.price ?? item.avgDeposit ?? item.deposit ?? item.avgMonthlyRent ?? item.monthlyRent ?? null
+  if (item.transactionType === 'SALE') return item.avgSalePrice ?? item.price ?? null
+  if (item.transactionType === 'JEONSE') return item.avgDeposit ?? item.deposit ?? null
+  if (item.transactionType === 'MONTHLY_RENT') return item.avgMonthlyRent ?? item.monthlyRent ?? null
+  return item.avgMonthlyRent ?? item.monthlyRent ?? item.avgSalePrice ?? item.price ?? item.avgDeposit ?? item.deposit ?? null
 }
+
+export const regionLevelLabel = (level) => ({
+  SIDO: '시/도',
+  SIGUNGU: '시/군/구',
+  DONG: '읍/면/동'
+}[level] || '지역')
+
+export const propertyTypeLabel = (type) => ({
+  ONE_ROOM: '원룸',
+  OFFICETEL: '오피스텔',
+  APARTMENT: '아파트',
+  VILLA: '빌라',
+  MULTI_FAMILY: '다세대주택'
+}[type] || '주거')
 
 export const viewportMarkerKind = (item) => {
   if (item?.type === VIEWPORT_ITEM_TYPES.REGION_AVG) return 'region'
@@ -36,7 +54,7 @@ export const viewportMarkerLabel = (item, { formatWons, transactionLabel } = {})
   if (item?.type === VIEWPORT_ITEM_TYPES.REGION_AVG) {
     const regionName = item.regionName || item.regionCode || '지역'
     return {
-      eyebrow: item.regionLevel || 'REGION',
+      eyebrow: regionLevelLabel(item.regionLevel),
       title: regionName,
       value: formatPrice(getPrimaryPriceValue(item))
     }
