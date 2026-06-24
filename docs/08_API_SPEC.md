@@ -168,6 +168,8 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
 | `PROPERTY_CLUSTER` | 거리/밀집 수준 | 원형 클러스터 |
 | `PROPERTY_MARKER` | 상세 확대 | 개별 매물 |
 
+`SIGUNGU_AVG`는 넓은 줌에서 시군구 단위 대표 마커를 안정적으로 표시하기 위해 현재 bounds 안의 활성 매물을 시군구별로 직접 집계합니다. `DONG_AVG`는 사용 가능한 `region_price_stat` 기준 지역 평균을 반환합니다.
+
 초기 운영 threshold는 네이버지도 zoom 숫자를 기준으로 서버에서 결정합니다.
 
 | zoom | mode | 설명 |
@@ -188,12 +190,12 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
         "regionLevel": "SIGUNGU",
         "regionCode": "11620",
         "regionName": "관악구",
-        "avgDeposit": 98000000,
-        "avgMonthlyRent": 620000,
+        "avgDeposit": 10000000,
+        "avgMonthlyRent": 550000,
         "avgSalePrice": 720000000,
-        "transactionCount": 1240,
-        "latitude": 37.478406,
-        "longitude": 126.951613
+        "transactionCount": 2,
+        "latitude": 37.4705615,
+        "longitude": 126.936728
       }
     ],
     "totalCount": 1

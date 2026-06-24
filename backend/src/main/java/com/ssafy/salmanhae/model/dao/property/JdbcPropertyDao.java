@@ -112,6 +112,10 @@ public class JdbcPropertyDao implements PropertyDao {
 			String regionLevel,
 			int limit
 	) {
+		if ("SIGUNGU".equals(regionLevel)) {
+			return findVisibleSigunguAverageViewportItems(criteria, limit);
+		}
+
 		Map<String, Object> params = new HashMap<>();
 		params.put("west", criteria.west());
 		params.put("east", criteria.east());
@@ -185,6 +189,43 @@ public class JdbcPropertyDao implements PropertyDao {
 				.append(regionNameExpression)
 				.append(" \nORDER BY transaction_count DESC, region_name ASC")
 				.append(" \nLIMIT :limit");
+		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
+	}
+
+	private List<RegionAverageViewportItem> findVisibleSigunguAverageViewportItems(
+			PropertySearchCriteria criteria,
+			int limit
+	) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("west", criteria.west());
+		params.put("east", criteria.east());
+		params.put("south", criteria.south());
+		params.put("north", criteria.north());
+		params.put("limit", limit);
+
+		StringBuilder sql = new StringBuilder("""
+				SELECT 'SIGUNGU' AS region_level,
+				       MIN(SUBSTRING(legal_dong_code, 1, 5)) AS region_code,
+				       sigungu AS region_name,
+				       CAST(AVG(deposit) AS BIGINT) AS avg_deposit,
+				       CAST(AVG(monthly_rent) AS BIGINT) AS avg_monthly_rent,
+				       CAST(AVG(price) AS BIGINT) AS avg_sale_price,
+				       COUNT(*) AS transaction_count,
+				       AVG(latitude) AS latitude,
+				       AVG(longitude) AS longitude
+				FROM properties
+				WHERE is_active = true
+				  AND longitude BETWEEN :west AND :east
+				  AND latitude BETWEEN :south AND :north
+				  AND sigungu IS NOT NULL
+				""");
+		appendPropertyFilters(sql, params, "", criteria);
+		sql.append("""
+
+				GROUP BY sido, sigungu
+				ORDER BY transaction_count DESC, region_name ASC
+				LIMIT :limit
+				""");
 		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
 	}
 
