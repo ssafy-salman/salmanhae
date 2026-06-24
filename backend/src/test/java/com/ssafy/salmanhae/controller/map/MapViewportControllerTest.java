@@ -64,6 +64,21 @@ class MapViewportControllerTest {
 	}
 
 	@Test
+	void getViewportRegionAverageUsesOnlyStatsMatchingFilteredVisiblePropertyCombinations() throws Exception {
+		mockMvc.perform(baseViewportRequest()
+						.param("zoom", "12")
+						.param("minDeposit", "1"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("DONG_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("DONG"))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10500000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(520000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(3));
+	}
+
+	@Test
 	void getViewportReturnsClusterModeBeforeDetailedMarkers() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "14"))
 				.andExpect(status().isOk())

@@ -126,18 +126,30 @@ public class JdbcPropertyDao implements PropertyDao {
 		String regionNameExpression;
 		if ("DONG".equals(regionLevel)) {
 			centerColumns = "sido, sigungu, dong, legal_dong_code AS region_code";
-			centerGroupBy = "sido, sigungu, dong, legal_dong_code";
-			joinCondition = "rs.region_code = visible.region_code";
+			centerGroupBy = "sido, sigungu, dong, legal_dong_code, property_type, transaction_type";
+			joinCondition = """
+					rs.region_code = visible.region_code
+					AND rs.property_type = visible.property_type
+					AND rs.transaction_type = visible.transaction_type
+					""";
 			regionNameExpression = "rs.dong";
 		} else {
 			centerColumns = "sido, sigungu, NULL AS dong, NULL AS region_code";
-			centerGroupBy = "sido, sigungu";
-			joinCondition = "rs.sido = visible.sido AND rs.sigungu = visible.sigungu";
+			centerGroupBy = "sido, sigungu, property_type, transaction_type";
+			joinCondition = """
+					rs.sido = visible.sido
+					AND rs.sigungu = visible.sigungu
+					AND rs.property_type = visible.property_type
+					AND rs.transaction_type = visible.transaction_type
+					""";
 			regionNameExpression = "rs.sigungu";
 		}
 
 		StringBuilder visibleSql = new StringBuilder("""
 				SELECT %s,
+				       property_type,
+				       transaction_type,
+				       COUNT(*) AS visible_count,
 				       AVG(latitude) AS latitude,
 				       AVG(longitude) AS longitude
 				FROM properties
@@ -162,8 +174,8 @@ public class JdbcPropertyDao implements PropertyDao {
 				       CAST(SUM(CASE WHEN rs.avg_price IS NOT NULL THEN rs.avg_price * rs.transaction_count ELSE 0 END)
 				            / NULLIF(SUM(CASE WHEN rs.avg_price IS NOT NULL THEN rs.transaction_count ELSE 0 END), 0) AS BIGINT) AS avg_sale_price,
 				       SUM(rs.transaction_count) AS transaction_count,
-				       visible.latitude,
-				       visible.longitude
+				       SUM(visible.latitude * visible.visible_count) / NULLIF(SUM(visible.visible_count), 0) AS latitude,
+				       SUM(visible.longitude * visible.visible_count) / NULLIF(SUM(visible.visible_count), 0) AS longitude
 				FROM region_price_stat rs
 				JOIN visible ON %s
 				WHERE rs.region_level = :regionLevel
@@ -171,7 +183,6 @@ public class JdbcPropertyDao implements PropertyDao {
 		appendRegionStatFilters(sql, params, "rs", criteria);
 		sql.append(" \nGROUP BY rs.region_level, rs.region_code, ")
 				.append(regionNameExpression)
-				.append(", visible.latitude, visible.longitude")
 				.append(" \nORDER BY transaction_count DESC, region_name ASC")
 				.append(" \nLIMIT :limit");
 		return jdbcTemplate.query(sql.toString(), params, regionAverageMapper());
