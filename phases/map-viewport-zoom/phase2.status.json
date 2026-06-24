@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "phase": "phase2-region-and-cluster-query.md",
+  "issue_number": 55,
+  "timestamp": "2026-06-24T15:44:00+09:00",
+  "detail": "Implemented region average, cluster, and detailed property query behavior for /api/v1/map/viewport. Verified targeted, combined property/map, and full backend test suites.",
+  "runner": "codex"
+}

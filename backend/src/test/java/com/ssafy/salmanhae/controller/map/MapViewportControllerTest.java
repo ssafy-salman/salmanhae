@@ -26,19 +26,37 @@ class MapViewportControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"));
 
-		mockMvc.perform(baseViewportRequest().param("zoom", "11"))
+		mockMvc.perform(baseViewportRequest()
+						.param("zoom", "11")
+						.param("transactionType", "MONTHLY_RENT")
+						.param("propertyType", "ONE_ROOM"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value("OK"))
 				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"))
-				.andExpect(jsonPath("$.data.totalCount").value(0))
-				.andExpect(jsonPath("$.data.items", hasSize(0)));
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items", hasSize(1)))
+				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("SIGUNGU"))
+				.andExpect(jsonPath("$.data.items[0].regionName").value("관악구"))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(98000000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(12))
+				.andExpect(jsonPath("$.data.items[0].latitude").value(37.4701230))
+				.andExpect(jsonPath("$.data.items[0].longitude").value(126.9364560));
 	}
 
 	@Test
 	void getViewportReturnsDongModeAtMiddleZoom() throws Exception {
-		mockMvc.perform(baseViewportRequest().param("zoom", "12"))
+		mockMvc.perform(baseViewportRequest()
+						.param("zoom", "12")
+						.param("transactionType", "MONTHLY_RENT")
+						.param("propertyType", "ONE_ROOM"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("DONG_AVG"));
+				.andExpect(jsonPath("$.data.mode").value("DONG_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].type").value("REGION_AVG"))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("DONG"))
+				.andExpect(jsonPath("$.data.items[0].regionName").value("대학동"))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(520000));
 
 		mockMvc.perform(baseViewportRequest().param("zoom", "13"))
 				.andExpect(status().isOk())
@@ -49,7 +67,13 @@ class MapViewportControllerTest {
 	void getViewportReturnsClusterModeBeforeDetailedMarkers() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "14"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("PROPERTY_CLUSTER"));
+				.andExpect(jsonPath("$.data.mode").value("PROPERTY_CLUSTER"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].type").value("CLUSTER"))
+				.andExpect(jsonPath("$.data.items[0].count").value(2))
+				.andExpect(jsonPath("$.data.items[0].avgDeposit").value(10000000))
+				.andExpect(jsonPath("$.data.items[0].avgMonthlyRent").value(550000))
+				.andExpect(jsonPath("$.data.items[0].avgSalePrice").value(720000000));
 
 		mockMvc.perform(baseViewportRequest().param("zoom", "15"))
 				.andExpect(status().isOk())
@@ -60,7 +84,14 @@ class MapViewportControllerTest {
 	void getViewportReturnsPropertyMarkerModeAtDetailedZoom() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "16"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("PROPERTY_MARKER"));
+				.andExpect(jsonPath("$.data.mode").value("PROPERTY_MARKER"))
+				.andExpect(jsonPath("$.data.totalCount").value(2))
+				.andExpect(jsonPath("$.data.items", hasSize(2)))
+				.andExpect(jsonPath("$.data.items[0].type").value("PROPERTY"))
+				.andExpect(jsonPath("$.data.items[0].id").value(1))
+				.andExpect(jsonPath("$.data.items[0].title").value("대학동 그린빌 월세"))
+				.andExpect(jsonPath("$.data.items[1].type").value("PROPERTY"))
+				.andExpect(jsonPath("$.data.items[1].id").value(2));
 
 		mockMvc.perform(baseViewportRequest().param("zoom", "21"))
 				.andExpect(status().isOk())
