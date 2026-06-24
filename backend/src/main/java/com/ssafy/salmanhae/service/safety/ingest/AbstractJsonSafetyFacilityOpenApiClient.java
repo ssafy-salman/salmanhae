@@ -15,6 +15,8 @@ import com.ssafy.salmanhae.config.SafetyDataProperties;
 
 abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacilitySourceClient {
 
+	private static final int MAX_PAGES = 1000;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final String sourceName;
@@ -49,7 +51,7 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
 		int totalCount = -1;
-		while (totalCount < 0 || (pageNo - 1) * properties.pageSize() < totalCount) {
+		while (pageNo <= MAX_PAGES && (totalCount < 0 || (pageNo - 1) * properties.pageSize() < totalCount)) {
 			URI uri = UriComponentsBuilder.fromUriString(baseUrl)
 					.queryParam("serviceKey", serviceKey)
 					.queryParam("pageNo", pageNo)
@@ -69,15 +71,22 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 			if (body == null || body.isBlank()) {
 				break;
 			}
+			JsonNode root;
+			try {
+				root = objectMapper.readTree(body);
+			} catch (Exception exception) {
+				log.warn("Failed to parse {} safety facilities from {}", payloadName, baseUrl, exception);
+				break;
+			}
 			ParsedSafetyFacilityPage page;
 			try {
-				page = parsePage(body);
+				page = parsePage(root);
 			} catch (IllegalArgumentException exception) {
 				log.warn("Failed to parse {} safety facilities from {}", payloadName, baseUrl, exception);
 				break;
 			}
 			if (totalCount < 0) {
-				totalCount = totalCount(body);
+				totalCount = SafetyFacilityParserSupport.totalCount(root);
 			}
 			if (page.rawItemCount() == 0) {
 				break;
@@ -87,6 +96,9 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 				break;
 			}
 			pageNo++;
+		}
+		if (pageNo > MAX_PAGES) {
+			log.warn("Stopped fetching {} safety facilities after reaching max page limit {}", payloadName, MAX_PAGES);
 		}
 		return facilities;
 	}
@@ -110,14 +122,6 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 				.filter(NormalizedSafetyFacility::hasUsableCoordinates)
 				.toList();
 		return new ParsedSafetyFacilityPage(facilities, items.size());
-	}
-
-	private int totalCount(String json) {
-		try {
-			return SafetyFacilityParserSupport.totalCount(objectMapper.readTree(json));
-		} catch (Exception exception) {
-			return -1;
-		}
 	}
 
 	abstract NormalizedSafetyFacility toFacility(JsonNode node);
