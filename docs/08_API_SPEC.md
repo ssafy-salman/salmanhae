@@ -202,6 +202,29 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
 }
 ```
 
+**거리/밀집 Response**
+```json
+{
+  "data": {
+    "mode": "PROPERTY_CLUSTER",
+    "items": [
+      {
+        "type": "CLUSTER",
+        "clusterId": "cluster-37.471-126.938",
+        "count": 42,
+        "latitude": 37.47102,
+        "longitude": 126.93811,
+        "radiusM": 180,
+        "avgDeposit": 12000000,
+        "avgMonthlyRent": 580000
+      }
+    ],
+    "totalCount": 1
+  },
+  "message": "OK"
+}
+```
+
 **상세 확대 Response**
 ```json
 {
@@ -215,22 +238,13 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=12
         "transactionType": "MONTHLY_RENT",
         "deposit": 10000000,
         "monthlyRent": 550000,
+        "price": null,
         "areaM2": 22.5,
         "latitude": 37.470123,
         "longitude": 126.936456
-      },
-      {
-        "type": "CLUSTER",
-        "clusterId": "cluster-37.471-126.938",
-        "count": 42,
-        "latitude": 37.47102,
-        "longitude": 126.93811,
-        "radiusM": 180,
-        "avgDeposit": 12000000,
-        "avgMonthlyRent": 580000
       }
     ],
-    "totalCount": 2
+    "totalCount": 1
   },
   "message": "OK"
 }

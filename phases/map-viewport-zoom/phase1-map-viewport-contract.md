@@ -12,11 +12,11 @@ Define the backend contract for zoom-aware map data so the frontend can stop loa
 - `docs/08_API_SPEC.md` - Document the cluster-specific viewport mode and zoom threshold policy
 
 ## Done When
-- [ ] `GET /api/v1/map/viewport` is publicly accessible without JWT.
-- [ ] zoom `11` returns `SIGUNGU_AVG`, zoom `12`-`13` returns `DONG_AVG`, zoom `14`-`15` returns `PROPERTY_CLUSTER`, and zoom `16+` returns `PROPERTY_MARKER`.
-- [ ] invalid bounds or missing zoom returns `400 INVALID_REQUEST` or the existing bounds validation error.
-- [ ] Backend tests for the controller contract pass.
-- [ ] API spec describes the implemented threshold policy.
+- [x] `GET /api/v1/map/viewport` is publicly accessible without JWT.
+- [x] zoom `11` returns `SIGUNGU_AVG`, zoom `12`-`13` returns `DONG_AVG`, zoom `14`-`15` returns `PROPERTY_CLUSTER`, and zoom `16+` returns `PROPERTY_MARKER`.
+- [x] invalid bounds or missing zoom returns `400 INVALID_REQUEST` or the existing bounds validation error.
+- [x] Backend tests for the controller contract pass.
+- [x] API spec describes the implemented threshold policy.
 
 ## Architecture Rules
 - Business logic belongs in Service classes; the Controller only validates input and delegates.

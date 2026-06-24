@@ -22,6 +22,10 @@ class MapViewportControllerTest {
 
 	@Test
 	void getViewportIsPublicAndReturnsSigunguModeAtWideZoom() throws Exception {
+		mockMvc.perform(baseViewportRequest().param("zoom", "0"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"));
+
 		mockMvc.perform(baseViewportRequest().param("zoom", "11"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value("OK"))
@@ -57,6 +61,10 @@ class MapViewportControllerTest {
 		mockMvc.perform(baseViewportRequest().param("zoom", "16"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.mode").value("PROPERTY_MARKER"));
+
+		mockMvc.perform(baseViewportRequest().param("zoom", "21"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("PROPERTY_MARKER"));
 	}
 
 	@Test
@@ -75,6 +83,14 @@ class MapViewportControllerTest {
 	@Test
 	void getViewportRejectsMissingZoom() throws Exception {
 		mockMvc.perform(baseViewportRequest())
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+				.andExpect(jsonPath("$.status").value(400));
+	}
+
+	@Test
+	void getViewportRejectsOutOfRangeZoom() throws Exception {
+		mockMvc.perform(baseViewportRequest().param("zoom", "22"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
 				.andExpect(jsonPath("$.status").value(400));
