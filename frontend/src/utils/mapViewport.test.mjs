@@ -4,8 +4,10 @@ import { test } from 'node:test'
 import {
   getPrimaryPriceValue,
   isPropertyItem,
+  propertyDisplayTitle,
   propertyTypeLabel,
   regionLevelLabel,
+  targetZoomForViewportItem,
   viewportMarkerAnchor,
   viewportMarkerKind,
   viewportMarkerLabel
@@ -96,4 +98,31 @@ test('viewport labels translate region levels and property types', () => {
   assert.equal(regionLevelLabel('SIGUNGU'), '시/군/구')
   assert.equal(regionLevelLabel('DONG'), '읍/면/동')
   assert.equal(propertyTypeLabel('MULTI_FAMILY'), '다세대주택')
+})
+
+test('property display title removes raw enum labels and trailing item wording', () => {
+  assert.equal(propertyDisplayTitle({
+    id: 1,
+    title: '대학동 MULTI_FAMILY 매물',
+    propertyType: 'MULTI_FAMILY'
+  }), '대학동 다세대주택')
+  assert.equal(propertyDisplayTitle({
+    id: 2,
+    title: '신림동 원룸 매물',
+    propertyType: 'ONE_ROOM'
+  }), '신림동 원룸')
+  assert.equal(propertyDisplayTitle({
+    id: 3,
+    title: '',
+    buildingName: '',
+    propertyType: 'MULTI_FAMILY'
+  }), '다세대주택')
+})
+
+test('viewport item target zoom follows drill-down hierarchy', () => {
+  assert.equal(targetZoomForViewportItem({ type: 'REGION_AVG', regionLevel: 'SIDO' }, 9), 10)
+  assert.equal(targetZoomForViewportItem({ type: 'REGION_AVG', regionLevel: 'SIGUNGU' }, 10), 12)
+  assert.equal(targetZoomForViewportItem({ type: 'REGION_AVG', regionLevel: 'DONG' }, 12), 14)
+  assert.equal(targetZoomForViewportItem({ type: 'CLUSTER' }, 14), 16)
+  assert.equal(targetZoomForViewportItem({ type: 'UNKNOWN' }, 20), 21)
 })

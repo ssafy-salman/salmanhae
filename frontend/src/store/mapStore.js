@@ -21,6 +21,21 @@ const toNumberOrEmpty = (value) => {
   return Number.isFinite(numberValue) ? numberValue : ''
 }
 
+const normalizeBounds = (bounds) => {
+  if (!bounds) return null
+  const normalized = {
+    west: Number(bounds.west),
+    east: Number(bounds.east),
+    south: Number(bounds.south),
+    north: Number(bounds.north)
+  }
+  const hasFiniteValues = Object.values(normalized).every(Number.isFinite)
+  if (!hasFiniteValues) return null
+  if (normalized.west < -180 || normalized.east > 180 || normalized.south < -90 || normalized.north > 90) return null
+  if (normalized.west >= normalized.east || normalized.south >= normalized.north) return null
+  return normalized
+}
+
 export default defineStore('map', {
   state: () => ({
     currentRegion: 'seoul',
@@ -95,12 +110,10 @@ export default defineStore('map', {
       this.currentRegion = region
     },
     setBounds(bounds) {
-      this.bounds = {
-        west: Number(bounds.west),
-        east: Number(bounds.east),
-        south: Number(bounds.south),
-        north: Number(bounds.north)
-      }
+      const normalized = normalizeBounds(bounds)
+      if (!normalized) return false
+      this.bounds = normalized
+      return true
     },
     setCenter(center) {
       this.center = {

@@ -53,3 +53,24 @@ test('viewport summary selection remains for non-property viewport results', () 
   assert.deepEqual(store.selectedViewportItem, selectedItem)
   assert.equal(store.properties.length, 0)
 })
+
+test('setBounds keeps the last valid bounds when map reports a transient invalid range', () => {
+  const store = createStore()
+  const previousBounds = { ...store.bounds }
+
+  assert.equal(store.setBounds({
+    west: Number.NaN,
+    east: 127.02,
+    south: 37.45,
+    north: 37.55
+  }), false)
+  assert.deepEqual(store.bounds, previousBounds)
+
+  assert.equal(store.setBounds({
+    west: 127.02,
+    east: 126.91,
+    south: 37.45,
+    north: 37.55
+  }), false)
+  assert.deepEqual(store.bounds, previousBounds)
+})

@@ -258,8 +258,10 @@ import { loadNaverMaps } from '../utils/naverMaps'
 import {
   VIEWPORT_MODES,
   getPrimaryPriceValue,
+  propertyDisplayTitle,
   propertyTypeLabel,
   regionLevelLabel,
+  targetZoomForViewportItem,
   viewportMarkerAnchor,
   viewportMarkerKind,
   viewportMarkerLabel
@@ -310,7 +312,7 @@ const emptyListText = computed(() => {
   }
 })
 
-const displayTitle = (property) => property.title || property.buildingName || `매물 ${property.id}`
+const displayTitle = (property) => propertyDisplayTitle(property)
 
 const transactionLabel = (type) => ({
   MONTHLY_RENT: '월세',
@@ -384,12 +386,15 @@ const getMapBounds = () => {
   const bounds = map.getBounds()
   const sw = bounds.getSW()
   const ne = bounds.getNE()
-  return {
+  const nextBounds = {
     west: sw.lng(),
     south: sw.lat(),
     east: ne.lng(),
     north: ne.lat()
   }
+  const hasFiniteValues = Object.values(nextBounds).every(Number.isFinite)
+  if (!hasFiniteValues || nextBounds.west >= nextBounds.east || nextBounds.south >= nextBounds.north) return null
+  return nextBounds
 }
 
 const propertyMarkerContent = (property, isSelected) => {
@@ -531,24 +536,26 @@ const handleMarkerClick = (item) => {
     return
   }
   store.selectViewportItem(item)
-  if (!mapsApi || !map || !item.latitude || !item.longitude) return
-  map.panTo(new mapsApi.LatLng(item.latitude, item.longitude))
-  map.setZoom(Math.max(map.getZoom(), targetZoomForViewportItem(item)))
-}
-
-const targetZoomForViewportItem = (item) => {
-  if (item.type === 'CLUSTER') return 16
-  if (item.regionLevel === 'SIDO') return 10
-  if (item.regionLevel === 'SIGUNGU') return 12
-  if (item.regionLevel === 'DONG') return 14
-  return Math.min(21, map?.getZoom?.() + 1 || store.zoom + 1)
+  focusViewportItem(item)
 }
 
 const zoomToSelectedViewport = () => {
   const item = store.selectedViewportItem
-  if (!item || !mapsApi || !map || !item.latitude || !item.longitude) return
-  map.panTo(new mapsApi.LatLng(item.latitude, item.longitude))
-  map.setZoom(Math.max(map.getZoom(), targetZoomForViewportItem(item)))
+  focusViewportItem(item)
+}
+
+const focusViewportItem = (item) => {
+  if (!item || !mapsApi || !map) return
+  const latitude = Number(item.latitude)
+  const longitude = Number(item.longitude)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+
+  const nextZoom = Math.max(map.getZoom(), targetZoomForViewportItem(item, map.getZoom()))
+  const nextCenter = new mapsApi.LatLng(latitude, longitude)
+  map.setZoom(nextZoom)
+  map.setCenter(nextCenter)
+  store.setZoom(nextZoom)
+  store.setCenter({ latitude, longitude })
 }
 
 const refreshFromMapBounds = async () => {
@@ -562,7 +569,8 @@ const refreshFromMapBounds = async () => {
     longitude: map.getCenter().lng()
   })
   store.setZoom(map.getZoom())
-  await store.fetchViewport(getMapBounds())
+  const bounds = getMapBounds()
+  await store.fetchViewport(bounds || store.bounds)
 }
 
 const refreshFromFilters = async () => {
