@@ -77,17 +77,65 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    "set local statement_timeout = %s",
-                    (int(self.statement_timeout_ms),),
-                )
+                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
                 # IVFFlat 인덱스가 lists=100으로 설정돼 있으나 데이터 수가 적을 때
                 # 기본 probes=1이면 대부분의 클러스터를 건너뛰어 결과가 0개가 됨.
                 # probes를 lists 값과 동일하게 설정해 전체 인덱스를 탐색하도록 한다.
-                cursor.execute("set local ivfflat.probes = %s", (100,))
+                cursor.execute("set local ivfflat.probes = 100")
                 cursor.execute(sql, (vector_literal, vector_literal, top_k))
                 return list(cursor.fetchall())
 
+    def get_regional_price_stats(
+        self,
+        sigungu: str | None = None,
+        dong: str | None = None,
+        property_type: str | None = None,
+        transaction_type: str | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        params: list[Any] = []
+
+        if sigungu:
+            conditions.append("sigungu = %s")
+            params.append(sigungu)
+        if dong:
+            conditions.append("dong = %s")
+            params.append(dong)
+        if property_type:
+            conditions.append("property_type = %s")
+            params.append(property_type)
+        if transaction_type:
+            conditions.append("transaction_type = %s")
+            params.append(transaction_type)
+
+        if not conditions:
+            return []
+
+        where_clause = " AND ".join(conditions)
+        sql = f"""
+            SELECT region_level, region_code, sigungu, dong,
+                   property_type, transaction_type,
+                   avg_deposit, median_deposit,
+                   avg_monthly_rent, median_monthly_rent,
+                   avg_price, median_price,
+                   transaction_count, sample_from_ym, sample_to_ym
+            FROM public.region_price_stat
+            WHERE {where_clause}
+            ORDER BY transaction_count DESC NULLS LAST
+            LIMIT %s
+        """
+        params.append(limit)
+
+        with psycopg.connect(
+            self.database_url,
+            row_factory=dict_row,
+            connect_timeout=self.connect_timeout_seconds,
+        ) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
+                cursor.execute(sql, params)
+                return list(cursor.fetchall())
     def search_properties(self, criteria: dict[str, Any], limit: int = 20) -> list[dict[str, Any]]:
         conditions = ["is_active = true"]
         params: list[Any] = []
@@ -131,10 +179,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    "set local statement_timeout = %s",
-                    (int(self.statement_timeout_ms),),
-                )
+                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
 
@@ -259,10 +304,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    "set local statement_timeout = %s",
-                    (self.statement_timeout_ms,),
-                )
+                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
                 for row_params in params:
                     cursor.execute(sql, row_params)
                     affected_rows += max(int(getattr(cursor, "rowcount", 1)), 0)
