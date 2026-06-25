@@ -79,9 +79,13 @@ export default defineStore('map', {
       const keyword = state.searchKeyword.trim().toLowerCase()
       if (!keyword) return state.properties
       return state.properties.filter((property) => {
-        const title = property.title || property.buildingName || ''
-        const address = property.address || property.roadAddress || ''
-        return title.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword)
+        const searchableText = [
+          property.title,
+          property.buildingName,
+          property.address,
+          property.roadAddress
+        ].filter(Boolean).join(' ').toLowerCase()
+        return searchableText.includes(keyword)
       })
     },
     regionStatus(state) {
@@ -91,6 +95,9 @@ export default defineStore('map', {
     },
     hasActiveFilters(state) {
       return Object.values(state.filters).some((value) => value !== '')
+    },
+    hasActiveSearchConditions(state) {
+      return state.searchKeyword.trim() !== '' || Object.values(state.filters).some((value) => value !== '')
     }
   },
   actions: {
@@ -153,6 +160,7 @@ export default defineStore('map', {
         const data = await fetchMapViewport({
           ...this.bounds,
           zoom: this.zoom,
+          keyword: this.searchKeyword,
           ...this.filters
         })
 

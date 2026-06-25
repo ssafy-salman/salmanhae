@@ -69,6 +69,29 @@ class PropertyControllerTest {
 	}
 
 	@Test
+	void searchPropertiesAppliesKeywordFilter() throws Exception {
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("keyword", "매매"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].id").value(2));
+
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("keyword", "검색결과없음"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.totalCount").value(0))
+				.andExpect(jsonPath("$.data.items", hasSize(0)));
+	}
+
+	@Test
 	void searchPropertiesRejectsInvalidBounds() throws Exception {
 		mockMvc.perform(get("/api/v1/properties")
 						.param("west", "127.00")

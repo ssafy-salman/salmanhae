@@ -47,7 +47,8 @@ public class PropertyController {
 			@RequestParam(required = false) Long minDeposit,
 			@RequestParam(required = false) Long maxDeposit,
 			@RequestParam(required = false) Long minPrice,
-			@RequestParam(required = false) Long maxPrice
+			@RequestParam(required = false) Long maxPrice,
+			@RequestParam(required = false) String keyword
 	) {
 		PropertySearchCriteria criteria = new PropertySearchCriteria(
 				west,
@@ -59,7 +60,8 @@ public class PropertyController {
 				minDeposit,
 				maxDeposit,
 				minPrice,
-				maxPrice
+				maxPrice,
+				keyword
 		);
 		criteria.validateBounds();
 		List<PropertySummaryResponse> properties = propertyService.searchProperties(criteria);

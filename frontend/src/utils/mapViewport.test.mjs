@@ -40,6 +40,22 @@ test('region average marker uses region metadata and representative price', () =
   })
 })
 
+test('region marker can show matching property count for search results', () => {
+  const item = {
+    type: 'REGION_AVG',
+    regionLevel: 'SIGUNGU',
+    regionName: '관악구',
+    avgMonthlyRent: 620000,
+    transactionCount: 3
+  }
+
+  assert.deepEqual(viewportMarkerLabel(item, { formatWons, showCount: true }), {
+    eyebrow: '시/군/구',
+    title: '관악구',
+    value: '3개'
+  })
+})
+
 test('monthly rent viewport items use monthly rent as representative price', () => {
   assert.equal(getPrimaryPriceValue({
     type: 'PROPERTY',

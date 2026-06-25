@@ -76,14 +76,14 @@ export const viewportMarkerAnchor = (item) => {
   return { x: 42, y: 44 }
 }
 
-export const viewportMarkerLabel = (item, { formatWons, transactionLabel } = {}) => {
+export const viewportMarkerLabel = (item, { formatWons, transactionLabel, showCount = false } = {}) => {
   const formatPrice = formatWons || ((value) => String(value ?? '-'))
   if (item?.type === VIEWPORT_ITEM_TYPES.REGION_AVG) {
     const regionName = item.regionName || item.regionCode || '지역'
     return {
       eyebrow: regionLevelLabel(item.regionLevel),
       title: regionName,
-      value: formatPrice(getPrimaryPriceValue(item))
+      value: showCount ? `${Number(item.transactionCount || 0).toLocaleString()}개` : formatPrice(getPrimaryPriceValue(item))
     }
   }
 

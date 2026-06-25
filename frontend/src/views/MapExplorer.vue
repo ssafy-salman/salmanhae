@@ -434,7 +434,11 @@ const propertyMarkerContent = (property, isSelected) => {
 }
 
 const regionMarkerContent = (item) => {
-  const label = viewportMarkerLabel(item, { formatWons, transactionLabel })
+  const label = viewportMarkerLabel(item, {
+    formatWons,
+    transactionLabel,
+    showCount: store.hasActiveSearchConditions
+  })
   return `
     <button type="button" style="
       position: relative;
