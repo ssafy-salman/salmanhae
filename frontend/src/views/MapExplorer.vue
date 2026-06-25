@@ -155,209 +155,195 @@
         <span v-if="store.lastFetchedAt" class="text-slate-400">{{ formattedFetchedAt }}</span>
       </div>
 
-      <!-- 매물 상세 패널 (지도 영역 내부) -->
-      <transition name="slide">
-        <div v-if="store.selectedProperty" class="absolute inset-y-0 right-0 z-[500] w-[360px] overflow-hidden rounded-r-2xl border-l border-slate-200 bg-white shadow-2xl">
-          <div class="flex h-full flex-col">
-            <div class="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
-              <div class="flex items-center gap-2">
-                <span class="rounded-full bg-brand-light px-2 py-1 text-[10px] font-bold text-brand-dark">{{ transactionLabel(store.selectedProperty.transactionType) }}</span>
-              </div>
-              <button class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" type="button" @click="store.closeProperty">
-                <X class="h-4 w-4" aria-hidden="true" />
-                <span class="sr-only">닫기</span>
-              </button>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-              <div class="space-y-5 p-5">
-                <div>
-                  <p class="text-xs font-bold text-brand-dark">{{ propertyTypeLabel(store.selectedProperty.propertyType) }}</p>
-                  <h2 class="mt-1 text-2xl font-bold text-slate-900">{{ displayTitle(store.selectedProperty) }}</h2>
-                  <p class="mt-2 text-sm leading-6 text-slate-500">{{ store.selectedProperty.address }}</p>
-                  <p v-if="store.selectedProperty.roadAddress" class="text-xs leading-5 text-slate-400">{{ store.selectedProperty.roadAddress }}</p>
-                </div>
-
-                <div class="rounded-2xl border border-brand/20 bg-brand-light p-4">
-                  <p class="text-xs font-bold text-brand-dark">가격</p>
-                  <p class="mt-1 text-xl font-bold text-slate-900">{{ priceText(store.selectedProperty) }}</p>
-                  <p v-if="store.selectedProperty.maintenanceFee" class="mt-2 text-xs font-bold text-slate-600">관리비 {{ formatWons(store.selectedProperty.maintenanceFee) }}</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                  <div class="detail-stat">
-                    <span>전용 면적</span>
-                    <b>{{ areaText(store.selectedProperty) }}</b>
-                  </div>
-                  <div class="detail-stat">
-                    <span>층수</span>
-                    <b>{{ floorText(store.selectedProperty) }}</b>
-                  </div>
-                  <div class="detail-stat">
-                    <span>건물명</span>
-                    <b>{{ store.selectedProperty.buildingName || '-' }}</b>
-                  </div>
-                </div>
-
-                <div v-if="store.detailError" class="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
-                  {{ store.detailError }}
-                </div>
-
-                <div v-if="store.isDetailLoading" class="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">
-                  <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  상세 정보를 불러오는 중입니다
-                </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="text-xs font-bold text-brand-dark">{{ transactionTrendLabel }}</p>
-                      <h3 class="mt-1 text-base font-bold text-slate-900">실거래가 추이</h3>
-                    </div>
-                    <span v-if="store.selectedPropertyTransactionsTotal" class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
-                      최근 {{ store.selectedPropertyTransactionsTotal.toLocaleString() }}건
-                    </span>
-                  </div>
-
-                  <div v-if="store.isTransactionsLoading" class="mt-4 flex items-center justify-center rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
-                    <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                    실거래가를 불러오는 중입니다
-                  </div>
-
-                  <div v-else-if="store.transactionError" class="mt-4 rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
-                    {{ store.transactionError }}
-                  </div>
-
-                  <div v-else-if="transactionTrend.points.length === 0" class="mt-4 rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
-                    비교 가능한 최근 실거래가가 없습니다.
-                  </div>
-
-                  <div v-else class="mt-4 space-y-4">
-                    <div class="grid grid-cols-2 gap-2">
-                      <div class="rounded-xl bg-slate-50 p-3">
-                        <span class="text-[10px] font-bold text-slate-400">평균</span>
-                        <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.averageAmount) }}</b>
-                      </div>
-                      <div class="rounded-xl bg-slate-50 p-3">
-                        <span class="text-[10px] font-bold text-slate-400">최근 거래</span>
-                        <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.latest?.amount) }}</b>
-                      </div>
-                    </div>
-
-                    <div class="space-y-3">
-                      <div
-                        v-for="transaction in transactionTrend.points"
-                        :key="`${transaction.contractYearMonth}-${transaction.amount}-${transaction.floor ?? 'floor'}`"
-                        class="space-y-1.5"
-                      >
-                        <div class="flex items-center justify-between gap-3 text-xs font-bold">
-                          <span class="text-slate-500">{{ transaction.contractYearMonth }}</span>
-                          <span class="text-slate-900">{{ formatWons(transaction.amount) }}</span>
-                        </div>
-                        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                          <div class="h-full rounded-full bg-brand" :style="{ width: `${transaction.barWidth}%` }"></div>
-                        </div>
-                        <p class="text-[11px] font-semibold text-slate-400">{{ transactionMetaText(transaction) }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="publicDescription" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="flex items-center gap-2">
-                    <Building2 class="h-4 w-4 text-slate-400" aria-hidden="true" />
-                    <h3 class="text-sm font-bold text-slate-900">매물 메모</h3>
-                  </div>
-                  <p class="mt-3 text-sm leading-6 text-slate-600">{{ publicDescription }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
       </section>
     </div>
 
-    <aside class="flex h-[660px] flex-col gap-4 lg:col-span-3 lg:h-[calc(100vh-132px)] lg:min-h-[660px]">
-      <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="mt-1 text-lg font-bold text-slate-900">지도 범위 매물</h2>
-          </div>
-          <SlidersHorizontal class="h-5 w-5 text-slate-400" aria-hidden="true" />
-        </div>
-        <p class="mt-2 text-xs leading-5 text-slate-500">현재 지도 화면 안의 매물을 조회합니다.</p>
-      </section>
+    <aside class="flex h-[660px] flex-col lg:col-span-3 lg:h-[calc(100vh-132px)] lg:min-h-[660px]">
+      <section class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-      <section class="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div v-if="store.isLoading" class="flex h-full items-center justify-center text-sm font-bold text-slate-500">
-          <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-          매물을 불러오는 중입니다
-        </div>
-
-        <div v-else-if="store.error" class="flex h-full items-center justify-center p-6 text-center">
-          <div>
-            <AlertTriangle class="mx-auto h-8 w-8 text-rose-500" aria-hidden="true" />
-            <p class="mt-3 text-sm font-bold text-slate-900">매물 API 오류</p>
-            <p class="mt-2 text-xs leading-5 text-slate-500">{{ store.error }}</p>
-          </div>
-        </div>
-
-        <div v-else-if="store.selectedViewportItem" class="space-y-3">
-          <article class="rounded-xl border border-brand/30 bg-brand-light p-4 shadow-sm">
-            <p class="text-[11px] font-bold uppercase text-brand-dark">{{ selectedViewportSummary.eyebrow }}</p>
-            <h3 class="mt-1 text-base font-bold text-slate-900">{{ selectedViewportSummary.title }}</h3>
-            <p class="mt-2 text-xs leading-5 text-slate-600">{{ selectedViewportSummary.description }}</p>
-            <div class="mt-4 grid grid-cols-2 gap-2">
-              <div class="rounded-xl bg-white p-3">
-                <span class="text-[10px] font-bold text-slate-400">대표 가격</span>
-                <b class="mt-1 block text-sm text-slate-900">{{ selectedViewportSummary.price }}</b>
-              </div>
-              <div class="rounded-xl bg-white p-3">
-                <span class="text-[10px] font-bold text-slate-400">포함 매물</span>
-                <b class="mt-1 block text-sm text-slate-900">{{ selectedViewportSummary.count }}</b>
-              </div>
-            </div>
-            <button class="mt-4 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800" type="button" @click="zoomToSelectedViewport">
-              확대해서 보기
+        <!-- 헤더 -->
+        <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
+          <template v-if="store.selectedProperty">
+            <button type="button" @click="store.closeProperty" class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-800">
+              <ChevronLeft class="h-4 w-4" aria-hidden="true" />
+              목록으로
             </button>
-          </article>
+            <span class="rounded-full bg-brand-light px-2 py-1 text-[10px] font-bold text-brand-dark">{{ transactionLabel(store.selectedProperty.transactionType) }}</span>
+          </template>
+          <template v-else>
+            <h2 class="text-sm font-bold text-slate-900">지도 범위 매물</h2>
+          </template>
         </div>
 
-        <div v-else-if="store.filteredProperties.length === 0" class="flex h-full items-center justify-center p-6 text-center">
-          <div>
-            <Home class="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
-            <p class="mt-3 text-sm font-bold text-slate-900">{{ emptyListText.title }}</p>
-            <p class="mt-2 text-xs leading-5 text-slate-500">{{ emptyListText.description }}</p>
+        <!-- 상세 뷰 -->
+        <div v-if="store.selectedProperty" class="min-h-0 flex-1 overflow-y-auto">
+          <div class="space-y-5 p-5">
+            <div>
+              <p class="text-xs font-bold text-brand-dark">{{ propertyTypeLabel(store.selectedProperty.propertyType) }}</p>
+              <h2 class="mt-1 text-2xl font-bold text-slate-900">{{ displayTitle(store.selectedProperty) }}</h2>
+              <p class="mt-2 text-sm leading-6 text-slate-500">{{ store.selectedProperty.address }}</p>
+              <p v-if="store.selectedProperty.roadAddress" class="text-xs leading-5 text-slate-400">{{ store.selectedProperty.roadAddress }}</p>
+            </div>
+
+            <div class="rounded-2xl border border-brand/20 bg-brand-light p-4">
+              <p class="text-xs font-bold text-brand-dark">가격</p>
+              <p class="mt-1 text-xl font-bold text-slate-900">{{ priceText(store.selectedProperty) }}</p>
+              <p v-if="store.selectedProperty.maintenanceFee" class="mt-2 text-xs font-bold text-slate-600">관리비 {{ formatWons(store.selectedProperty.maintenanceFee) }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="detail-stat">
+                <span>전용 면적</span>
+                <b>{{ areaText(store.selectedProperty) }}</b>
+              </div>
+              <div class="detail-stat">
+                <span>층수</span>
+                <b>{{ floorText(store.selectedProperty) }}</b>
+              </div>
+              <div class="detail-stat">
+                <span>건물명</span>
+                <b>{{ store.selectedProperty.buildingName || '-' }}</b>
+              </div>
+            </div>
+
+            <div v-if="store.detailError" class="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
+              {{ store.detailError }}
+            </div>
+
+            <div v-if="store.isDetailLoading" class="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">
+              <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              상세 정보를 불러오는 중입니다
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-bold text-brand-dark">{{ transactionTrendLabel }}</p>
+                  <h3 class="mt-1 text-base font-bold text-slate-900">실거래가 추이</h3>
+                </div>
+                <span v-if="store.selectedPropertyTransactionsTotal" class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
+                  최근 {{ store.selectedPropertyTransactionsTotal.toLocaleString() }}건
+                </span>
+              </div>
+              <div v-if="store.isTransactionsLoading" class="mt-4 flex items-center justify-center rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
+                <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                실거래가를 불러오는 중입니다
+              </div>
+              <div v-else-if="store.transactionError" class="mt-4 rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
+                {{ store.transactionError }}
+              </div>
+              <div v-else-if="transactionTrend.points.length === 0" class="mt-4 rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
+                비교 가능한 최근 실거래가가 없습니다.
+              </div>
+              <div v-else class="mt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="rounded-xl bg-slate-50 p-3">
+                    <span class="text-[10px] font-bold text-slate-400">평균</span>
+                    <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.averageAmount) }}</b>
+                  </div>
+                  <div class="rounded-xl bg-slate-50 p-3">
+                    <span class="text-[10px] font-bold text-slate-400">최근 거래</span>
+                    <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.latest?.amount) }}</b>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <div
+                    v-for="transaction in transactionTrend.points"
+                    :key="`${transaction.contractYearMonth}-${transaction.amount}-${transaction.floor ?? 'floor'}`"
+                    class="space-y-1.5"
+                  >
+                    <div class="flex items-center justify-between gap-3 text-xs font-bold">
+                      <span class="text-slate-500">{{ transaction.contractYearMonth }}</span>
+                      <span class="text-slate-900">{{ formatWons(transaction.amount) }}</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div class="h-full rounded-full bg-brand" :style="{ width: `${transaction.barWidth}%` }"></div>
+                    </div>
+                    <p class="text-[11px] font-semibold text-slate-400">{{ transactionMetaText(transaction) }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="publicDescription" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-center gap-2">
+                <Building2 class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                <h3 class="text-sm font-bold text-slate-900">매물 메모</h3>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">{{ publicDescription }}</p>
+            </div>
           </div>
         </div>
 
-        <div v-else class="space-y-2">
-          <article
-            v-for="property in store.filteredProperties"
-            :key="property.id"
-            :class="[
-              'cursor-pointer rounded-xl border p-3 transition',
-              store.selectedPropertyId === property.id ? 'border-brand bg-brand-light shadow-sm' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-            ]"
-            tabindex="0"
-            @click="store.selectProperty(property.id)"
-            @keydown.enter="store.selectProperty(property.id)"
-            @keydown.space.prevent="store.selectProperty(property.id)"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-bold text-slate-900">{{ displayTitle(property) }}</p>
-                <p class="mt-1 truncate text-xs font-semibold text-slate-500">{{ property.address }}</p>
+        <!-- 목록 뷰 -->
+        <div v-else class="min-h-0 flex-1 overflow-y-auto p-3">
+          <div v-if="store.isLoading" class="flex h-full items-center justify-center text-sm font-bold text-slate-500">
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+            매물을 불러오는 중입니다
+          </div>
+          <div v-else-if="store.error" class="flex h-full items-center justify-center p-6 text-center">
+            <div>
+              <AlertTriangle class="mx-auto h-8 w-8 text-rose-500" aria-hidden="true" />
+              <p class="mt-3 text-sm font-bold text-slate-900">매물 API 오류</p>
+              <p class="mt-2 text-xs leading-5 text-slate-500">{{ store.error }}</p>
+            </div>
+          </div>
+          <div v-else-if="store.selectedViewportItem" class="space-y-3">
+            <article class="rounded-xl border border-brand/30 bg-brand-light p-4 shadow-sm">
+              <p class="text-[11px] font-bold uppercase text-brand-dark">{{ selectedViewportSummary.eyebrow }}</p>
+              <h3 class="mt-1 text-base font-bold text-slate-900">{{ selectedViewportSummary.title }}</h3>
+              <p class="mt-2 text-xs leading-5 text-slate-600">{{ selectedViewportSummary.description }}</p>
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <div class="rounded-xl bg-white p-3">
+                  <span class="text-[10px] font-bold text-slate-400">대표 가격</span>
+                  <b class="mt-1 block text-sm text-slate-900">{{ selectedViewportSummary.price }}</b>
+                </div>
+                <div class="rounded-xl bg-white p-3">
+                  <span class="text-[10px] font-bold text-slate-400">포함 매물</span>
+                  <b class="mt-1 block text-sm text-slate-900">{{ selectedViewportSummary.count }}</b>
+                </div>
               </div>
-              <span class="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600">{{ propertyTypeLabel(property.propertyType) }}</span>
+              <button class="mt-4 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800" type="button" @click="zoomToSelectedViewport">
+                확대해서 보기
+              </button>
+            </article>
+          </div>
+          <div v-else-if="store.filteredProperties.length === 0" class="flex h-full items-center justify-center p-6 text-center">
+            <div>
+              <Home class="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
+              <p class="mt-3 text-sm font-bold text-slate-900">{{ emptyListText.title }}</p>
+              <p class="mt-2 text-xs leading-5 text-slate-500">{{ emptyListText.description }}</p>
             </div>
-            <div class="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3">
-              <span class="text-sm font-bold text-slate-900">{{ priceText(property) }}</span>
-              <span class="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-bold text-white">{{ transactionLabel(property.transactionType) }}</span>
-            </div>
-            <p class="mt-2 text-xs font-semibold text-slate-500">{{ areaText(property) }} · {{ floorText(property) }}</p>
-          </article>
+          </div>
+          <div v-else class="space-y-2">
+            <article
+              v-for="property in store.filteredProperties"
+              :key="property.id"
+              :class="[
+                'cursor-pointer rounded-xl border p-3 transition',
+                store.selectedPropertyId === property.id ? 'border-brand bg-brand-light shadow-sm' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+              ]"
+              tabindex="0"
+              @click="store.selectProperty(property.id)"
+              @keydown.enter="store.selectProperty(property.id)"
+              @keydown.space.prevent="store.selectProperty(property.id)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-bold text-slate-900">{{ displayTitle(property) }}</p>
+                  <p class="mt-1 truncate text-xs font-semibold text-slate-500">{{ property.address }}</p>
+                </div>
+                <span class="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600">{{ propertyTypeLabel(property.propertyType) }}</span>
+              </div>
+              <div class="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3">
+                <span class="text-sm font-bold text-slate-900">{{ priceText(property) }}</span>
+                <span class="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-bold text-white">{{ transactionLabel(property.transactionType) }}</span>
+              </div>
+              <p class="mt-2 text-xs font-semibold text-slate-500">{{ areaText(property) }} · {{ floorText(property) }}</p>
+            </article>
+          </div>
         </div>
+
       </section>
     </aside>
 
@@ -371,12 +357,12 @@ import {
   Building2,
   Check,
   ChevronDown,
+  ChevronLeft,
   Home,
   Loader2,
   MapPin,
   RotateCw,
   Search,
-  SlidersHorizontal,
   X
 } from '@lucide/vue'
 import useMapStore from '../store/mapStore'
