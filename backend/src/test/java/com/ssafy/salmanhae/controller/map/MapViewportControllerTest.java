@@ -103,6 +103,27 @@ class MapViewportControllerTest {
 	}
 
 	@Test
+	void getViewportRegionAverageAppliesKeywordToVisibleProperties() throws Exception {
+		mockMvc.perform(baseViewportRequest()
+						.param("zoom", "10")
+						.param("keyword", "매매"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(1))
+				.andExpect(jsonPath("$.data.items[0].regionLevel").value("SIGUNGU"))
+				.andExpect(jsonPath("$.data.items[0].avgSalePrice").value(720000000))
+				.andExpect(jsonPath("$.data.items[0].transactionCount").value(1));
+
+		mockMvc.perform(baseViewportRequest()
+						.param("zoom", "10")
+						.param("keyword", "검색결과없음"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.mode").value("SIGUNGU_AVG"))
+				.andExpect(jsonPath("$.data.totalCount").value(0))
+				.andExpect(jsonPath("$.data.items", hasSize(0)));
+	}
+
+	@Test
 	void getViewportReturnsClusterModeBeforeDetailedMarkers() throws Exception {
 		mockMvc.perform(baseViewportRequest().param("zoom", "14"))
 				.andExpect(status().isOk())

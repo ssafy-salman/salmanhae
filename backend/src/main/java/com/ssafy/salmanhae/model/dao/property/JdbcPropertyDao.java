@@ -60,30 +60,7 @@ public class JdbcPropertyDao implements PropertyDao {
 				  AND latitude BETWEEN :south AND :north
 				""".formatted(PROPERTY_COLUMNS));
 
-		if (criteria.transactionType() != null) {
-			sql.append(" AND transaction_type = :transactionType");
-			params.put("transactionType", criteria.transactionType().name());
-		}
-		if (criteria.propertyType() != null) {
-			sql.append(" AND property_type = :propertyType");
-			params.put("propertyType", criteria.propertyType().name());
-		}
-		if (criteria.minDeposit() != null) {
-			sql.append(" AND deposit >= :minDeposit");
-			params.put("minDeposit", criteria.minDeposit());
-		}
-		if (criteria.maxDeposit() != null) {
-			sql.append(" AND deposit <= :maxDeposit");
-			params.put("maxDeposit", criteria.maxDeposit());
-		}
-		if (criteria.minPrice() != null) {
-			sql.append(" AND price >= :minPrice");
-			params.put("minPrice", criteria.minPrice());
-		}
-		if (criteria.maxPrice() != null) {
-			sql.append(" AND price <= :maxPrice");
-			params.put("maxPrice", criteria.maxPrice());
-		}
+		appendPropertyFilters(sql, params, "", criteria);
 
 		sql.append(" ORDER BY id ASC");
 		return jdbcTemplate.query(sql.toString(), params, propertyRowMapper());
@@ -679,6 +656,24 @@ public class JdbcPropertyDao implements PropertyDao {
 			sql.append(" AND ").append(prefix).append("price <= :maxPrice");
 			params.put("maxPrice", criteria.maxPrice());
 		}
+		if (criteria.hasKeyword()) {
+			sql.append("""
+					 AND (
+					      LOWER(COALESCE(%stitle, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%sbuilding_name, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%saddress, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%sroad_address, '')) LIKE :keywordPattern ESCAPE '!'
+					 )
+					""".formatted(prefix, prefix, prefix, prefix));
+			params.put("keywordPattern", "%" + escapeLikePattern(criteria.normalizedKeyword().toLowerCase(Locale.ROOT)) + "%");
+		}
+	}
+
+	private String escapeLikePattern(String keyword) {
+		return keyword
+				.replace("!", "!!")
+				.replace("%", "!%")
+				.replace("_", "!_");
 	}
 
 	private void appendRegionStatFilters(

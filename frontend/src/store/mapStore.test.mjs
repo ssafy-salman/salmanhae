@@ -74,3 +74,15 @@ test('setBounds keeps the last valid bounds when map reports a transient invalid
   }), false)
   assert.deepEqual(store.bounds, previousBounds)
 })
+
+test('search condition state uses trimmed keyword', () => {
+  const store = createStore()
+
+  store.searchKeyword = '   '
+  assert.equal(store.normalizedSearchKeyword, '')
+  assert.equal(store.hasActiveSearchConditions, false)
+
+  store.searchKeyword = '  그린빌  '
+  assert.equal(store.normalizedSearchKeyword, '그린빌')
+  assert.equal(store.hasActiveSearchConditions, true)
+})

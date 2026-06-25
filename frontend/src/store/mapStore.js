@@ -79,9 +79,13 @@ export default defineStore('map', {
       const keyword = state.searchKeyword.trim().toLowerCase()
       if (!keyword) return state.properties
       return state.properties.filter((property) => {
-        const title = property.title || property.buildingName || ''
-        const address = property.address || property.roadAddress || ''
-        return title.toLowerCase().includes(keyword) || address.toLowerCase().includes(keyword)
+        const searchableText = [
+          property.title,
+          property.buildingName,
+          property.address,
+          property.roadAddress
+        ].filter(Boolean).join(' ').toLowerCase()
+        return searchableText.includes(keyword)
       })
     },
     regionStatus(state) {
@@ -89,8 +93,14 @@ export default defineStore('map', {
       if (state.isLoading) return { text: '매물 불러오는 중', tone: 'text-slate-600' }
       return { text: `${state.totalCount.toLocaleString()}개 매물 표시`, tone: 'text-emerald-700' }
     },
+    normalizedSearchKeyword(state) {
+      return state.searchKeyword.trim()
+    },
     hasActiveFilters(state) {
       return Object.values(state.filters).some((value) => value !== '')
+    },
+    hasActiveSearchConditions() {
+      return this.normalizedSearchKeyword !== '' || this.hasActiveFilters
     }
   },
   actions: {
@@ -153,6 +163,7 @@ export default defineStore('map', {
         const data = await fetchMapViewport({
           ...this.bounds,
           zoom: this.zoom,
+          keyword: this.normalizedSearchKeyword,
           ...this.filters
         })
 

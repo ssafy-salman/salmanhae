@@ -104,6 +104,7 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 | `maxDeposit` | — | 최대 보증금 (원) |
 | `minPrice` | — | 최소 매매가 (원) |
 | `maxPrice` | — | 최대 매매가 (원) |
+| `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 
 F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물을 조회합니다. 운영 단계에서는 제휴 피드 또는 합법적으로 확보한 매물 데이터를 `properties`에 저장한 뒤 같은 API로 조회합니다.
 
@@ -156,6 +157,11 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 | `zoom` | ✅ | 네이버지도 현재 zoom |
 | `transactionType` | — | `MONTHLY_RENT` / `JEONSE` / `SALE` |
 | `propertyType` | — | `ONE_ROOM` / `OFFICETEL` / `APARTMENT` / `VILLA` / `MULTI_FAMILY` |
+| `minDeposit` | — | 최소 보증금 (원) |
+| `maxDeposit` | — | 최대 보증금 (원) |
+| `minPrice` | — | 최소 매매가 (원) |
+| `maxPrice` | — | 최대 매매가 (원) |
+| `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 | `clusterThreshold` | — | 매물 클러스터링 기준 수. 기본값은 서버 설정 사용 |
 
 **표시 모드**
@@ -168,7 +174,7 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 | `PROPERTY_CLUSTER` | 거리/밀집 수준 | 원형 클러스터 |
 | `PROPERTY_MARKER` | 상세 확대 | 개별 매물 |
 
-`SIDO_AVG`, `SIGUNGU_AVG`, `DONG_AVG`는 지도에 표시된 지역 마커를 확대했을 때 실제 매물이 비지 않도록 현재 bounds 안의 활성 매물을 행정구역별로 직접 집계합니다. 월세 대표 가격은 보증금이 아니라 `avgMonthlyRent` 기준으로 표시합니다.
+`SIDO_AVG`, `SIGUNGU_AVG`, `DONG_AVG`는 지도에 표시된 지역 마커를 확대했을 때 실제 매물이 비지 않도록 현재 bounds 안의 활성 매물을 행정구역별로 직접 집계합니다. `transactionType`, `propertyType`, 가격 범위, `keyword` 조건도 같은 방식으로 적용하며 조건에 맞는 매물이 없으면 해당 지역은 반환하지 않습니다. 월세 대표 가격은 보증금이 아니라 `avgMonthlyRent` 기준으로 표시합니다. 프론트엔드는 검색 조건이 활성화된 상태에서 지역 마커를 가격 대신 조건에 맞는 매물 수로 표시합니다.
 
 초기 운영 threshold는 네이버지도 zoom 숫자를 기준으로 서버에서 결정합니다.
 

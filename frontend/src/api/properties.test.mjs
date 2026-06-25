@@ -29,6 +29,7 @@ test('fetchMapViewport calls zoom-aware viewport endpoint with cleaned params', 
       south: 37.46,
       north: 37.48,
       zoom: 14,
+      keyword: '그린빌',
       transactionType: 'MONTHLY_RENT',
       propertyType: '',
       minDeposit: null,
@@ -45,6 +46,7 @@ test('fetchMapViewport calls zoom-aware viewport endpoint with cleaned params', 
       south: 37.46,
       north: 37.48,
       zoom: 14,
+      keyword: '그린빌',
       transactionType: 'MONTHLY_RENT'
     }
   })

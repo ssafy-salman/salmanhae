@@ -15,7 +15,8 @@ public record PropertySearchCriteria(
 		Long minDeposit,
 		Long maxDeposit,
 		Long minPrice,
-		Long maxPrice
+		Long maxPrice,
+		String keyword
 ) {
 
 	private static final BigDecimal MIN_LONGITUDE = BigDecimal.valueOf(-180);
@@ -50,5 +51,13 @@ public record PropertySearchCriteria(
 
 	private boolean isNegative(Long value) {
 		return value != null && value < 0;
+	}
+
+	public boolean hasKeyword() {
+		return keyword != null && !keyword.isBlank();
+	}
+
+	public String normalizedKeyword() {
+		return keyword == null ? "" : keyword.trim();
 	}
 }

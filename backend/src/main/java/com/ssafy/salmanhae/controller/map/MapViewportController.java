@@ -43,6 +43,7 @@ public class MapViewportController {
 			@RequestParam(required = false) Long maxDeposit,
 			@RequestParam(required = false) Long minPrice,
 			@RequestParam(required = false) Long maxPrice,
+			@RequestParam(required = false) String keyword,
 			@RequestParam(required = false) Integer clusterThreshold
 	) {
 		PropertySearchCriteria criteria = new PropertySearchCriteria(
@@ -55,7 +56,8 @@ public class MapViewportController {
 				minDeposit,
 				maxDeposit,
 				minPrice,
-				maxPrice
+				maxPrice,
+				keyword
 		);
 		criteria.validateBounds();
 		return ApiResponse.ok(mapViewportService.getViewport(new MapViewportRequest(criteria, zoom, clusterThreshold)));
