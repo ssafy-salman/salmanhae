@@ -227,7 +227,10 @@ class LLMClient:
                 if live:
                     parts.append(live)
                 else:
-                    parts.append(f"조건에 맞는 매물 {count}개를 찾았습니다.")
+                    parts.append(
+                        f"조건에 맞는 매물 {count}개를 찾았습니다. "
+                        "아래 매물 중 하나를 선택하면 시세·안전 분석을 해 드릴게요."
+                    )
 
         if parts:
             return "\n\n".join(parts)
@@ -370,7 +373,6 @@ class LLMClient:
             return extract_chat_completion_text(response.json())
         except (httpx.HTTPError, KeyError, TypeError, ValueError):
             return None
-
 
     def _generate_live_analysis_answer(self, state: AgentState) -> str | None:
         analysis_cards = state.get("analysis_cards", [])

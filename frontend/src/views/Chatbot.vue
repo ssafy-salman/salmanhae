@@ -55,6 +55,28 @@
           <div :class="['msg-bubble', msg.role === 'user' ? 'msg-bubble--user' : 'msg-bubble--bot', msg.isError && 'msg-bubble--error']">
             <p class="msg-text">{{ msg.text }}</p>
 
+            <div v-if="msg.properties?.length" class="card-list">
+              <div
+                v-for="prop in msg.properties"
+                :key="prop.id"
+                class="property-card"
+                @click="store.selectProperty && store.selectProperty(prop)"
+              >
+                <div class="property-card__head">
+                  <div class="property-card__info">
+                    <p class="info-card__tag">{{ propTypeLabel(prop.property_type) }} · {{ txTypeLabel(prop.transaction_type) }}</p>
+                    <h4 class="info-card__title">{{ prop.building_name || prop.title }}</h4>
+                    <p class="property-card__address">{{ prop.address }}</p>
+                  </div>
+                  <p class="property-card__price">{{ formatPropertyPrice(prop) }}</p>
+                </div>
+                <div v-if="prop.area_m2 || prop.floor" class="property-card__meta">
+                  <span v-if="prop.area_m2">{{ prop.area_m2 }}㎡</span>
+                  <span v-if="prop.floor">{{ prop.floor }}층</span>
+                </div>
+              </div>
+            </div>
+
             <div v-if="msg.legalCards?.length" class="card-list">
               <div v-for="card in msg.legalCards" :key="`${card.lawName}-${card.articleNo}`" class="info-card">
                 <div class="info-card__head">
@@ -180,6 +202,21 @@ const examplePrompts = [
   { text: '이 지역의 안전 점수는 어떻게 확인하나요?', icon: iconMap },
   { text: '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?', icon: iconChat2 },
 ]
+
+const propTypeLabels = {
+  ONE_ROOM: '원룸', OFFICETEL: '오피스텔', VILLA: '빌라',
+  APARTMENT: '아파트', MULTI_FAMILY: '다가구',
+}
+const txTypeLabels = { MONTHLY_RENT: '월세', JEONSE: '전세', SALE: '매매' }
+const propTypeLabel = (t) => propTypeLabels[t] || t || ''
+const txTypeLabel = (t) => txTypeLabels[t] || t || ''
+const formatPropertyPrice = (prop) => {
+  const tx = prop.transaction_type
+  if (tx === 'MONTHLY_RENT') return `${Number(prop.deposit || 0).toLocaleString()}/${Number(prop.monthly_rent || 0).toLocaleString()}만`
+  if (tx === 'JEONSE') return `전세 ${Number(prop.deposit || 0).toLocaleString()}만`
+  if (tx === 'SALE') return `매매 ${Number(prop.price || 0).toLocaleString()}만`
+  return ''
+}
 
 const analysisLabels = { PRICE: 'PRICE ANALYSIS', SAFETY: 'SAFETY ANALYSIS' }
 const analysisTitles = { PRICE: '시세 분석', SAFETY: '안전 분석' }
@@ -455,6 +492,19 @@ const send = async (text) => {
 .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
 .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)} }
+
+/* Property cards */
+.property-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 12px; cursor: pointer; transition: border-color 0.13s, box-shadow 0.13s;
+}
+.property-card:hover { border-color: #01bfa6; box-shadow: 0 2px 8px rgba(1,191,166,0.1); }
+.property-card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.property-card__info { flex: 1; min-width: 0; }
+.property-card__address { font-size: 11px; color: #9ca3af; margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.property-card__price { font-size: 13px; font-weight: 700; color: #01bfa6; white-space: nowrap; flex-shrink: 0; }
+.property-card__meta { display: flex; gap: 8px; margin-top: 6px; }
+.property-card__meta span { font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 7px; border-radius: 4px; }
 
 /* Info cards */
 .card-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
