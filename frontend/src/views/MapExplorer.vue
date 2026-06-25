@@ -729,7 +729,7 @@ const regionMarkerContent = (item) => {
   const label = viewportMarkerLabel(item, {
     formatWons,
     transactionLabel,
-    showCount: store.hasActiveSearchConditions
+    showCount: true
   })
   return `
     <button type="button" style="
@@ -791,8 +791,8 @@ const clusterMarkerContent = (item) => {
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.15;
     ">
-      <span style="font-size:15px; font-weight:800; letter-spacing:-0.03em;">${escapeHtml(label.eyebrow)}</span>
-      <span style="margin-top:3px; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:600; opacity:0.82;">${escapeHtml(label.value)}</span>
+      <span style="font-size:15px; font-weight:800; letter-spacing:-0.03em;">${escapeHtml(label.value)}</span>
+      <span style="margin-top:3px; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:600; opacity:0.82;">${escapeHtml(label.title)}</span>
     </button>
   `
 }

@@ -76,7 +76,7 @@ export const viewportMarkerAnchor = (item) => {
   return { x: 42, y: 44 }
 }
 
-export const viewportMarkerLabel = (item, { formatWons, transactionLabel, showCount = false } = {}) => {
+export const viewportMarkerLabel = (item, { formatWons, transactionLabel, showCount = true } = {}) => {
   const formatPrice = formatWons || ((value) => String(value ?? '-'))
   if (item?.type === VIEWPORT_ITEM_TYPES.REGION_AVG) {
     const regionName = item.regionName || item.regionCode || '지역'
@@ -88,10 +88,11 @@ export const viewportMarkerLabel = (item, { formatWons, transactionLabel, showCo
   }
 
   if (item?.type === VIEWPORT_ITEM_TYPES.CLUSTER) {
+    const count = Number(item.count || 0).toLocaleString()
     return {
-      eyebrow: `${Number(item.count || 0).toLocaleString()}개`,
+      eyebrow: `${count}개`,
       title: '매물 묶음',
-      value: formatPrice(getPrimaryPriceValue(item))
+      value: `${count}개`
     }
   }
 

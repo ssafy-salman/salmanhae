@@ -21,13 +21,14 @@ test('viewport utilities identify property items for side-list rendering', () =>
   assert.equal(isPropertyItem({ type: 'CLUSTER', count: 12 }), false)
 })
 
-test('region average marker uses region metadata and representative price', () => {
+test('region average marker uses region metadata and matching property count by default', () => {
   const item = {
     type: 'REGION_AVG',
     regionLevel: 'SIGUNGU',
     regionName: '관악구',
     avgDeposit: 98000000,
-    avgMonthlyRent: 620000
+    avgMonthlyRent: 620000,
+    transactionCount: 3
   }
 
   assert.equal(viewportMarkerKind(item), 'region')
@@ -36,11 +37,11 @@ test('region average marker uses region metadata and representative price', () =
   assert.deepEqual(viewportMarkerLabel(item, { formatWons }), {
     eyebrow: '시/군/구',
     title: '관악구',
-    value: '620000'
+    value: '3개'
   })
 })
 
-test('region marker can show matching property count for search results', () => {
+test('region marker can still show representative price when explicitly requested', () => {
   const item = {
     type: 'REGION_AVG',
     regionLevel: 'SIGUNGU',
@@ -49,10 +50,10 @@ test('region marker can show matching property count for search results', () => 
     transactionCount: 3
   }
 
-  assert.deepEqual(viewportMarkerLabel(item, { formatWons, showCount: true }), {
+  assert.deepEqual(viewportMarkerLabel(item, { formatWons, showCount: false }), {
     eyebrow: '시/군/구',
     title: '관악구',
-    value: '3개'
+    value: '620000'
   })
 })
 
@@ -70,7 +71,7 @@ test('monthly rent viewport items use monthly rent as representative price', () 
   }), 500000)
 })
 
-test('cluster marker shows count and monthly rent representative price first', () => {
+test('cluster marker uses count instead of mixed representative price', () => {
   const item = {
     type: 'CLUSTER',
     count: 42,
@@ -83,7 +84,7 @@ test('cluster marker shows count and monthly rent representative price first', (
   assert.deepEqual(viewportMarkerLabel(item, { formatWons }), {
     eyebrow: '42개',
     title: '매물 묶음',
-    value: '580000'
+    value: '42개'
   })
 })
 

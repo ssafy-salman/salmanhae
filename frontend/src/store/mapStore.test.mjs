@@ -123,13 +123,13 @@ test('money filters are entered in ten-thousand won units and sent as won', () =
   assert.equal(store.apiFilters.maxPrice, 800000000)
 })
 
-test('deposit filters are disabled and cleared for non-monthly transactions', () => {
+test('deposit filters are disabled and cleared for sale transactions', () => {
   const store = createStore()
 
   store.filters.minDeposit = 500
   store.filters.maxDeposit = 1000
 
-  store.setTransactionType('JEONSE')
+  store.setTransactionType('SALE')
   assert.equal(store.isDepositFilterDisabled, true)
   assert.equal(store.filters.minDeposit, '')
   assert.equal(store.filters.maxDeposit, '')
