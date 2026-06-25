@@ -8,6 +8,18 @@ def safety_analysis(state: AgentState) -> AgentState:
         message=state["message"],
         context=state.get("context", {}),
     )
+
+    updated_tool_results = {
+        **state.get("tool_results", {}),
+        "safetyAnalysis": result,
+    }
+
+    if result.get("requiresSelection"):
+        return {
+            **state,
+            "tool_results": updated_tool_results,
+        }
+
     metrics = {
         "selectedPropertyId": result.get("selectedPropertyId"),
         "stub": result.get("stub", False),
@@ -26,8 +38,5 @@ def safety_analysis(state: AgentState) -> AgentState:
     return {
         **state,
         "analysis_cards": [*state.get("analysis_cards", []), analysis_card],
-        "tool_results": {
-            **state.get("tool_results", {}),
-            "safetyAnalysis": result,
-        },
+        "tool_results": updated_tool_results,
     }
