@@ -45,10 +45,14 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 	}
 
 	List<NormalizedSafetyFacility> fetchPagedJson(String baseUrl, String serviceKey) {
+		return fetchPagedJson(baseUrl, serviceKey, properties.pageSize());
+	}
+
+	List<NormalizedSafetyFacility> fetchPagedJson(String baseUrl, String serviceKey, int requestedPageSize) {
 		if (baseUrl == null || baseUrl.isBlank()) {
 			return List.of();
 		}
-		int pageSize = properties.pageSize();
+		int pageSize = requestedPageSize;
 		if (pageSize <= 0) {
 			log.warn("Invalid page size {} for {} safety facilities", pageSize, payloadName);
 			return List.of();

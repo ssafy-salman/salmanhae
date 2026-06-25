@@ -59,6 +59,29 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(facility.name()).isEqualTo("Test Emergency Bell");
 		assertThat(facility.source()).isEqualTo(EmergencyBellOpenApiClient.SOURCE);
 		assertThat(facility.sourceId()).isEqualTo("bell-1");
+		assertThat(facility.address()).isEqualTo("Seoul bell road address");
+		assertThat(facility.description()).isEqualTo("fixture bell");
+		assertThat(facility.latitude()).isEqualByComparingTo("37.4705000");
+		assertThat(facility.longitude()).isEqualByComparingTo("126.9363000");
+	}
+
+	@Test
+	void emergencyBellClientCapsPageSizeAtApiLimit() {
+		SafetyDataProperties properties = new SafetyDataProperties();
+		ReflectionTestUtils.setField(properties, "publicServiceKey", "emergency-key");
+		ReflectionTestUtils.setField(properties, "emergencyBellUrl", "https://apis.data.go.kr/example/info");
+		ReflectionTestUtils.setField(properties, "pageSize", 1000);
+		CapturingEmergencyBellOpenApiClient client = new CapturingEmergencyBellOpenApiClient(
+				properties,
+				RestClient.builder(),
+				new ObjectMapper()
+		);
+
+		client.fetchFacilities();
+
+		assertThat(client.capturedBaseUrl).isEqualTo("https://apis.data.go.kr/example/info");
+		assertThat(client.capturedServiceKey).isEqualTo("emergency-key");
+		assertThat(client.capturedPageSize).isEqualTo(100);
 	}
 
 	@Test
@@ -109,6 +132,29 @@ class SafetyFacilitySourceClientParserTest {
 	private String fixture(String filename) throws Exception {
 		return new ClassPathResource("fixtures/safety/" + filename)
 				.getContentAsString(StandardCharsets.UTF_8);
+	}
+
+	private static class CapturingEmergencyBellOpenApiClient extends EmergencyBellOpenApiClient {
+
+		private String capturedBaseUrl;
+		private String capturedServiceKey;
+		private int capturedPageSize;
+
+		CapturingEmergencyBellOpenApiClient(
+				SafetyDataProperties properties,
+				RestClient.Builder restClientBuilder,
+				ObjectMapper objectMapper
+		) {
+			super(properties, restClientBuilder, objectMapper);
+		}
+
+		@Override
+		List<NormalizedSafetyFacility> fetchPagedJson(String baseUrl, String serviceKey, int requestedPageSize) {
+			this.capturedBaseUrl = baseUrl;
+			this.capturedServiceKey = serviceKey;
+			this.capturedPageSize = requestedPageSize;
+			return List.of();
+		}
 	}
 
 	private static class CapturingSecurityLightOpenApiClient extends SecurityLightOpenApiClient {
