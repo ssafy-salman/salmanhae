@@ -3,7 +3,6 @@ package com.ssafy.salmanhae.service.safety.ingest;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +46,10 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 	public List<NormalizedSafetyFacility> fetchFacilities() {
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
-		int maxPages = properties.maxPages();
+		int maxPages = SafetyFacilityHttpSupport.cappedMaxPages(properties.maxPages());
 		while (pageNo <= maxPages) {
 			URI uri = UriComponentsBuilder.fromUriString(properties.safemapPoliceUrl())
-					.queryParam("serviceKey", encodedQueryParam(properties.safemapServiceKey()))
+					.queryParam("serviceKey", SafetyFacilityHttpSupport.encodedQueryParam(properties.safemapServiceKey()))
 					.queryParam("pageNo", pageNo)
 					.queryParam("numOfRows", properties.pageSize())
 					.queryParam("returnType", "xml")
@@ -154,9 +153,5 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 			}
 		}
 		return "";
-	}
-
-	private String encodedQueryParam(String value) {
-		return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
 	}
 }

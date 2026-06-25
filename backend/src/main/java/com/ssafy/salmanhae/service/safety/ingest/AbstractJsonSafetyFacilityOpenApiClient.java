@@ -1,8 +1,6 @@
 package com.ssafy.salmanhae.service.safety.ingest;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,8 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.salmanhae.config.SafetyDataProperties;
 
 abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacilitySourceClient {
-
-	private static final int MAX_PAGES = 1000;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -62,7 +58,7 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
 		int totalCount = -1;
-		int maxPages = Math.min(properties.maxPages(), MAX_PAGES);
+		int maxPages = SafetyFacilityHttpSupport.cappedMaxPages(properties.maxPages());
 		while (pageNo <= maxPages && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
 			URI uri = pagedJsonUri(baseUrl, serviceKey, pageNo, pageSize);
 			String body;
@@ -109,17 +105,13 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 
 	URI pagedJsonUri(String baseUrl, String serviceKey, int pageNo, int pageSize) {
 		return UriComponentsBuilder.fromUriString(baseUrl)
-				.queryParam("serviceKey", encodedQueryParam(serviceKey))
+				.queryParam("serviceKey", SafetyFacilityHttpSupport.encodedQueryParam(serviceKey))
 				.queryParam("pageNo", pageNo)
 				.queryParam("numOfRows", pageSize)
 				.queryParam("type", "json")
 				.queryParam("returnType", "json")
 				.build(true)
 				.toUri();
-	}
-
-	private String encodedQueryParam(String value) {
-		return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
 	}
 
 	public List<NormalizedSafetyFacility> parseFacilities(String json) {
