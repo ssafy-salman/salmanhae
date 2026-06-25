@@ -9,7 +9,12 @@
         <RouterLink to="/chat" class="app-header__link" active-class="app-header__link--active">챗봇</RouterLink>
       </nav>
       <div class="app-header__right">
-        <RouterLink to="/login" class="app-header__cta">로그인</RouterLink>
+        <template v-if="auth.isLoggedIn">
+          <button class="app-header__cta" @click="handleLogout">로그아웃</button>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="app-header__cta">로그인</RouterLink>
+        </template>
       </div>
     </header>
 
@@ -24,7 +29,17 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import logoBlack from '@/assets/logo-black.png'
+import { useAuthStore } from '@/store/authStore.js'
+
+const router = useRouter()
+const auth = useAuthStore()
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/')
+}
 </script>
 
 <style scoped>
@@ -94,5 +109,10 @@ import logoBlack from '@/assets/logo-black.png'
 }
 .app-header__cta:hover {
   background: #374151;
+}
+button.app-header__cta {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 </style>
