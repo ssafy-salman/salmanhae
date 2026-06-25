@@ -1,0 +1,28 @@
+{
+  "response": {
+    "body": {
+      "totalCount": 2,
+      "items": {
+        "item": [
+          {
+            "MNG_NO": "cctv-legacy-1",
+            "CCTV_MNG_NO": "cctv-1",
+            "INSTL_PRPS": "fixture cctv",
+            "INSTL_PSTN": "Test CCTV",
+            "LCTN_ROAD_NM_ADDR": "Seoul CCTV road address",
+            "LCTN_LOTNO_ADDR": "Seoul CCTV lot address",
+            "WGS84_LAT": "37.4703210",
+            "WGS84_LOT": "126.9361110",
+            "MNG_INST_NM": "Test Office"
+          },
+          {
+            "CCTV_MNG_NO": "cctv-invalid",
+            "INSTL_PSTN": "Invalid CCTV",
+            "WGS84_LAT": "",
+            "WGS84_LOT": "126.9361110"
+          }
+        ]
+      }
+    }
+  }
+}

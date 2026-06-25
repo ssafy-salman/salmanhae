@@ -1,6 +1,7 @@
 package com.ssafy.salmanhae.service.safety.ingest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -17,7 +18,7 @@ import com.ssafy.salmanhae.model.dto.safety.SafetyFacilityType;
 
 class SafetyFacilitySourceClientParserTest {
 
-	private CctvCsvClient cctvCsvClient;
+	private CctvOpenApiClient cctvOpenApiClient;
 	private EmergencyBellOpenApiClient emergencyBellOpenApiClient;
 	private SecurityLightOpenApiClient securityLightOpenApiClient;
 	private SafemapPoliceFacilityClient safemapPoliceFacilityClient;
@@ -27,25 +28,45 @@ class SafetyFacilitySourceClientParserTest {
 		SafetyDataProperties properties = new SafetyDataProperties();
 		RestClient.Builder restClientBuilder = RestClient.builder();
 		ObjectMapper objectMapper = new ObjectMapper();
-		cctvCsvClient = new CctvCsvClient(properties, restClientBuilder);
+		cctvOpenApiClient = new CctvOpenApiClient(properties, restClientBuilder, objectMapper);
 		emergencyBellOpenApiClient = new EmergencyBellOpenApiClient(properties, restClientBuilder, objectMapper);
 		securityLightOpenApiClient = new SecurityLightOpenApiClient(properties, restClientBuilder, objectMapper);
 		safemapPoliceFacilityClient = new SafemapPoliceFacilityClient(properties, restClientBuilder);
 	}
 
 	@Test
-	void cctvCsvParserNormalizesRowsAndSkipsInvalidCoordinates() throws Exception {
-		List<NormalizedSafetyFacility> facilities = cctvCsvClient.parseFacilities(fixture("cctv.csv"));
+	void cctvJsonParserNormalizesRowsAndSkipsInvalidCoordinates() throws Exception {
+		List<NormalizedSafetyFacility> facilities = cctvOpenApiClient.parseFacilities(fixture("cctv.json"));
 
 		assertThat(facilities).hasSize(1);
 		NormalizedSafetyFacility facility = facilities.getFirst();
 		assertThat(facility.type()).isEqualTo(SafetyFacilityType.CCTV);
 		assertThat(facility.name()).isEqualTo("Test CCTV");
-		assertThat(facility.source()).isEqualTo(CctvCsvClient.SOURCE);
+		assertThat(facility.source()).isEqualTo(CctvOpenApiClient.SOURCE);
 		assertThat(facility.sourceId()).isEqualTo("cctv-1");
-		assertThat(facility.description().replace("\r\n", "\n")).isEqualTo("fixture cctv\nwith newline");
+		assertThat(facility.address()).isEqualTo("Seoul CCTV road address");
+		assertThat(facility.description()).isEqualTo("fixture cctv");
 		assertThat(facility.latitude()).isEqualByComparingTo("37.4703210");
 		assertThat(facility.longitude()).isEqualByComparingTo("126.9361110");
+	}
+
+	@Test
+	void cctvClientUsesPublicDataServiceKeyAndCapsPageSizeAtApiLimit() {
+		SafetyDataProperties properties = new SafetyDataProperties();
+		ReflectionTestUtils.setField(properties, "publicServiceKey", "public-data-key");
+		ReflectionTestUtils.setField(properties, "cctvUrl", "https://apis.data.go.kr/1741000/cctv_info/info");
+		ReflectionTestUtils.setField(properties, "pageSize", 1000);
+		CapturingCctvOpenApiClient client = new CapturingCctvOpenApiClient(
+				properties,
+				RestClient.builder(),
+				new ObjectMapper()
+		);
+
+		client.fetchFacilities();
+
+		assertThat(client.capturedBaseUrl).isEqualTo("https://apis.data.go.kr/1741000/cctv_info/info");
+		assertThat(client.capturedServiceKey).isEqualTo("public-data-key");
+		assertThat(client.capturedPageSize).isEqualTo(100);
 	}
 
 	@Test
@@ -95,6 +116,10 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(facility.name()).isEqualTo("Test Security Light");
 		assertThat(facility.source()).isEqualTo(SecurityLightOpenApiClient.SOURCE);
 		assertThat(facility.sourceId()).isEqualTo("light-1");
+		assertThat(facility.address()).isEqualTo("Seoul light address");
+		assertThat(facility.description()).isEqualTo("508020");
+		assertThat(facility.latitude().doubleValue()).isCloseTo(37.839708417620116, within(0.000001));
+		assertThat(facility.longitude().doubleValue()).isCloseTo(126.93722623764315, within(0.000001));
 	}
 
 	@Test
@@ -141,6 +166,29 @@ class SafetyFacilitySourceClientParserTest {
 		private int capturedPageSize;
 
 		CapturingEmergencyBellOpenApiClient(
+				SafetyDataProperties properties,
+				RestClient.Builder restClientBuilder,
+				ObjectMapper objectMapper
+		) {
+			super(properties, restClientBuilder, objectMapper);
+		}
+
+		@Override
+		List<NormalizedSafetyFacility> fetchPagedJson(String baseUrl, String serviceKey, int requestedPageSize) {
+			this.capturedBaseUrl = baseUrl;
+			this.capturedServiceKey = serviceKey;
+			this.capturedPageSize = requestedPageSize;
+			return List.of();
+		}
+	}
+
+	private static class CapturingCctvOpenApiClient extends CctvOpenApiClient {
+
+		private String capturedBaseUrl;
+		private String capturedServiceKey;
+		private int capturedPageSize;
+
+		CapturingCctvOpenApiClient(
 				SafetyDataProperties properties,
 				RestClient.Builder restClientBuilder,
 				ObjectMapper objectMapper

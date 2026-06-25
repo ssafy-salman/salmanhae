@@ -202,7 +202,7 @@ final class SafetyFacilityParserSupport {
 				var entry = fields.next();
 				String key = normalizeKey(entry.getKey());
 				JsonNode value = entry.getValue();
-				if (("items".equals(key) || "item".equals(key) || "data".equals(key)) && value.isArray()) {
+				if (("items".equals(key) || "item".equals(key) || "data".equals(key) || "body".equals(key)) && value.isArray()) {
 					value.forEach(result::add);
 				} else if ("item".equals(key) && value.isObject()) {
 					result.add(value);

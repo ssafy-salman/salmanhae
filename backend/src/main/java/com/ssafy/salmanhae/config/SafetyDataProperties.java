@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SafetyDataProperties {
 
-	private static final String DEFAULT_CCTV_URL = "https://file.localdata.go.kr/file/cctv_info/info";
+	private static final String DEFAULT_CCTV_URL = "https://apis.data.go.kr/1741000/cctv_info/info";
 	private static final String DEFAULT_SAFEMAP_POLICE_URL = "https://www.safemap.go.kr/openapi2/IF_0036";
 	private static final int DEFAULT_PAGE_SIZE = 1000;
 
