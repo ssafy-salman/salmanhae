@@ -1,4 +1,5 @@
 <template>
+  <PropertyMapModal v-if="mapModalProp" :prop="mapModalProp" @close="closeMapModal" />
   <div class="chat-page">
     <div class="chat-outer">
 
@@ -60,7 +61,7 @@
                 v-for="prop in msg.properties"
                 :key="prop.id"
                 class="property-card"
-                @click="store.selectProperty && store.selectProperty(prop.id)"
+                @click="openMapModal(prop)"
               >
                 <div class="property-card__head">
                   <div class="property-card__info">
@@ -169,9 +170,14 @@
 import { nextTick, ref } from 'vue'
 import useMapStore from '../store/mapStore'
 import { useChatSessionStore } from '../store/chatSessionStore.js'
+import PropertyMapModal from '../components/PropertyMapModal.vue'
 
 const store = useMapStore()
 const chatStore = useChatSessionStore()
+
+const mapModalProp = ref(null)
+const openMapModal = (prop) => { mapModalProp.value = prop }
+const closeMapModal = () => { mapModalProp.value = null }
 const input = ref('')
 const messageArea = ref(null)
 const textarea = ref(null)
