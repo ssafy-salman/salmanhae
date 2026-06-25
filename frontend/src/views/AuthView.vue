@@ -64,20 +64,9 @@
       <template v-else>
         <h2>회원가입</h2>
         <p class="sub">살만해에 가입하고 내 집 마련을 시작하세요</p>
-        <form @submit.prevent="handleRegister">
-          <div class="field">
-            <label for="reg-name">이름</label>
-            <div class="field-input">
-              <input
-                id="reg-name"
-                v-model="name"
-                type="text"
-                placeholder="홍길동"
-                autocomplete="name"
-                required
-              />
-            </div>
-          </div>
+
+        <!-- Step 1: 이메일 입력 -->
+        <form v-if="registerStep === 'email'" @submit.prevent="handleSendCode">
           <div class="field">
             <label for="reg-email">이메일</label>
             <div class="field-input">
@@ -87,6 +76,54 @@
                 type="email"
                 placeholder="you@example.com"
                 autocomplete="email"
+                required
+              />
+            </div>
+          </div>
+          <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+          <button type="submit" class="btn-submit" :disabled="loading">
+            {{ loading ? '발송 중…' : '인증코드 발송' }}
+          </button>
+        </form>
+
+        <!-- Step 2: 인증코드 입력 -->
+        <form v-else-if="registerStep === 'code'" @submit.prevent="handleVerifyCode">
+          <div class="field">
+            <label>이메일</label>
+            <div class="field-input">
+              <input :value="email" type="email" readonly />
+            </div>
+          </div>
+          <div class="field">
+            <label for="reg-code">인증코드</label>
+            <div class="field-input">
+              <input
+                id="reg-code"
+                v-model="verifyCode"
+                type="text"
+                placeholder="6자리 코드 입력"
+                maxlength="6"
+                required
+              />
+            </div>
+          </div>
+          <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+          <button type="submit" class="btn-submit" :disabled="loading">
+            {{ loading ? '확인 중…' : '확인' }}
+          </button>
+        </form>
+
+        <!-- Step 3: 닉네임·비밀번호 입력 -->
+        <form v-else @submit.prevent="handleRegister">
+          <div class="field">
+            <label for="reg-nickname">닉네임</label>
+            <div class="field-input">
+              <input
+                id="reg-nickname"
+                v-model="nickname"
+                type="text"
+                placeholder="홍길동"
+                autocomplete="name"
                 required
               />
             </div>
@@ -113,6 +150,7 @@
             {{ loading ? '가입 중…' : '회원가입' }}
           </button>
         </form>
+
         <p class="signup-line">
           이미 계정이 있으신가요?
           <a href="#" @click.prevent="switchMode('login')">로그인</a>
@@ -127,34 +165,76 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import heroHouse from '@/assets/hero_house.jpg'
 import logoWhite from '@/assets/logo-white.png'
+import { useAuthStore } from '@/store/authStore.js'
+import { sendVerificationEmail, verifyEmail } from '@/api/auth.js'
 
 const router = useRouter()
+const auth = useAuthStore()
 
 const mode = ref('login')
+const registerStep = ref('email')
+
 const email = ref('')
 const password = ref('')
-const name = ref('')
+const nickname = ref('')
+const verifyCode = ref('')
 const showPw = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
 
 function switchMode(next) {
   mode.value = next
+  registerStep.value = 'email'
   email.value = ''
   password.value = ''
-  name.value = ''
+  nickname.value = ''
+  verifyCode.value = ''
   showPw.value = false
   errorMsg.value = ''
+}
+
+function parseError(e, fallback) {
+  const code = e?.response?.data?.code
+  if (code === 'INVALID_VERIFICATION_CODE') return '인증코드가 올바르지 않습니다.'
+  if (code === 'EMAIL_ALREADY_EXISTS') return '이미 가입된 이메일입니다.'
+  if (code === 'EMAIL_NOT_VERIFIED') return '이메일 인증을 먼저 완료해주세요.'
+  return e?.response?.data?.message ?? fallback
 }
 
 async function handleLogin() {
   loading.value = true
   errorMsg.value = ''
   try {
-    // TODO: useAuthStore().login({ email, password }) 연결
+    await auth.login(email.value, password.value)
     router.push('/')
   } catch (e) {
-    errorMsg.value = e?.response?.data?.message ?? '로그인에 실패했습니다.'
+    errorMsg.value = parseError(e, '로그인에 실패했습니다.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleSendCode() {
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    await sendVerificationEmail(email.value)
+    registerStep.value = 'code'
+  } catch (e) {
+    errorMsg.value = parseError(e, '인증코드 발송에 실패했습니다.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleVerifyCode() {
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    await verifyEmail(email.value, verifyCode.value)
+    registerStep.value = 'info'
+  } catch (e) {
+    errorMsg.value = parseError(e, '인증에 실패했습니다.')
   } finally {
     loading.value = false
   }
@@ -164,10 +244,10 @@ async function handleRegister() {
   loading.value = true
   errorMsg.value = ''
   try {
-    // TODO: useAuthStore().register({ name, email, password }) 연결
+    await auth.signup(email.value, password.value, nickname.value)
     switchMode('login')
   } catch (e) {
-    errorMsg.value = e?.response?.data?.message ?? '회원가입에 실패했습니다.'
+    errorMsg.value = parseError(e, '회원가입에 실패했습니다.')
   } finally {
     loading.value = false
   }
