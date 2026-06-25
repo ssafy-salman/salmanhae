@@ -28,7 +28,9 @@ export const useChatSessionStore = defineStore('chatSession', {
     chatMessages: (state) =>
       state.sessions.find((s) => s.id === state.currentSessionId)?.messages ?? [],
     sessionList: (state) =>
-      [...state.sessions].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      [...state.sessions]
+        .filter((s) => s.messages.length > 0)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   },
 
   actions: {
@@ -54,11 +56,14 @@ export const useChatSessionStore = defineStore('chatSession', {
       }
     },
 
-    createSession() {
+    newChat() {
+      this.currentSessionId = null
+    },
+
+    _createSession() {
       const session = makeSession()
       this.sessions.unshift(session)
       this.currentSessionId = session.id
-      this._persist()
       return session
     },
 
@@ -70,7 +75,7 @@ export const useChatSessionStore = defineStore('chatSession', {
 
     _ensureSession() {
       if (!this.currentSessionId || !this.sessions.some((s) => s.id === this.currentSessionId)) {
-        this.createSession()
+        this._createSession()
       }
     },
 
