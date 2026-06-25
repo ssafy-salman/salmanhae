@@ -15,10 +15,19 @@ const DEFAULT_CENTER = {
   longitude: 126.978
 }
 
+const MONEY_UNIT = 10000
+const MONEY_FILTER_KEYS = ['minDeposit', 'maxDeposit', 'minPrice', 'maxPrice']
+const DISABLE_DEPOSIT_TRANSACTION_TYPES = ['JEONSE', 'SALE']
+
 const toNumberOrEmpty = (value) => {
   if (value === '' || value === null || value === undefined) return ''
   const numberValue = Number(value)
   return Number.isFinite(numberValue) ? numberValue : ''
+}
+
+const toWonOrEmpty = (value) => {
+  const numberValue = toNumberOrEmpty(value)
+  return numberValue === '' ? '' : numberValue * MONEY_UNIT
 }
 
 const normalizeBounds = (bounds) => {
@@ -96,6 +105,20 @@ export default defineStore('map', {
     normalizedSearchKeyword(state) {
       return state.searchKeyword.trim()
     },
+    isDepositFilterDisabled(state) {
+      return DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(state.filters.transactionType)
+    },
+    apiFilters(state) {
+      const isDepositDisabled = DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(state.filters.transactionType)
+      return {
+        transactionType: state.filters.transactionType,
+        propertyType: state.filters.propertyType,
+        minDeposit: isDepositDisabled ? '' : toWonOrEmpty(state.filters.minDeposit),
+        maxDeposit: isDepositDisabled ? '' : toWonOrEmpty(state.filters.maxDeposit),
+        minPrice: toWonOrEmpty(state.filters.minPrice),
+        maxPrice: toWonOrEmpty(state.filters.maxPrice)
+      }
+    },
     hasActiveFilters(state) {
       return Object.values(state.filters).some((value) => value !== '')
     },
@@ -122,9 +145,20 @@ export default defineStore('map', {
     setZoom(zoom) {
       this.zoom = Number(zoom)
     },
+    setTransactionType(transactionType) {
+      this.filters.transactionType = transactionType
+      if (this.isDepositFilterDisabled) {
+        this.filters.minDeposit = ''
+        this.filters.maxDeposit = ''
+      }
+    },
     setFilter(key, value) {
       if (!(key in this.filters)) return
-      if (['minDeposit', 'maxDeposit', 'minPrice', 'maxPrice'].includes(key)) {
+      if (key === 'transactionType') {
+        this.setTransactionType(value)
+        return
+      }
+      if (MONEY_FILTER_KEYS.includes(key)) {
         this.filters[key] = toNumberOrEmpty(value)
         return
       }
@@ -164,7 +198,7 @@ export default defineStore('map', {
           ...this.bounds,
           zoom: this.zoom,
           keyword: this.normalizedSearchKeyword,
-          ...this.filters
+          ...this.apiFilters
         })
 
         if (seq !== this.requestSeq) return

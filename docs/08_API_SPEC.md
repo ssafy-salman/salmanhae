@@ -106,6 +106,8 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 | `maxPrice` | — | 최대 매매가 (원) |
 | `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 
+프론트엔드 검색 폼은 금액을 `만원` 단위로 입력받고, Spring Boot API 호출 시 `minDeposit`, `maxDeposit`, `minPrice`, `maxPrice`를 원 단위로 변환해 전송합니다. 전세 또는 매매 거래 유형을 선택한 경우 보증금 입력값은 전송하지 않습니다.
+
 F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물을 조회합니다. 운영 단계에서는 제휴 피드 또는 합법적으로 확보한 매물 데이터를 `properties`에 저장한 뒤 같은 API로 조회합니다.
 
 **Response — 매물 추천**
@@ -163,6 +165,8 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 | `maxPrice` | — | 최대 매매가 (원) |
 | `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 | `clusterThreshold` | — | 매물 클러스터링 기준 수. 기본값은 서버 설정 사용 |
+
+프론트엔드 검색 폼은 금액을 `만원` 단위로 입력받고, Spring Boot API 호출 시 `minDeposit`, `maxDeposit`, `minPrice`, `maxPrice`를 원 단위로 변환해 전송합니다. 전세 또는 매매 거래 유형을 선택한 경우 보증금 입력값은 전송하지 않습니다.
 
 **표시 모드**
 
