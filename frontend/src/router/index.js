@@ -4,9 +4,11 @@ import Diagnosis from '../views/Diagnosis.vue'
 import Community from '../views/Community.vue'
 import Recommend from '../views/Recommend.vue'
 import Chatbot from '../views/Chatbot.vue'
+import AuthView from '../views/AuthView.vue'
 
 const routes = [
   { path: '/', name: 'MapExplorer', component: MapExplorer },
+  { path: '/login', name: 'Auth', component: AuthView },
   { path: '/diagnosis', name: 'Diagnosis', component: Diagnosis },
   { path: '/recommend', name: 'Recommend', component: Recommend },
   { path: '/chat', name: 'Chatbot', component: Chatbot },

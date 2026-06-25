@@ -1,57 +1,98 @@
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
-      <div class="max-w-7xl mx-auto flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-center gap-3 cursor-pointer" @click="$router.push('/')">
-          <img src="/salman_symbol_logo.png" alt="살만해 로고" class="w-11 h-11 rounded-xl object-cover bg-brand-light" />
-          <div>
-            <h1 class="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              살만해
-              <span class="text-[11px] bg-brand-light text-brand-dark px-2 py-0.5 rounded-full font-bold">안심 주거 탐색</span>
-            </h1>
-            <p class="text-xs text-slate-500">실질 치안 통계 · HUG 126% 기준 · 청년 주거 커뮤니티</p>
-          </div>
-        </div>
-
-        <nav class="flex flex-wrap gap-2 text-sm font-bold">
-          <router-link v-for="item in navItems" :key="item.to" :to="item.to" class="px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition" active-class="bg-brand text-white hover:bg-brand">
-            {{ item.icon }} {{ item.label }}
-          </router-link>
-        </nav>
-
-        <div class="flex items-center gap-3">
-          <select v-model="store.currentRegion" @change="store.setRegion(store.currentRegion)" class="bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
-            <option v-for="region in store.regions" :key="region.value" :value="region.value">
-              {{ region.label }} · {{ region.desc }}
-            </option>
-          </select>
-          <div class="hidden md:flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span :class="store.regionStatus.tone">{{ store.regionStatus.text }}</span>
-          </div>
-        </div>
+  <div class="min-h-screen bg-white text-slate-800 flex flex-col">
+    <header v-if="$route.name !== 'Auth'" class="app-header">
+      <div class="app-header__brand">
+        <img :src="logoBlack" alt="살만해" />
+      </div>
+      <nav class="app-header__nav">
+        <RouterLink to="/" class="app-header__link" active-class="app-header__link--active">지도</RouterLink>
+        <RouterLink to="/chat" class="app-header__link" active-class="app-header__link--active">챗봇</RouterLink>
+      </nav>
+      <div class="app-header__right">
+        <RouterLink to="/login" class="app-header__cta">로그인</RouterLink>
       </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4">
+    <main :class="['flex-1', !['Auth', 'Chatbot'].includes($route.name) && 'max-w-7xl w-full mx-auto p-4']">
       <router-view />
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center">
-      <p class="text-xs text-slate-400">© 2026 살만해. 국토교통부 실거래가, 공시가격, 생활안전지도 연동을 가정한 프론트엔드 시뮬레이터.</p>
+    <footer v-if="!['Auth', 'Chatbot'].includes($route.name)" class="bg-white border-t border-slate-200 py-4 px-4 text-center">
+      <p class="text-xs text-slate-400">© 2026 살만해.</p>
     </footer>
   </div>
 </template>
 
 <script setup>
-import useMapStore from './store/mapStore'
-
-const store = useMapStore()
-const navItems = [
-  { to: '/', label: '매물·치안 탐색', icon: '🗺️' },
-  { to: '/diagnosis', label: 'HUG 진단', icon: '🛡️' },
-  { to: '/recommend', label: 'AI 추천', icon: '✨' },
-  { to: '/chat', label: '계약 챗봇', icon: '🤖' },
-  { to: '/community', label: '지역 후기', icon: '💬' }
-]
+import logoBlack from '@/assets/logo-black.png'
 </script>
+
+<style scoped>
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #ffffff;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header__brand img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.app-header__nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background: #f4f4f6;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.app-header__link {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(13, 17, 16, 0.5);
+  text-decoration: none;
+  padding: 4px 14px;
+  border-radius: 7px;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.app-header__link:hover {
+  color: #0d1110;
+}
+.app-header__link--active {
+  background: #ffffff;
+  color: #0d1110;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-header__right {
+  display: flex;
+  align-items: center;
+}
+
+.app-header__cta {
+  padding: 5px 14px;
+  background: #0d1110;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+.app-header__cta:hover {
+  background: #374151;
+}
+</style>
