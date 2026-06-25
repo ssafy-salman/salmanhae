@@ -77,6 +77,7 @@ PROPERTY_CRITERIA_PROMPT = """\
 - max_monthly_rent: 최대 월세 (원 단위, 숫자만)
 - max_price: 최대 매매가 (원 단위, 숫자만)
 - sort_by: "price_asc" (가장 싼, 저렴한, 싼 순, 최저가 등 저가 정렬 요청 시) | null (그 외)
+- limit: 사용자가 명시적으로 개수를 요청한 경우 해당 숫자 (예: "1개", "3개 보여줘") | null (그 외)
 
 JSON만 반환해. 설명 없이.\
 """
