@@ -30,7 +30,7 @@
       <!-- Welcome -->
       <template v-if="!chatStore.chatMessages.length">
         <div class="chat-welcome">
-          <div class="welcome-orb" />
+          <img src="@/assets/aigraphic.gif" alt="" class="welcome-orb" aria-hidden="true" />
           <h2 class="welcome-title">안녕하세요!<br /><span class="welcome-accent">무엇이 궁금하신가요?</span></h2>
           <div class="examples__grid">
             <button
@@ -197,10 +197,10 @@ const iconMap  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const iconChat2= `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
 
 const examplePrompts = [
-  { text: '확정일자는 언제 받아야 하나요?', icon: iconDoc },
-  { text: '전세 보증금을 돌려받으려면 어떤 순서를 확인해야 하나요?', icon: iconKey },
-  { text: '이 지역의 안전 점수는 어떻게 확인하나요?', icon: iconMap },
-  { text: '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?', icon: iconChat2 },
+  { text: '역삼동 오피스텔 중 가격이 저렴한 곳 5개 추천해줘', icon: iconKey },
+  { text: '관악구 아파트의 최근 매매 실거래가 궁금해', icon: iconMap },
+  { text: '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?', icon: iconDoc },
+  { text: '성북구 돈암동은 자취하기 안전한 곳인가요?', icon: iconChat2 },
 ]
 
 const propTypeLabels = {
@@ -413,9 +413,7 @@ const send = async (text) => {
   padding-top: 40px;
 }
 .welcome-orb {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #5eead4, #01bfa6 60%, #019c87);
-  box-shadow: 0 8px 28px rgba(1, 191, 166, 0.3);
+  width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
 }
 .welcome-title {
   font-size: 28px; font-weight: 700; color: #0d1110;
