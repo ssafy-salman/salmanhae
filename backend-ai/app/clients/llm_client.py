@@ -224,13 +224,8 @@ class LLMClient:
                 )
             else:
                 live = self._generate_live_property_search_answer(state)
-                if live:
-                    parts.append(live)
-                else:
-                    parts.append(
-                        f"조건에 맞는 매물 {count}개를 찾았습니다. "
-                        "아래 매물 중 하나를 선택하면 시세·안전 분석을 해 드릴게요."
-                    )
+                base = live if live else f"조건에 맞는 매물 {count}개를 찾았습니다."
+                parts.append(base + "\n아래 매물 중 하나를 선택하면 시세·안전 분석을 해 드릴게요.")
 
         if parts:
             return "\n\n".join(parts)
