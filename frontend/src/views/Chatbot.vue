@@ -7,7 +7,7 @@
     <div ref="messageArea" class="chat-body">
 
       <!-- Welcome -->
-      <template v-if="!store.chatMessages.length">
+      <template v-if="!chatStore.chatMessages.length">
         <div class="chat-welcome">
           <div class="welcome-orb" />
           <h2 class="welcome-title">안녕하세요!<br /><span class="welcome-accent">무엇이 궁금하신가요?</span></h2>
@@ -16,7 +16,7 @@
               v-for="item in examplePrompts"
               :key="item.text"
               class="example-card"
-              :disabled="store.isChatLoading"
+              :disabled="chatStore.isChatLoading"
               @click="send(item.text)"
             >
               <span class="example-card__icon" v-html="item.icon" />
@@ -30,7 +30,7 @@
       <template v-else>
         <div class="date-sep">Today {{ nowTime }}</div>
 
-        <div v-for="(msg, i) in store.chatMessages" :key="i" :class="['msg-group', msg.role === 'user' ? 'msg-group--user' : 'msg-group--bot']">
+        <div v-for="(msg, i) in chatStore.chatMessages" :key="i" :class="['msg-group', msg.role === 'user' ? 'msg-group--user' : 'msg-group--bot']">
           <div :class="['msg-bubble', msg.role === 'user' ? 'msg-bubble--user' : 'msg-bubble--bot', msg.isError && 'msg-bubble--error']">
             <p class="msg-text">{{ msg.text }}</p>
 
@@ -74,7 +74,7 @@
           </div>
         </div>
 
-        <div v-if="store.isChatLoading" class="msg-group msg-group--bot">
+        <div v-if="chatStore.isChatLoading" class="msg-group msg-group--bot">
           <div class="msg-bubble msg-bubble--bot">
             <div class="loading-dots"><span /><span /><span /></div>
           </div>
@@ -105,7 +105,7 @@
           </div>
           <button
             class="send-btn"
-            :disabled="store.isChatLoading || !input.trim()"
+            :disabled="chatStore.isChatLoading || !input.trim()"
             @click="send(input)"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -124,8 +124,10 @@
 <script setup>
 import { nextTick, ref } from 'vue'
 import useMapStore from '../store/mapStore'
+import { useChatSessionStore } from '../store/chatSessionStore.js'
 
 const store = useMapStore()
+const chatStore = useChatSessionStore()
 const input = ref('')
 const messageArea = ref(null)
 const textarea = ref(null)
@@ -203,7 +205,7 @@ const send = async (text) => {
   input.value = ''
   await nextTick()
   if (textarea.value) textarea.value.style.height = 'auto'
-  const response = store.sendChat(message)
+  const response = chatStore.sendChat(message, store.selectedPropertyId)
   await scrollToBottom()
   await response
   await scrollToBottom()
