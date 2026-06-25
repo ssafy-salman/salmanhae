@@ -16,8 +16,8 @@ const DEFAULT_CENTER = {
 }
 
 const MONEY_UNIT = 10000
-const MONEY_FILTER_KEYS = ['minDeposit', 'maxDeposit', 'minPrice', 'maxPrice']
-const DISABLE_DEPOSIT_TRANSACTION_TYPES = ['JEONSE', 'SALE']
+const MONEY_FILTER_KEYS = ['minDeposit', 'maxDeposit', 'minPrice', 'maxPrice', 'minMonthlyRent', 'maxMonthlyRent']
+const DISABLE_DEPOSIT_TRANSACTION_TYPES = ['SALE']
 
 const toNumberOrEmpty = (value) => {
   if (value === '' || value === null || value === undefined) return ''
@@ -62,10 +62,12 @@ export default defineStore('map', {
     zoom: 12,
     searchKeyword: '',
     filters: {
-      transactionType: '',
+      transactionTypes: [],
       propertyType: '',
       minDeposit: '',
       maxDeposit: '',
+      minMonthlyRent: '',
+      maxMonthlyRent: '',
       minPrice: '',
       maxPrice: ''
     },
@@ -110,21 +112,28 @@ export default defineStore('map', {
       return state.searchKeyword.trim()
     },
     isDepositFilterDisabled(state) {
-      return DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(state.filters.transactionType)
+      const types = state.filters.transactionTypes
+      return types.length > 0 && types.every(t => DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(t))
     },
     apiFilters(state) {
-      const isDepositDisabled = DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(state.filters.transactionType)
+      const types = state.filters.transactionTypes
+      const isDepositDisabled = types.length > 0 && types.every(t => DISABLE_DEPOSIT_TRANSACTION_TYPES.includes(t))
+      // 단일 선택일 때만 transactionType 파라미터 전송 (복수 선택은 추후 백엔드 지원 예정)
+      const transactionType = types.length === 1 ? types[0] : ''
       return {
-        transactionType: state.filters.transactionType,
+        transactionType,
         propertyType: state.filters.propertyType,
         minDeposit: isDepositDisabled ? '' : toWonOrEmpty(state.filters.minDeposit),
         maxDeposit: isDepositDisabled ? '' : toWonOrEmpty(state.filters.maxDeposit),
+        minMonthlyRent: toWonOrEmpty(state.filters.minMonthlyRent),
+        maxMonthlyRent: toWonOrEmpty(state.filters.maxMonthlyRent),
         minPrice: toWonOrEmpty(state.filters.minPrice),
         maxPrice: toWonOrEmpty(state.filters.maxPrice)
       }
     },
     hasActiveFilters(state) {
-      return Object.values(state.filters).some((value) => value !== '')
+      const { transactionTypes, ...rest } = state.filters
+      return transactionTypes.length > 0 || Object.values(rest).some((value) => value !== '')
     },
     hasActiveSearchConditions() {
       return this.normalizedSearchKeyword !== '' || this.hasActiveFilters
@@ -150,18 +159,24 @@ export default defineStore('map', {
       this.zoom = Number(zoom)
     },
     setTransactionType(transactionType) {
-      this.filters.transactionType = transactionType
+      if (!transactionType) {
+        this.filters.transactionTypes = []
+      } else {
+        const idx = this.filters.transactionTypes.indexOf(transactionType)
+        if (idx === -1) this.filters.transactionTypes.push(transactionType)
+        else this.filters.transactionTypes.splice(idx, 1)
+      }
       if (this.isDepositFilterDisabled) {
         this.filters.minDeposit = ''
         this.filters.maxDeposit = ''
       }
     },
     setFilter(key, value) {
-      if (!(key in this.filters)) return
       if (key === 'transactionType') {
         this.setTransactionType(value)
         return
       }
+      if (!(key in this.filters)) return
       if (MONEY_FILTER_KEYS.includes(key)) {
         this.filters[key] = toNumberOrEmpty(value)
         return
@@ -170,10 +185,12 @@ export default defineStore('map', {
     },
     resetFilters() {
       this.filters = {
-        transactionType: '',
+        transactionTypes: [],
         propertyType: '',
         minDeposit: '',
         maxDeposit: '',
+        minMonthlyRent: '',
+        maxMonthlyRent: '',
         minPrice: '',
         maxPrice: ''
       }
