@@ -8,7 +8,8 @@ class Intent(StrEnum):
     PRICE_ANALYSIS = "PRICE_ANALYSIS"
     SAFETY_ANALYSIS = "SAFETY_ANALYSIS"
     HUG_CALC = "HUG_CALC"
-    FALLBACK = "FALLBACK"
+    GENERAL_CHAT = "GENERAL_CHAT"
+    FINISH = "FINISH"
 
 
 class AgentState(TypedDict):
@@ -16,9 +17,12 @@ class AgentState(TypedDict):
     session_id: str | None
     message: str
     context: dict[str, Any]
-    intent: NotRequired[Intent]
+    intent: NotRequired[str]
+    next_worker: NotRequired[str]
+    workers_called: NotRequired[list[str]]
     answer: NotRequired[str]
     properties: NotRequired[list[dict[str, Any]]]
     legal_cards: NotRequired[list[dict[str, Any]]]
+    analysis_cards: NotRequired[list[dict[str, Any]]]
     tool_results: NotRequired[dict[str, Any]]
     next_actions: NotRequired[list[dict[str, Any]]]

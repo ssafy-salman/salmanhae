@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "phase": "phase4-frontend-zoom-rendering.md",
+  "issue_number": 59,
+  "timestamp": "2026-06-24T16:29:04+09:00",
+  "detail": "Rendered region average, cluster, and property viewport items with distinct marker styles, preserved property-only side list behavior, and added viewport marker utility coverage.",
+  "runner": "codex"
+}

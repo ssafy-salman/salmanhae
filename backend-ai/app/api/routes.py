@@ -33,15 +33,17 @@ def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
         "context": request.context.model_dump(by_alias=True),
         "properties": [],
         "legal_cards": [],
+        "analysis_cards": [],
         "tool_results": {},
         "next_actions": [],
     }
     result = get_agent_graph().invoke(state)
     return AgentChatResponse(
-        intent=result["intent"],
+        workersCalled=result.get("workers_called", []),
         answer=result["answer"],
         properties=result.get("properties", []),
         legalCards=result.get("legal_cards", []),
+        analysisCards=result.get("analysis_cards", []),
         toolResults=result.get("tool_results", {}),
         nextActions=result.get("next_actions", []),
     )

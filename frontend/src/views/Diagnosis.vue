@@ -1,14 +1,14 @@
 <template>
   <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
     <div class="border-b border-slate-100 pb-4 mb-6">
-      <h2 class="text-xl font-black text-slate-900">🛡️ HUG 보증보험 적격성 및 권리관계 정밀 자가진단기</h2>
+      <h2 class="text-xl font-bold text-slate-900">🛡️ HUG 보증보험 적격성 및 권리관계 정밀 자가진단기</h2>
       <p class="text-sm text-slate-500 mt-1">HUG 126% 기준, 선순위 임차보증금, 근저당, 임대인 세금 체납 여부를 함께 계산합니다.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <form class="lg:col-span-6 space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-100" @submit.prevent>
         <div>
-          <label class="block text-sm font-black text-slate-700 mb-2">1. 주택 유형</label>
+          <label class="block text-sm font-bold text-slate-700 mb-2">1. 주택 유형</label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" @click="buildingType = 'multi'" :class="typeButtonClass('multi')">다가구 / 단독주택</button>
             <button type="button" @click="buildingType = 'apt'" :class="typeButtonClass('apt')">아파트 / 오피스텔 / 다세대</button>
@@ -29,7 +29,7 @@
         </div>
 
         <div class="bg-white p-3 rounded-xl border border-slate-200">
-          <label class="block text-xs font-black text-slate-700 mb-2">임대인 세금 완납 검증 여부</label>
+          <label class="block text-xs font-bold text-slate-700 mb-2">임대인 세금 완납 검증 여부</label>
           <div class="space-y-2 text-xs text-slate-600">
             <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.taxChecked" type="radio" value="yes" class="accent-brand" /> 국세/지방세 완납 증명서 확인 완료</label>
             <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.taxChecked" type="radio" value="no" class="accent-brand" /> 확인하지 못함 / 거부당함</label>
@@ -40,8 +40,8 @@
       <section class="lg:col-span-6 space-y-4">
         <div :class="['p-5 rounded-2xl border shadow-sm space-y-4', result.panelClass]">
           <div class="flex items-center justify-between gap-3">
-            <span class="text-xs text-slate-500 font-black">임차 자산 안전 권리진단 등급</span>
-            <span :class="['text-xs font-black px-3 py-1 rounded-full', result.badgeClass]">{{ result.status }}</span>
+            <span class="text-xs text-slate-500 font-bold">임차 자산 안전 권리진단 등급</span>
+            <span :class="['text-xs font-bold px-3 py-1 rounded-full', result.badgeClass]">{{ result.status }}</span>
           </div>
 
           <div class="grid grid-cols-2 gap-4 text-xs bg-white p-3 rounded-xl border border-white/80">
@@ -55,7 +55,7 @@
         </div>
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 class="text-sm font-black text-slate-900 mb-3">📋 계약 전 필수 서류 체크리스트</h3>
+          <h3 class="text-sm font-bold text-slate-900 mb-3">📋 계약 전 필수 서류 체크리스트</h3>
           <div class="space-y-2 text-xs text-slate-600">
             <p :class="form.taxChecked === 'yes' ? 'line-through text-slate-400' : 'font-bold text-rose-600'">1. 국세 및 지방세 완납증명서</p>
             <p :class="buildingType === 'multi' ? 'font-bold text-brand-dark' : 'text-slate-400'">2. 선순위 임차인 정보 제공 확인서</p>
@@ -75,7 +75,7 @@ const InputMoney = defineComponent({
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     return () => h('label', { class: 'block' }, [
-      h('span', { class: 'block text-xs font-black text-slate-700 mb-1' }, props.label),
+      h('span', { class: 'block text-xs font-bold text-slate-700 mb-1' }, props.label),
       h('div', { class: 'relative' }, [
         h('input', {
           value: props.modelValue,
@@ -101,8 +101,8 @@ const form = ref({
 
 const money = (value) => Math.round(value).toLocaleString()
 const typeButtonClass = (type) => buildingType.value === type
-  ? 'py-3 bg-brand text-white border border-brand rounded-xl font-black text-xs shadow-sm'
-  : 'py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-black text-xs hover:bg-slate-50'
+  ? 'py-3 bg-brand text-white border border-brand rounded-xl font-bold text-xs shadow-sm'
+  : 'py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-xs hover:bg-slate-50'
 
 const result = computed(() => {
   const seniorDeposits = buildingType.value === 'multi' ? Number(form.value.seniorDeposits || 0) : 0

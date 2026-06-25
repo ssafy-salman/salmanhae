@@ -1,0 +1,30 @@
+{
+  "response": {
+    "body": {
+      "totalCount": 2,
+      "items": {
+        "item": [
+          {
+            "MNG_NO": "bell-legacy-1",
+            "SFTY_EMRGNCBLL_MNG_NO": "bell-1",
+            "INSTL_PRPS": "fixture bell",
+            "INSTL_PLC_TYPE": "공원",
+            "INSTL_PSTN": "Test Emergency Bell",
+            "LCTN_ROAD_NM_ADDR": "Seoul bell road address",
+            "LCTN_LOTNO_ADDR": "Seoul bell lot address",
+            "WGS84_LAT": "37.4705000",
+            "WGS84_LOT": "126.9363000",
+            "LINK_MTH": "경찰연계",
+            "MNG_INST_NM": "Test Office"
+          },
+          {
+            "SFTY_EMRGNCBLL_MNG_NO": "bell-invalid",
+            "INSTL_PSTN": "Invalid Emergency Bell",
+            "WGS84_LAT": "",
+            "WGS84_LOT": "126.9363000"
+          }
+        ]
+      }
+    }
+  }
+}

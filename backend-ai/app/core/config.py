@@ -11,13 +11,33 @@ class Settings(BaseSettings):
         default="http://localhost:8080",
         alias="SPRING_API_BASE_URL",
     )
+    spring_api_timeout_seconds: float = Field(
+        default=5.0,
+        alias="SPRING_API_TIMEOUT_SECONDS",
+    )
     supabase_db_url: str = Field(
         default="postgresql://user:password@host:5432/postgres",
         alias="SUPABASE_DB_URL",
     )
-    supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")
+    supabase_connect_timeout_seconds: int = Field(
+        default=5,
+        alias="SUPABASE_CONNECT_TIMEOUT_SECONDS",
+    )
+    supabase_statement_timeout_ms: int = Field(
+        default=5000,
+        alias="SUPABASE_STATEMENT_TIMEOUT_MS",
+    )
+    supabase_service_role_key: str = Field(
+        default="", alias="SUPABASE_SERVICE_ROLE_KEY"
+    )
     gms_api_key: str = Field(default="", alias="GMS_API_KEY")
+    llm_base_url: str = Field(default="", alias="LLM_BASE_URL")
     llm_model: str = Field(default="", alias="LLM_MODEL")
+    embedding_api_key: str = Field(default="", alias="EMBEDDING_API_KEY")
+    embedding_base_url: str = Field(
+        default="https://api.openai.com/v1",
+        alias="EMBEDDING_BASE_URL",
+    )
     embedding_model: str = Field(default="", alias="EMBEDDING_MODEL")
     langsmith_tracing: bool = Field(default=False, alias="LANGSMITH_TRACING")
     langsmith_api_key: str = Field(default="", alias="LANGSMITH_API_KEY")

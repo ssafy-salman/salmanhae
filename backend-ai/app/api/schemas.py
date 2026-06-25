@@ -2,8 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.graph.state import Intent
-
 
 class RecentMessage(BaseModel):
     role: str
@@ -27,10 +25,11 @@ class AgentChatRequest(BaseModel):
 
 
 class AgentChatResponse(BaseModel):
-    intent: Intent
+    workers_called: list[str] = Field(default_factory=list, alias="workersCalled")
     answer: str
     properties: list[dict[str, Any]] = Field(default_factory=list)
     legal_cards: list[dict[str, Any]] = Field(default_factory=list, alias="legalCards")
+    analysis_cards: list[dict[str, Any]] = Field(default_factory=list, alias="analysisCards")
     tool_results: dict[str, Any] = Field(default_factory=dict, alias="toolResults")
     next_actions: list[dict[str, Any]] = Field(default_factory=list, alias="nextActions")
 

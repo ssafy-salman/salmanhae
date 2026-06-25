@@ -1,0 +1,36 @@
+{
+  "header": {
+    "resultMsg": "NORMAL SERVICE",
+    "resultCode": "00",
+    "errorMsg": ""
+  },
+  "numOfRows": 3,
+  "pageNo": 1,
+  "totalCount": 3,
+  "body": [
+    {
+      "FCLT_CD": "508020",
+      "FCLT_TYPE": "Security Light",
+      "ADDR": "Seoul light address",
+      "YMAP_CRTS": "4556806.669483073",
+      "ROAD_NM_ADDR": "",
+      "XMAP_CRTS": "14130587.387485001",
+      "SN": "light-1",
+      "FCLT_GVMNFC_NM": "Test Security Light",
+      "GEOM": "POINT(14130587.387485001 4556806.669483073)"
+    },
+    {
+      "FCLT_CD": "508020",
+      "FCLT_TYPE": "Security Light",
+      "ADDR": "Geom only light address",
+      "SN": "light-geom",
+      "FCLT_GVMNFC_NM": "Geom Only Security Light",
+      "GEOM": "POINT(14130587.387485001 4556806.669483073)"
+    },
+    {
+      "FCLT_TYPE": "Security Light",
+      "ADDR": "Invalid light address",
+      "SN": "light-invalid"
+    }
+  ]
+}

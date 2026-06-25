@@ -1,0 +1,39 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+!*.env.example
+!backend/src/test/resources/.env.properties
+
+# Local generated data inputs and pipeline outputs
+data/raw/
+data/seed/
+data/pipeline/
+data/cache/
+data/legal/
+data/output/
+!data/reference/
+!data/reference/*.example.csv
+!data/**/README.md
+
+# Local run logs
+run-logs/
+.codex/run-logs/
+.tmp/
+gha-creds-*.json
+
+# Generated SQL seed artifacts
+database/seed/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node/Vite
+node_modules/
+dist/
+.vite/
+
+# IDE / OS
+.DS_Store
+Thumbs.db

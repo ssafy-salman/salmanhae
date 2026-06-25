@@ -43,7 +43,7 @@ salmanhae/
 │       ├── graph/     # LangGraph 노드 + 엣지
 │       ├── clients/   # Spring Boot HTTP 클라이언트
 │       └── rag/       # pgvector 검색
-├── docs/              # 프로젝트 문서 (01~12)
+├── docs/              # 프로젝트 문서 (01~13)
 ├── phases/            # Harness Phase 지시서
 └── scripts/           # execute.py, hooks
 ```
@@ -105,6 +105,8 @@ git commit -m "feat(be): 매물 조회 API 구현 (#이슈번호)"
 
 ### Harness 플로우
 
+#### Claude Code
+
 ```bash
 # Claude Code에서
 /harness
@@ -119,6 +121,19 @@ python3 scripts/execute.py {task-name}
 중간에 실패하면 `--from N`으로 해당 Phase부터 재시작할 수 있습니다.
 
 이후 동일하게 **상대방 approve → develop merge**
+
+#### Codex
+
+```bash
+# Codex에서
+$salmanhae-harness
+# → docs/ 읽고 Phase 계획 제안 → 승인하면 phases/ 폴더에 지시서 생성
+
+python scripts/execute_codex.py {task-name} --dry-run
+python scripts/execute_codex.py {task-name}
+```
+
+자세한 내용은 `docs/13_CODEX_HARNESS.md` 참고.
 
 ---
 
@@ -159,3 +174,4 @@ feat(ai): LangGraph 의도분류 구현 (#12)
 | `docs/04_UI_GUIDE.md`     | 디자인 기준, CSS 토큰       |
 | `docs/05_GIT_GUIDE.md`    | 컨벤션 상세                 |
 | `docs/11_ROADMAP.md`      | 개발 순서                   |
+| `docs/13_CODEX_HARNESS.md` | Codex 하네스 사용법         |
