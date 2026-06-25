@@ -77,11 +77,11 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
+                cursor.execute(statement_timeout_sql(self.statement_timeout_ms))
                 # IVFFlat 인덱스가 lists=100으로 설정돼 있으나 데이터 수가 적을 때
                 # 기본 probes=1이면 대부분의 클러스터를 건너뛰어 결과가 0개가 됨.
                 # probes를 lists 값과 동일하게 설정해 전체 인덱스를 탐색하도록 한다.
-                cursor.execute("set local ivfflat.probes = %s", (100,))
+                cursor.execute("set local ivfflat.probes = 100")
                 cursor.execute(sql, (vector_literal, vector_literal, top_k))
                 return list(cursor.fetchall())
 
@@ -133,7 +133,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
+                cursor.execute(statement_timeout_sql(self.statement_timeout_ms))
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
     def search_properties(self, criteria: dict[str, Any], limit: int = 20) -> list[dict[str, Any]]:
@@ -163,6 +163,7 @@ class SupabaseVectorClient:
                 params.append(criteria[key])
 
         min_safety_score = parse_int_criteria(criteria.get("min_safety_score"))
+        uses_safety_score = criteria.get("sort_by") == "safety_desc" or min_safety_score is not None
         if min_safety_score is not None:
             conditions.append("pss.safety_score >= %s")
             params.append(min_safety_score)
@@ -183,13 +184,29 @@ class SupabaseVectorClient:
             order_clause = "p.created_at DESC"
 
         where_clause = " AND ".join(conditions)
+        safety_columns = (
+            """
+                   pss.safety_score, pss.cctv_count_300m, pss.bell_count_300m,
+                   pss.light_count_300m, pss.police_count_500m
+            """
+            if uses_safety_score
+            else """
+                   NULL::integer AS safety_score, NULL::integer AS cctv_count_300m,
+                   NULL::integer AS bell_count_300m, NULL::integer AS light_count_300m,
+                   NULL::integer AS police_count_500m
+            """
+        )
+        safety_join = (
+            "LEFT JOIN public.property_score_stat pss ON pss.property_id = p.id"
+            if uses_safety_score
+            else ""
+        )
         sql = f"""
             SELECT p.id, p.title, p.building_name, p.address, p.property_type, p.transaction_type,
                    p.deposit, p.monthly_rent, p.price, p.area_m2, p.floor, p.latitude, p.longitude,
-                   pss.safety_score, pss.cctv_count_300m, pss.bell_count_300m,
-                   pss.light_count_300m, pss.police_count_500m
+                   {safety_columns}
             FROM public.properties p
-            LEFT JOIN public.property_score_stat pss ON pss.property_id = p.id
+            {safety_join}
             WHERE {where_clause}
             ORDER BY {order_clause}
             LIMIT %s
@@ -202,7 +219,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
+                cursor.execute(statement_timeout_sql(self.statement_timeout_ms))
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
 
@@ -327,7 +344,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
+                cursor.execute(statement_timeout_sql(self.statement_timeout_ms))
                 for row_params in params:
                     cursor.execute(sql, row_params)
                     affected_rows += max(int(getattr(cursor, "rowcount", 1)), 0)
@@ -383,6 +400,11 @@ def parse_int_criteria(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def statement_timeout_sql(timeout_ms: int) -> str:
+    timeout = max(1, int(timeout_ms))
+    return f"set local statement_timeout = {timeout}"
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:

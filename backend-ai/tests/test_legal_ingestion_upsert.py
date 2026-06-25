@@ -165,7 +165,7 @@ def test_supabase_vector_client_upserts_legal_chunks(
 
     executes = calls["executes"]
     assert upserted == 1
-    assert executes[0] == ("set local statement_timeout = %s", (3000,))
+    assert executes[0] == ("set local statement_timeout = 3000", None)
     assert "on conflict (content_hash)" in executes[1][0]
     assert "where" in executes[1][0]
     assert "existing.content is distinct from excluded.content" in executes[1][0]

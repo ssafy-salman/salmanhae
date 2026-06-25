@@ -136,7 +136,7 @@ def test_supabase_vector_client_sets_connection_and_statement_timeouts(
         def __exit__(self, exc_type, exc, traceback) -> None:
             return None
 
-        def execute(self, sql, params) -> None:
+        def execute(self, sql, params=None) -> None:
             calls.setdefault("executes", []).append((sql, params))
 
         def fetchall(self) -> list[dict]:
@@ -167,7 +167,7 @@ def test_supabase_vector_client_sets_connection_and_statement_timeouts(
 
     assert calls["connect_kwargs"]["connect_timeout"] == 7
     assert len(calls.get("executes", [])) >= 1
-    assert calls["executes"][0] == ("set local statement_timeout = %s", (3000,))
+    assert calls["executes"][0] == ("set local statement_timeout = 3000", None)
 
 
 def test_parse_pgvector_value_supports_postgrest_vector_strings() -> None:

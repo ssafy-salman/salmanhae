@@ -74,6 +74,47 @@ def test_search_properties_can_order_by_safety_score(
     assert rows[0]["safety_score"] == 91
 
 
+def test_search_properties_does_not_join_safety_scores_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: dict[str, object] = {"executes": []}
+
+    class FakeCursor:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def execute(self, sql, params=None) -> None:
+            calls["executes"].append((sql, params))
+
+        def fetchall(self) -> list[dict]:
+            return []
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def cursor(self) -> FakeCursor:
+            return FakeCursor()
+
+    monkeypatch.setattr(
+        supabase_module.psycopg,
+        "connect",
+        lambda *args, **kwargs: FakeConnection(),
+    )
+
+    SupabaseVectorClient().search_properties({"property_type": "ONE_ROOM"}, limit=5)
+
+    query_sql, query_params = calls["executes"][-1]
+    assert "property_score_stat" not in query_sql
+    assert query_params == ["ONE_ROOM", 5]
+
+
 def test_property_criteria_fallback_detects_safety_sort() -> None:
     client = LLMClient(api_key="", model="")
 
