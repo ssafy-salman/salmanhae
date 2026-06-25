@@ -76,6 +76,8 @@ PROPERTY_CRITERIA_PROMPT = """\
 - max_deposit: 최대 보증금 (원 단위, 숫자만)
 - max_monthly_rent: 최대 월세 (원 단위, 숫자만)
 - max_price: 최대 매매가 (원 단위, 숫자만)
+- sort_by: "price_asc" (가장 싼, 저렴한, 싼 순, 최저가 등 저가 정렬 요청 시) | null (그 외)
+- limit: 사용자가 명시적으로 개수를 요청한 경우 해당 숫자 (예: "1개", "3개 보여줘") | null (그 외)
 
 JSON만 반환해. 설명 없이.\
 """
@@ -320,11 +322,11 @@ class LLMClient:
             rent = p.get("monthly_rent")
             price = p.get("price")
             if tx == "월세" and deposit is not None and rent is not None:
-                price_str = f"{int(deposit):,}/{int(rent):,}만원"
+                price_str = f"{int(deposit) // 10000:,}/{int(rent) // 10000:,}만원"
             elif tx == "전세" and deposit is not None:
-                price_str = f"전세 {int(deposit):,}만원"
+                price_str = f"전세 {int(deposit) // 10000:,}만원"
             elif tx == "매매" and price is not None:
-                price_str = f"매매 {int(price):,}만원"
+                price_str = f"매매 {int(price) // 10000:,}만원"
             else:
                 price_str = ""
             tag = " · ".join(x for x in [pt, tx, price_str] if x)
