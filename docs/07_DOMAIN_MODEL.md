@@ -364,3 +364,22 @@ F-1 MVP 생성 매물은 `properties`에 다음 기준으로 저장합니다.
 - 기존 DB 데이터는 삭제하지 않고 upsert
 
 raw XML, JSONL, geocoding cache, SQL chunk 같은 파일은 로컬 파이프라인 산출물입니다. git에 커밋하지 않으며, 운영 수집 job이 같은 역할을 대체하면 삭제해도 됩니다.
+
+## F-4 Safety Score Stored Model
+
+`SafetyFacility` stores normalized point data from monthly safety facility ingestion. The MVP score flow uses these stored points only; it does not call public APIs during map, detail, chat, or AI analysis requests.
+
+`PropertyScoreStat` stores precomputed per-property score data:
+
+| Field | Meaning |
+| --- | --- |
+| `property_id` | Target property ID. |
+| `safety_score` | Rounded weighted score from CCTV, emergency bell, security light, and police/security facility counts. |
+| `price_score` | Preserved by the safety score batch; populated by price scoring when available. |
+| `cctv_count_300m` | CCTV count within 300m. |
+| `bell_count_300m` | Emergency bell count within 300m. |
+| `light_count_300m` | Security light count within 300m. |
+| `police_count_500m` | Police/security facility count within 500m. |
+| `updated_at` | Last score-stat update timestamp. |
+
+The safety score batch upserts `safety_score` and the safety count fields while preserving existing `price_score`. New score-stat rows may have `price_score = null` until the price scoring flow fills it.

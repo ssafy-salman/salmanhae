@@ -73,3 +73,16 @@
 - 정교한 HUG/HF/SGI 판정 (등기부등본 데이터 기반)
 - 커뮤니티 (지역/건물 후기)
 - 개인화 추천 (찜·조회 이력 기반)
+
+## F-4 Implementation Status
+
+Safety facility ingestion and safety score calculation are implemented as stored-data batch flows:
+
+- Phase 4 stores CCTV, emergency bell, security light, and police/security facility point data in `safety_facility`.
+- Phase 5 calculates per-property safety score/count fields and upserts `property_score_stat`.
+- Phase 6 verifies backend-ai `SAFETY_ANALYSIS` consumes Spring Boot `safety-summary` and surfaces the precomputed score/count fields.
+
+Remaining outside MVP:
+
+- WMS-only safety map layers.
+- Non-point safety datasets that cannot be normalized into `safety_facility`.

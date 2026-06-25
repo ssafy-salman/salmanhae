@@ -161,3 +161,81 @@ python scripts/data_pipeline/pipeline.py run --months 12 --scope nationwide --mi
 - 기존 DB 데이터 처리: truncate 없이 unique key 기준 누적 upsert
 
 이 방식은 데모/MVP에서 안정적인 지도 매물 탐색과 시세 비교를 제공하기 위한 bootstrap 방식입니다. 운영 단계에서 주기적 최신화가 필요해지면 같은 정규화/적재 로직을 Spring Scheduler 또는 별도 job으로 옮깁니다.
+
+## F-4 Safety Facility Ingestion Scheduler
+
+Phase 4 wires the safety source clients into a Spring service and scheduler. The scheduler is
+disabled by default so local and test profiles never call public APIs unexpectedly.
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `safety.ingestion.scheduler.enabled` / `SAFETY_INGESTION_SCHEDULER_ENABLED` | `false` | Enables the monthly scheduler when set to `true`. |
+| `safety.ingestion.scheduler.cron` / `SAFETY_INGESTION_SCHEDULER_CRON` | `0 0 3 1 * *` | Runs at 03:00 on the first day of every month. |
+| `safety.ingestion.scheduler.zone` / `SAFETY_INGESTION_SCHEDULER_ZONE` | `Asia/Seoul` | Scheduler timezone. |
+
+`SafetyFacilityIngestionService` runs each source independently. If one source fails, the failure is
+logged and recorded in `SafetyFacilityIngestionResult`, while the remaining sources continue. Stored
+rows are accumulated through `SafetyFacilityDao.upsertAll`, so rerunning the batch is idempotent for
+the unique `(type, source, source_id)` safety facility key.
+
+## Phase 5 Property Safety Score Calculation Scheduler
+
+Phase 5 recalculates `property_score_stat.safety_score` from stored `safety_facility` rows. It never
+calls public APIs during user requests; user-facing safety summary APIs read only precomputed DB rows.
+
+| Metric | Radius | Full-score cap | Weight |
+| --- | --- | --- | --- |
+| CCTV | 300m | 10 facilities | 30% |
+| Emergency bell | 300m | 3 facilities | 25% |
+| Security light | 300m | 20 facilities | 25% |
+| Police/security facility | 500m | 1 facility | 20% |
+
+Each metric is normalized as `min(count / full-score-cap, 1.0)`, then multiplied by its weight. The
+weighted total is rounded to the nearest integer and clamped to `0..100`. If no facility data exists
+for a metric, that metric contributes `0`.
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `safety.score.scheduler.enabled` / `SAFETY_SCORE_SCHEDULER_ENABLED` | `false` | Enables the monthly safety score scheduler when set to `true`. |
+| `safety.score.scheduler.cron` / `SAFETY_SCORE_SCHEDULER_CRON` | `0 30 3 1 * *` | Runs after the safety facility refresh by default. |
+| `safety.score.scheduler.zone` / `SAFETY_SCORE_SCHEDULER_ZONE` | `Asia/Seoul` | Scheduler timezone. |
+
+The upsert updates `safety_score` and safety facility counts while preserving existing `price_score`.
+New rows are inserted with `price_score = null` until a price scoring batch fills that value.
+
+## Phase 6 Safety Batch Runbook
+
+F-4 safety data is now a two-step stored-data flow:
+
+1. Safety facility ingestion reads configured public API sources and upserts normalized point data into `safety_facility`.
+2. Property safety score recalculation reads only `safety_facility` and active geocoded `properties`, then upserts `property_score_stat`.
+
+Recommended monthly production order:
+
+```bash
+SAFETY_INGESTION_SCHEDULER_ENABLED=true
+SAFETY_SCORE_SCHEDULER_ENABLED=true
+```
+
+Default schedule in `Asia/Seoul`:
+
+| Step | Default cron | Purpose |
+| --- | --- | --- |
+| Safety facility ingestion | `0 0 3 1 * *` | Refresh CCTV, emergency bell, security light, and police/security facility point rows. |
+| Property safety score recalculation | `0 30 3 1 * *` | Recalculate per-property safety score and facility counts after ingestion. |
+
+Required keys must be supplied through environment variables or platform secret settings, never committed:
+
+| Environment variable | Used by |
+| --- | --- |
+| `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell and security light when endpoint URLs require a service key. |
+| `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source. |
+
+Verification checklist:
+
+- `GET /api/v1/safety/facilities` returns stored point rows from `safety_facility`.
+- `GET /api/v1/properties/{id}/safety-summary?radius=500` returns `safetyScore`, `priceScore`, and count fields from `property_score_stat`.
+- Backend AI `SAFETY_ANALYSIS` calls Spring Boot `safety-summary` and surfaces the precomputed score/count fields in the analysis card and answer.
+- User-facing APIs must not call public safety APIs directly.
+
+MVP scope is point-data safety facilities only. WMS-only safety layers remain excluded from this batch flow and should be handled as a separate future map-layer feature.

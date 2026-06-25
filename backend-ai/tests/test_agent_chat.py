@@ -17,7 +17,7 @@ def internal_api_headers() -> dict[str, str]:
 
 
 def route_as(monkeypatch, *workers: str) -> None:
-    """supervisor가 지정된 워커들을 순서대로 호출하고 FINISH하도록 mock."""
+    """Mock supervisor routing so workers are called in the given order."""
     call_count = {"n": 0}
     worker_list = list(workers)
 
@@ -113,7 +113,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
         def analyze_price(self, message: str, context: dict) -> dict:
             return {
                 "selectedPropertyId": context["selectedPropertyId"],
-                "summary": "최근 실거래와 지역 통계를 확인했습니다.",
+                "summary": "최근 거래와 지역 통계를 확인했습니다.",
                 "metrics": {
                     "comparableTransactionCount": 2,
                     "regionStatCount": 1,
@@ -165,7 +165,7 @@ def test_agent_chat_returns_price_analysis_card_for_selected_property(monkeypatc
     assert card["metrics"]["selectedPropertyId"] == "1"
     assert card["metrics"]["comparableTransactionCount"] == 2
     assert card["metrics"]["stub"] is False
-    assert "최근 실거래 2건" in body["answer"]
+    assert "최근 거래 2건" in body["answer"]
     assert "지역 평균 보증금 10,500,000원" in body["answer"]
 
 
@@ -247,8 +247,8 @@ def test_agent_chat_returns_safety_analysis_card_for_selected_property(monkeypat
     assert body["analysisCards"]
     card = body["analysisCards"][0]
     assert card["type"] == "SAFETY"
-    assert card["title"]
-    assert card["summary"]
+    assert card["title"] == "안전 분석"
+    assert card["summary"] == "반경 500m 기준 안전 점수는 78점입니다."
     assert card["metrics"]["selectedPropertyId"] == "1"
     assert card["score"] == 78
     assert card["metrics"]["radius"] == 500

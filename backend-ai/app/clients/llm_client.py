@@ -15,6 +15,13 @@ from app.services.analysis_answer_service import AnalysisAnswerService
 
 
 HttpPost = Callable[..., httpx.Response]
+RENDERABLE_WORKERS = {
+    "PROPERTY_SEARCH",
+    "LEGAL_CONSULT",
+    "PRICE_ANALYSIS",
+    "SAFETY_ANALYSIS",
+    "GENERAL_CHAT",
+}
 
 SUPERVISOR_PROMPT = """\
 다음 사용자 메시지와 지금까지 실행된 워커 목록을 보고, 다음에 호출할 워커를 결정해줘.
@@ -179,6 +186,11 @@ class LLMClient:
 
     def generate_answer(self, state: AgentState) -> str:
         workers_called = state.get("workers_called", [])
+        if not workers_called and state.get("intent"):
+            intent = state["intent"]
+            intent_worker = str(getattr(intent, "value", intent))
+            if intent_worker in RENDERABLE_WORKERS:
+                workers_called = [intent_worker]
 
         if "GENERAL_CHAT" in workers_called:
             live = self._generate_live_general_chat_answer(state)
