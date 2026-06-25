@@ -6,6 +6,13 @@ from app.graph.state import AgentState
 class AnalysisAnswerService:
     def generate_price_answer(self, state: AgentState) -> str:
         result = self._tool_result(state, "priceAnalysis")
+
+        if result.get("requiresSelection"):
+            return (
+                "지역 시세를 분석하려면 지도에서 매물을 먼저 선택해 주세요. "
+                "매물을 선택하시면 해당 위치 기준 실거래가와 지역 통계를 바탕으로 시세를 분석해 드릴게요."
+            )
+
         card = self._analysis_card(state, "PRICE")
         metrics = self._combined_metrics(result, card)
         transactions = self._items(result.get("transactions"))
@@ -58,6 +65,10 @@ class AnalysisAnswerService:
             if parts:
                 facts.append(", ".join(parts) + "입니다.")
 
+        regional_stats = self._items(result.get("regionalStats"))
+        if regional_stats and not facts:
+            return self._format_regional_price_answer(regional_stats, result)
+
         if not facts:
             return "분석할 근거 데이터가 부족합니다. 매물을 선택하거나 시세 데이터가 쌓인 뒤 다시 확인해 주세요."
 
@@ -65,6 +76,13 @@ class AnalysisAnswerService:
 
     def generate_safety_answer(self, state: AgentState) -> str:
         result = self._tool_result(state, "safetyAnalysis")
+
+        if result.get("requiresSelection"):
+            return (
+                "주변 안전 정보를 분석하려면 지도에서 매물을 먼저 선택해 주세요. "
+                "매물을 선택하시면 반경 500m 내 CCTV·비상벨·보안등·경찰시설 현황을 바탕으로 안전 점수를 알려드릴게요."
+            )
+
         card = self._analysis_card(state, "SAFETY")
         safety_summary = result.get("safetySummary", {})
         if not isinstance(safety_summary, dict):
@@ -138,6 +156,43 @@ class AnalysisAnswerService:
         if not isinstance(value, list):
             return []
         return [item for item in value if isinstance(item, dict)]
+
+    def _format_regional_price_answer(
+        self, stats: list[dict[str, Any]], result: dict[str, Any]
+    ) -> str:
+        metrics = result.get("metrics", {}) or {}
+        region_name = metrics.get("dong") or metrics.get("sigungu") or "해당 지역"
+
+        tx_label = {"JEONSE": "전세", "MONTHLY_RENT": "월세", "SALE": "매매"}
+        prop_label = {
+            "ONE_ROOM": "원룸", "OFFICETEL": "오피스텔", "VILLA": "빌라",
+            "APARTMENT": "아파트", "MULTI_FAMILY": "다가구",
+        }
+
+        lines: list[str] = [f"**{region_name}** 지역 시세 현황입니다.\n"]
+        for stat in stats[:5]:
+            pt = prop_label.get(stat.get("property_type", ""), stat.get("property_type", ""))
+            tt = tx_label.get(stat.get("transaction_type", ""), stat.get("transaction_type", ""))
+            parts: list[str] = []
+            if pt and tt:
+                parts.append(f"{pt} {tt}")
+            avg_deposit = self._format_won(stat.get("avg_deposit"))
+            if avg_deposit:
+                parts.append(f"평균 보증금 {avg_deposit}")
+            avg_rent = self._format_won(stat.get("avg_monthly_rent"))
+            if avg_rent:
+                parts.append(f"평균 월세 {avg_rent}")
+            avg_price = self._format_won(stat.get("avg_price"))
+            if avg_price:
+                parts.append(f"평균 매매가 {avg_price}")
+            count = stat.get("transaction_count")
+            if count:
+                parts.append(f"표본 {count}건")
+            if parts:
+                lines.append("· " + " / ".join(parts))
+
+        lines.append("\n실제 거래가는 층수·면적·시기에 따라 달라질 수 있습니다.")
+        return "\n".join(lines)
 
     def _format_won(self, value: Any) -> str | None:
         if value is None:
