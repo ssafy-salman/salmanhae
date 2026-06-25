@@ -162,13 +162,26 @@ class SupabaseVectorClient:
                 conditions.append(condition)
                 params.append(criteria[key])
 
+        sort_by = criteria.get("sort_by")
+        if sort_by == "price_asc":
+            order_clause = """
+                CASE transaction_type
+                    WHEN 'SALE' THEN price
+                    WHEN 'JEONSE' THEN deposit
+                    WHEN 'MONTHLY_RENT' THEN monthly_rent
+                    ELSE COALESCE(price, deposit, monthly_rent)
+                END ASC NULLS LAST
+            """
+        else:
+            order_clause = "created_at DESC"
+
         where_clause = " AND ".join(conditions)
         sql = f"""
             SELECT id, title, building_name, address, property_type, transaction_type,
                    deposit, monthly_rent, price, area_m2, floor, latitude, longitude
             FROM public.properties
             WHERE {where_clause}
-            ORDER BY created_at DESC
+            ORDER BY {order_clause}
             LIMIT %s
         """
         params.append(limit)
