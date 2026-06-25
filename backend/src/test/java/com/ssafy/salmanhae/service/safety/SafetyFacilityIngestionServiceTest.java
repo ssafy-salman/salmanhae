@@ -54,7 +54,7 @@ class SafetyFacilityIngestionServiceTest {
 	@Test
 	void ingestAllCountsSkippedRowsWhenDaoDoesNotPersistEveryFetchedRow() {
 		SafetyFacilitySourceClient sourceClient = new FakeSourceClient(
-				"CCTV_CSV",
+				"CCTV_OPENAPI",
 				List.of(facility("cctv-1"), facility("cctv-2"))
 		);
 		when(safetyFacilityDao.upsertAll(argThat(rows -> rows != null && rows.size() == 2))).thenReturn(1);
@@ -79,7 +79,7 @@ class SafetyFacilityIngestionServiceTest {
 				"Seoul",
 				new BigDecimal("37.4703210"),
 				new BigDecimal("126.9361110"),
-				"CCTV_CSV",
+				"CCTV_OPENAPI",
 				sourceId,
 				"fixture"
 		);

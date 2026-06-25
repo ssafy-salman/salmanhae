@@ -229,6 +229,7 @@ Required keys must be supplied through environment variables or platform secret 
 | Environment variable | Used by |
 | --- | --- |
 | `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell when endpoint URLs require a service key. |
+| `SAFETY_DATA_CCTV_URL` | CCTV `/info` endpoint base URL without query parameters. Defaults to `https://apis.data.go.kr/1741000/cctv_info/info`. |
 | `SECURITY_LIGHT_SERVICE_KEY` | Security light source when it uses a separately issued service key. |
 | `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source. |
 | `SAFETY_DATA_EMERGENCY_BELL_URL` | Emergency bell `/info` endpoint base URL without query parameters. |
