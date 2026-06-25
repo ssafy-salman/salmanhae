@@ -93,11 +93,14 @@ export default defineStore('map', {
       if (state.isLoading) return { text: '매물 불러오는 중', tone: 'text-slate-600' }
       return { text: `${state.totalCount.toLocaleString()}개 매물 표시`, tone: 'text-emerald-700' }
     },
+    normalizedSearchKeyword(state) {
+      return state.searchKeyword.trim()
+    },
     hasActiveFilters(state) {
       return Object.values(state.filters).some((value) => value !== '')
     },
-    hasActiveSearchConditions(state) {
-      return state.searchKeyword.trim() !== '' || Object.values(state.filters).some((value) => value !== '')
+    hasActiveSearchConditions() {
+      return this.normalizedSearchKeyword !== '' || this.hasActiveFilters
     }
   },
   actions: {
@@ -160,7 +163,7 @@ export default defineStore('map', {
         const data = await fetchMapViewport({
           ...this.bounds,
           zoom: this.zoom,
-          keyword: this.searchKeyword,
+          keyword: this.normalizedSearchKeyword,
           ...this.filters
         })
 

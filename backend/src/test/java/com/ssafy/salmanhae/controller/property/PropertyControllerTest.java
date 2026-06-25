@@ -92,6 +92,29 @@ class PropertyControllerTest {
 	}
 
 	@Test
+	void searchPropertiesTreatsKeywordWildcardsAsLiteralText() throws Exception {
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("keyword", "%"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.totalCount").value(0))
+				.andExpect(jsonPath("$.data.items", hasSize(0)));
+
+		mockMvc.perform(get("/api/v1/properties")
+						.param("west", "126.93")
+						.param("east", "126.94")
+						.param("south", "37.46")
+						.param("north", "37.48")
+						.param("keyword", "_"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.totalCount").value(0))
+				.andExpect(jsonPath("$.data.items", hasSize(0)));
+	}
+
+	@Test
 	void searchPropertiesRejectsInvalidBounds() throws Exception {
 		mockMvc.perform(get("/api/v1/properties")
 						.param("west", "127.00")

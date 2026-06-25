@@ -104,7 +104,7 @@ GET /api/v1/properties?west=126.91&east=127.02&south=37.45&north=37.55
 | `maxDeposit` | — | 최대 보증금 (원) |
 | `minPrice` | — | 최소 매매가 (원) |
 | `maxPrice` | — | 최대 매매가 (원) |
-| `keyword` | — | 건물명 또는 주소 검색어 |
+| `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 
 F-1 MVP에서는 실거래가 건물 anchor 기반 `MVP_SYNTHETIC` 더미 매물을 조회합니다. 운영 단계에서는 제휴 피드 또는 합법적으로 확보한 매물 데이터를 `properties`에 저장한 뒤 같은 API로 조회합니다.
 
@@ -161,7 +161,7 @@ GET /api/v1/map/viewport?west=126.91&east=127.02&south=37.45&north=37.55&zoom=10
 | `maxDeposit` | — | 최대 보증금 (원) |
 | `minPrice` | — | 최소 매매가 (원) |
 | `maxPrice` | — | 최대 매매가 (원) |
-| `keyword` | — | 건물명 또는 주소 검색어 |
+| `keyword` | — | 제목, 건물명, 지번 주소, 도로명 주소 검색어 |
 | `clusterThreshold` | — | 매물 클러스터링 기준 수. 기본값은 서버 설정 사용 |
 
 **표시 모드**

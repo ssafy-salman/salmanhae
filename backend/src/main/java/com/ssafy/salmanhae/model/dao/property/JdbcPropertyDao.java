@@ -659,14 +659,21 @@ public class JdbcPropertyDao implements PropertyDao {
 		if (criteria.hasKeyword()) {
 			sql.append("""
 					 AND (
-					      LOWER(COALESCE(%stitle, '')) LIKE :keywordPattern
-					      OR LOWER(COALESCE(%sbuilding_name, '')) LIKE :keywordPattern
-					      OR LOWER(COALESCE(%saddress, '')) LIKE :keywordPattern
-					      OR LOWER(COALESCE(%sroad_address, '')) LIKE :keywordPattern
+					      LOWER(COALESCE(%stitle, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%sbuilding_name, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%saddress, '')) LIKE :keywordPattern ESCAPE '!'
+					      OR LOWER(COALESCE(%sroad_address, '')) LIKE :keywordPattern ESCAPE '!'
 					 )
 					""".formatted(prefix, prefix, prefix, prefix));
-			params.put("keywordPattern", "%" + criteria.normalizedKeyword().toLowerCase(Locale.ROOT) + "%");
+			params.put("keywordPattern", "%" + escapeLikePattern(criteria.normalizedKeyword().toLowerCase(Locale.ROOT)) + "%");
 		}
+	}
+
+	private String escapeLikePattern(String keyword) {
+		return keyword
+				.replace("!", "!!")
+				.replace("%", "!%")
+				.replace("_", "!_");
 	}
 
 	private void appendRegionStatFilters(
