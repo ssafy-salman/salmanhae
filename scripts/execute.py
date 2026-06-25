@@ -129,13 +129,15 @@ def run_phase(phase_path: Path, task_name: str) -> tuple[str, str, int]:
     """Claude headless 모드로 Phase를 실행하고 (status, detail, elapsed)을 반환."""
     phase_content = phase_path.read_text(encoding="utf-8")
     phase_num = re.search(r"phase(\d+)", phase_path.name).group(1)
-    branch_name = f"phase/{phase_num}-{re.sub(r'^phase\d+-', '', phase_path.stem)}"
+    phase_slug = re.sub(r"^phase\d+-", "", phase_path.stem)
 
     # GitHub 이슈 생성
     issue_number = create_issue(phase_num, phase_path.stem, task_name)
     issue_tag = f" (#{issue_number})" if issue_number else ""
 
-    # Phase 브랜치 생성
+    # Phase 브랜치 생성 (이슈 번호 기반)
+    branch_suffix = str(issue_number) if issue_number else f"p{phase_num}"
+    branch_name = f"phase/{branch_suffix}-{phase_slug}"
     subprocess.run(["git", "checkout", "-b", branch_name], capture_output=True, check=False)
 
     prompt = f"""당신은 살만해 프로젝트의 AI 에이전트입니다.

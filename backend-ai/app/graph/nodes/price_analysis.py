@@ -16,6 +16,7 @@ def price_analysis(state: AgentState) -> AgentState:
     if result.get("requiresSelection"):
         result = _regional_price_analysis(state["message"])
 
+
     updated_tool_results = {
         **state.get("tool_results", {}),
         "priceAnalysis": result,

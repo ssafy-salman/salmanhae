@@ -1,6 +1,27 @@
 <template>
   <div class="chat-page">
     <div class="chat-outer">
+
+    <!-- Session Sidebar -->
+    <div class="chat-sidebar">
+      <button class="new-chat-btn" @click="chatStore.newChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        새 대화
+      </button>
+
+      <div class="session-list">
+        <button
+          v-for="session in chatStore.sessionList"
+          :key="session.id"
+          :class="['session-item', session.id === chatStore.currentSessionId && 'session-item--active']"
+          @click="chatStore.switchSession(session.id)"
+        >
+          <p class="session-item__title">{{ session.title }}</p>
+          <p class="session-item__date">{{ formatSessionDate(session.createdAt) }}</p>
+        </button>
+      </div>
+    </div>
+
     <div class="chat-card">
 
     <!-- Body -->
@@ -33,6 +54,28 @@
         <div v-for="(msg, i) in chatStore.chatMessages" :key="i" :class="['msg-group', msg.role === 'user' ? 'msg-group--user' : 'msg-group--bot']">
           <div :class="['msg-bubble', msg.role === 'user' ? 'msg-bubble--user' : 'msg-bubble--bot', msg.isError && 'msg-bubble--error']">
             <p class="msg-text">{{ msg.text }}</p>
+
+            <div v-if="msg.properties?.length" class="card-list">
+              <div
+                v-for="prop in msg.properties"
+                :key="prop.id"
+                class="property-card"
+                @click="store.selectProperty && store.selectProperty(prop)"
+              >
+                <div class="property-card__head">
+                  <div class="property-card__info">
+                    <p class="info-card__tag">{{ propTypeLabel(prop.property_type) }} · {{ txTypeLabel(prop.transaction_type) }}</p>
+                    <h4 class="info-card__title">{{ prop.building_name || prop.title }}</h4>
+                    <p class="property-card__address">{{ prop.address }}</p>
+                  </div>
+                  <p class="property-card__price">{{ formatPropertyPrice(prop) }}</p>
+                </div>
+                <div v-if="prop.area_m2 || prop.floor" class="property-card__meta">
+                  <span v-if="prop.area_m2">{{ prop.area_m2 }}㎡</span>
+                  <span v-if="prop.floor">{{ prop.floor }}층</span>
+                </div>
+              </div>
+            </div>
 
             <div v-if="msg.legalCards?.length" class="card-list">
               <div v-for="card in msg.legalCards" :key="`${card.lawName}-${card.articleNo}`" class="info-card">
@@ -160,6 +203,21 @@ const examplePrompts = [
   { text: '전세사기 피해지원 특별법은 어떤 경우에 도움이 되나요?', icon: iconChat2 },
 ]
 
+const propTypeLabels = {
+  ONE_ROOM: '원룸', OFFICETEL: '오피스텔', VILLA: '빌라',
+  APARTMENT: '아파트', MULTI_FAMILY: '다가구',
+}
+const txTypeLabels = { MONTHLY_RENT: '월세', JEONSE: '전세', SALE: '매매' }
+const propTypeLabel = (t) => propTypeLabels[t] || t || ''
+const txTypeLabel = (t) => txTypeLabels[t] || t || ''
+const formatPropertyPrice = (prop) => {
+  const tx = prop.transaction_type
+  if (tx === 'MONTHLY_RENT') return `${Number(prop.deposit || 0).toLocaleString()}/${Number(prop.monthly_rent || 0).toLocaleString()}만`
+  if (tx === 'JEONSE') return `전세 ${Number(prop.deposit || 0).toLocaleString()}만`
+  if (tx === 'SALE') return `매매 ${Number(prop.price || 0).toLocaleString()}만`
+  return ''
+}
+
 const analysisLabels = { PRICE: 'PRICE ANALYSIS', SAFETY: 'SAFETY ANALYSIS' }
 const analysisTitles = { PRICE: '시세 분석', SAFETY: '안전 분석' }
 const metricLabels = {
@@ -188,6 +246,15 @@ const analysisMetricEntries = (card) => {
   const m = card?.metrics && typeof card.metrics === 'object' ? card.metrics : {}
   return metricOrder.filter((k) => m[k] !== null && m[k] !== undefined && m[k] !== '').slice(0, 4)
     .map((k) => ({ key: k, label: metricLabels[k] || k, value: formatMetricValue(k, m[k]) }))
+}
+
+const formatSessionDate = (iso) => {
+  const d = new Date(iso)
+  const diffDays = Math.floor((Date.now() - d) / 86400000)
+  if (diffDays === 0) return '오늘'
+  if (diffDays === 1) return '어제'
+  if (diffDays < 7) return `${diffDays}일 전`
+  return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
 }
 
 const autoResize = () => {
@@ -225,15 +292,92 @@ const send = async (text) => {
 
 .chat-outer {
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
   flex: 1;
   min-height: 0;
   display: flex;
   padding: 7px;
+  gap: 7px;
   border-radius: 24px;
   background: linear-gradient(to bottom, #F1F7F6 0%, #E3F2F0 100%);
   border: 1px solid #e9e9eb;
   box-shadow: 0 40px 80px 20px rgba(233, 240, 238, 0.25);
+}
+
+/* Sidebar */
+.chat-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 6px;
+  overflow: hidden;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 10px 13px;
+  background: #ffffff;
+  border: 1px solid #e9e9eb;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.13s, color 0.13s;
+  flex-shrink: 0;
+}
+.new-chat-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.new-chat-btn:hover { border-color: #01bfa6; color: #01bfa6; }
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.session-list::-webkit-scrollbar { width: 3px; }
+.session-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+.session-item {
+  width: 100%;
+  padding: 9px 11px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.session-item:hover { background: #D8E9E7; }
+.session-item--active {
+  background: #D8E9E7;
+  border-color: transparent;
+}
+.session-item--active .session-item__title {
+  color: #1a3d3a;
+}
+.session-item--active .session-item__date {
+  color: #5a8480;
+}
+.session-item__title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+.session-item__date {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 3px 0 0;
 }
 
 .chat-card {
@@ -348,6 +492,19 @@ const send = async (text) => {
 .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
 .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)} }
+
+/* Property cards */
+.property-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 12px; cursor: pointer; transition: border-color 0.13s, box-shadow 0.13s;
+}
+.property-card:hover { border-color: #01bfa6; box-shadow: 0 2px 8px rgba(1,191,166,0.1); }
+.property-card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.property-card__info { flex: 1; min-width: 0; }
+.property-card__address { font-size: 11px; color: #9ca3af; margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.property-card__price { font-size: 13px; font-weight: 700; color: #01bfa6; white-space: nowrap; flex-shrink: 0; }
+.property-card__meta { display: flex; gap: 8px; margin-top: 6px; }
+.property-card__meta span { font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 7px; border-radius: 4px; }
 
 /* Info cards */
 .card-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
