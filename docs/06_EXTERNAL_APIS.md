@@ -154,11 +154,14 @@ The F-4 MVP uses public safety APIs only in backend batch jobs. Runtime user req
 Operators must configure service keys as environment variables:
 
 - `PUBLIC_DATA_SERVICE_KEY` for public-data endpoints such as emergency bell that require a service key.
-- `SAFETY_DATA_CCTV_URL` should point at the actual CCTV `/info` endpoint when overriding the default.
 - `SECURITY_LIGHT_SERVICE_KEY` for the security light endpoint when it uses a separate issued key.
 - `SAFEMAP_SERVICE_KEY` for the SafetyMap police/security facility source.
-- `SAFETY_DATA_EMERGENCY_BELL_URL` should point at the actual emergency bell `/info` endpoint.
-- `SAFETY_DATA_SECURITY_LIGHT_URL` should be the security light base URL without `serviceKey`.
+
+Operators can override source endpoints and paging with non-secret environment variables:
+
+- `SAFETY_DATA_CCTV_URL` should point at the CCTV `/info` base URL without query parameters or `serviceKey` when overriding the default.
+- `SAFETY_DATA_EMERGENCY_BELL_URL` should point at the actual emergency bell `/info` base URL without query parameters or `serviceKey`.
+- `SAFETY_DATA_SECURITY_LIGHT_URL` should be the security light base URL without query parameters or `serviceKey`.
 - `SAFETY_DATA_PAGE_SIZE=100` is recommended for the shared batch setting.
 
 Do not expose these keys to the frontend. The frontend and backend-ai call Spring Boot APIs only. WMS-based safety layers are not part of the MVP stored-data flow.

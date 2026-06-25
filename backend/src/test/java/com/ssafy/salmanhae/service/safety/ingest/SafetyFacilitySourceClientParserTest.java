@@ -110,7 +110,7 @@ class SafetyFacilitySourceClientParserTest {
 		List<NormalizedSafetyFacility> facilities =
 				securityLightOpenApiClient.parseFacilities(fixture("security_light.json"));
 
-		assertThat(facilities).hasSize(1);
+		assertThat(facilities).hasSize(2);
 		NormalizedSafetyFacility facility = facilities.getFirst();
 		assertThat(facility.type()).isEqualTo(SafetyFacilityType.SECURITY_LIGHT);
 		assertThat(facility.name()).isEqualTo("Test Security Light");
@@ -120,6 +120,13 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(facility.description()).isEqualTo("508020");
 		assertThat(facility.latitude().doubleValue()).isCloseTo(37.839708417620116, within(0.000001));
 		assertThat(facility.longitude().doubleValue()).isCloseTo(126.93722623764315, within(0.000001));
+
+		NormalizedSafetyFacility geomOnlyFacility = facilities.get(1);
+		assertThat(geomOnlyFacility.name()).isEqualTo("Geom Only Security Light");
+		assertThat(geomOnlyFacility.sourceId()).isEqualTo("light-geom");
+		assertThat(geomOnlyFacility.address()).isEqualTo("Geom only light address");
+		assertThat(geomOnlyFacility.latitude().doubleValue()).isCloseTo(37.839708417620116, within(0.000001));
+		assertThat(geomOnlyFacility.longitude().doubleValue()).isCloseTo(126.93722623764315, within(0.000001));
 	}
 
 	@Test
