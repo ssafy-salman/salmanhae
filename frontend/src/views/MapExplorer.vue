@@ -21,7 +21,7 @@
         <form class="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur md:grid-cols-6" @submit.prevent="refreshFromFilters">
           <label class="filter-field">
             <span>거래</span>
-            <select v-model="store.filters.transactionType">
+            <select v-model="transactionTypeModel">
               <option value="">전체</option>
               <option value="MONTHLY_RENT">월세</option>
               <option value="JEONSE">전세</option>
@@ -40,16 +40,16 @@
             </select>
           </label>
           <label class="filter-field">
-            <span>보증금 최소</span>
-            <input v-model="store.filters.minDeposit" min="0" step="1000000" type="number" placeholder="원" />
+            <span>보증금 최소(만원)</span>
+            <input v-model="store.filters.minDeposit" :disabled="depositFilterDisabled" min="0" step="100" type="number" placeholder="만원" />
           </label>
           <label class="filter-field">
-            <span>보증금 최대</span>
-            <input v-model="store.filters.maxDeposit" min="0" step="1000000" type="number" placeholder="원" />
+            <span>보증금 최대(만원)</span>
+            <input v-model="store.filters.maxDeposit" :disabled="depositFilterDisabled" min="0" step="100" type="number" placeholder="만원" />
           </label>
           <label class="filter-field">
-            <span>매매가 최소</span>
-            <input v-model="store.filters.minPrice" min="0" step="10000000" type="number" placeholder="원" />
+            <span>매매가 최소(만원)</span>
+            <input v-model="store.filters.minPrice" min="0" step="1000" type="number" placeholder="만원" />
           </label>
           <div class="flex items-end gap-2">
             <button class="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50" type="button" @click="resetFilters">
@@ -277,6 +277,13 @@ let map = null
 let idleListener = null
 let markers = []
 let markerListeners = []
+
+const transactionTypeModel = computed({
+  get: () => store.filters.transactionType,
+  set: (value) => store.setTransactionType(value)
+})
+
+const depositFilterDisabled = computed(() => store.isDepositFilterDisabled)
 
 const formattedFetchedAt = computed(() => {
   if (!store.lastFetchedAt) return ''

@@ -86,3 +86,35 @@ test('search condition state uses trimmed keyword', () => {
   assert.equal(store.normalizedSearchKeyword, '그린빌')
   assert.equal(store.hasActiveSearchConditions, true)
 })
+
+test('money filters are entered in ten-thousand won units and sent as won', () => {
+  const store = createStore()
+
+  store.filters.transactionType = 'MONTHLY_RENT'
+  store.filters.minDeposit = 500
+  store.filters.maxDeposit = 1000
+  store.filters.minPrice = 70000
+  store.filters.maxPrice = 80000
+
+  assert.equal(store.apiFilters.minDeposit, 5000000)
+  assert.equal(store.apiFilters.maxDeposit, 10000000)
+  assert.equal(store.apiFilters.minPrice, 700000000)
+  assert.equal(store.apiFilters.maxPrice, 800000000)
+})
+
+test('deposit filters are disabled and cleared for non-monthly transactions', () => {
+  const store = createStore()
+
+  store.filters.minDeposit = 500
+  store.filters.maxDeposit = 1000
+
+  store.setTransactionType('JEONSE')
+  assert.equal(store.isDepositFilterDisabled, true)
+  assert.equal(store.filters.minDeposit, '')
+  assert.equal(store.filters.maxDeposit, '')
+  assert.equal(store.apiFilters.minDeposit, '')
+  assert.equal(store.apiFilters.maxDeposit, '')
+
+  store.setTransactionType('MONTHLY_RENT')
+  assert.equal(store.isDepositFilterDisabled, false)
+})
