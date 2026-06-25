@@ -1,5 +1,5 @@
+// 채팅 관련 state/action은 chatSessionStore로 이관됨
 import { defineStore } from 'pinia'
-import { sendChatMessage } from '../api/chat.js'
 import { fetchMapViewport, fetchPropertyDetail } from '../api/properties.js'
 import { isPropertyItem, VIEWPORT_MODES } from '../utils/mapViewport.js'
 
@@ -60,16 +60,11 @@ export default defineStore('map', {
     },
     isLoading: false,
     isDetailLoading: false,
-    isChatLoading: false,
     error: '',
     detailError: '',
-    chatError: '',
-    chatSessionId: null,
-    chatMessages: [],
     lastFetchedAt: null,
     requestSeq: 0,
-    detailRequestSeq: 0,
-    chatRequestSeq: 0
+    detailRequestSeq: 0
   }),
   getters: {
     regions: () => [
@@ -221,48 +216,5 @@ export default defineStore('map', {
       this.isDetailLoading = false
       this.selectedViewportItem = item
     },
-    async sendChat(message) {
-      const text = String(message || '').trim()
-      if (!text || this.isChatLoading) return
-
-      const seq = ++this.chatRequestSeq
-      this.chatMessages.push({ role: 'user', text })
-      this.isChatLoading = true
-      this.chatError = ''
-
-      try {
-        const response = await sendChatMessage({
-          message: text,
-          sessionId: this.chatSessionId,
-          selectedPropertyId: this.selectedPropertyId
-        })
-
-        if (seq !== this.chatRequestSeq) return
-
-        this.chatSessionId = response.sessionId || this.chatSessionId
-        this.chatMessages.push({
-          role: 'bot',
-          text: response.message,
-          intent: response.intent,
-          legalCards: response.legalCards,
-          analysisCards: response.analysisCards,
-          properties: response.properties
-        })
-      } catch (error) {
-        if (seq !== this.chatRequestSeq) return
-        this.chatError = error.response?.data?.message || 'AI 계약 상담 응답을 불러오지 못했습니다.'
-        this.chatMessages.push({
-          role: 'bot',
-          text: this.chatError,
-          isError: true,
-          legalCards: [],
-          analysisCards: []
-        })
-      } finally {
-        if (seq === this.chatRequestSeq) {
-          this.isChatLoading = false
-        }
-      }
-    }
   }
 })
