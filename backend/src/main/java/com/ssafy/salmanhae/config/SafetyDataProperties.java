@@ -9,6 +9,7 @@ public class SafetyDataProperties {
 	private static final String DEFAULT_CCTV_URL = "https://apis.data.go.kr/1741000/cctv_info/info";
 	private static final String DEFAULT_SAFEMAP_POLICE_URL = "https://www.safemap.go.kr/openapi2/IF_0036";
 	private static final int DEFAULT_PAGE_SIZE = 1000;
+	private static final int DEFAULT_MAX_PAGES = 1000;
 
 	@Value("${safety.data.public-service-key:}")
 	private String publicServiceKey;
@@ -33,6 +34,9 @@ public class SafetyDataProperties {
 
 	@Value("${safety.data.page-size:1000}")
 	private Integer pageSize;
+
+	@Value("${safety.data.max-pages:1000}")
+	private Integer maxPages;
 
 	public String publicServiceKey() {
 		return firstNonBlank(publicServiceKey, System.getenv("PUBLIC_DATA_SERVICE_KEY"));
@@ -64,6 +68,10 @@ public class SafetyDataProperties {
 
 	public int pageSize() {
 		return pageSize == null || pageSize < 1 ? DEFAULT_PAGE_SIZE : pageSize;
+	}
+
+	public int maxPages() {
+		return maxPages == null || maxPages < 1 ? DEFAULT_MAX_PAGES : maxPages;
 	}
 
 	private String defaultIfBlank(String value, String fallback) {

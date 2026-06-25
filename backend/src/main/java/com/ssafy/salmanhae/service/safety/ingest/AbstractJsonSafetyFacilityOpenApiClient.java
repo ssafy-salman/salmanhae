@@ -15,8 +15,6 @@ import com.ssafy.salmanhae.config.SafetyDataProperties;
 
 abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacilitySourceClient {
 
-	private static final int MAX_PAGES = 1000;
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final String sourceName;
@@ -60,16 +58,9 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
 		int totalCount = -1;
-		while (pageNo <= MAX_PAGES && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
-			URI uri = UriComponentsBuilder.fromUriString(baseUrl)
-					.queryParam("serviceKey", serviceKey)
-					.queryParam("pageNo", pageNo)
-					.queryParam("numOfRows", pageSize)
-					.queryParam("type", "json")
-					.queryParam("returnType", "json")
-					.build()
-					.encode()
-					.toUri();
+		int maxPages = SafetyFacilityHttpSupport.cappedMaxPages(properties.maxPages());
+		while (pageNo <= maxPages && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
+			URI uri = pagedJsonUri(baseUrl, serviceKey, pageNo, pageSize);
 			String body;
 			try {
 				body = restClient.get().uri(uri).retrieve().body(String.class);
@@ -106,10 +97,21 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 			}
 			pageNo++;
 		}
-		if (pageNo > MAX_PAGES) {
-			log.warn("Stopped fetching {} safety facilities after reaching max page limit {}", payloadName, MAX_PAGES);
+		if (pageNo > maxPages) {
+			log.warn("Stopped fetching {} safety facilities after reaching max page limit {}", payloadName, maxPages);
 		}
 		return facilities;
+	}
+
+	URI pagedJsonUri(String baseUrl, String serviceKey, int pageNo, int pageSize) {
+		return UriComponentsBuilder.fromUriString(baseUrl)
+				.queryParam("serviceKey", SafetyFacilityHttpSupport.encodedQueryParam(serviceKey))
+				.queryParam("pageNo", pageNo)
+				.queryParam("numOfRows", pageSize)
+				.queryParam("type", "json")
+				.queryParam("returnType", "json")
+				.build(true)
+				.toUri();
 	}
 
 	public List<NormalizedSafetyFacility> parseFacilities(String json) {

@@ -3,6 +3,7 @@ package com.ssafy.salmanhae.service.safety.ingest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -67,6 +68,32 @@ class SafetyFacilitySourceClientParserTest {
 		assertThat(client.capturedBaseUrl).isEqualTo("https://apis.data.go.kr/1741000/cctv_info/info");
 		assertThat(client.capturedServiceKey).isEqualTo("public-data-key");
 		assertThat(client.capturedPageSize).isEqualTo(100);
+	}
+
+	@Test
+	void cctvClientEncodesServiceKeyQueryParameter() {
+		URI uri = cctvOpenApiClient.pagedJsonUri(
+				"https://apis.data.go.kr/1741000/cctv_info/info",
+				"a+b/c==",
+				2,
+				100
+		);
+
+		assertThat(uri.getRawQuery()).contains("serviceKey=a%2Bb%2Fc%3D%3D");
+		assertThat(uri.getRawQuery()).contains("pageNo=2");
+		assertThat(uri.getRawQuery()).contains("numOfRows=100");
+	}
+
+	@Test
+	void safetyDataPropertiesNormalizesInvalidMaxPages() {
+		SafetyDataProperties properties = new SafetyDataProperties();
+		ReflectionTestUtils.setField(properties, "maxPages", 0);
+
+		assertThat(properties.maxPages()).isEqualTo(1000);
+
+		ReflectionTestUtils.setField(properties, "maxPages", 3);
+
+		assertThat(properties.maxPages()).isEqualTo(3);
 	}
 
 	@Test

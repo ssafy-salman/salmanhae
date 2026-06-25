@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -21,6 +22,7 @@ import com.ssafy.salmanhae.config.SafetyDataProperties;
 import com.ssafy.salmanhae.model.dto.safety.SafetyFacilityType;
 
 @Component
+@ConditionalOnProperty(name = "safety.data.safemap-police-enabled", havingValue = "true")
 public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 
 	static final String SOURCE = "IF_0036";
@@ -44,14 +46,14 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 	public List<NormalizedSafetyFacility> fetchFacilities() {
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
-		while (true) {
+		int maxPages = SafetyFacilityHttpSupport.cappedMaxPages(properties.maxPages());
+		while (pageNo <= maxPages) {
 			URI uri = UriComponentsBuilder.fromUriString(properties.safemapPoliceUrl())
-					.queryParam("serviceKey", properties.safemapServiceKey())
+					.queryParam("serviceKey", SafetyFacilityHttpSupport.encodedQueryParam(properties.safemapServiceKey()))
 					.queryParam("pageNo", pageNo)
 					.queryParam("numOfRows", properties.pageSize())
 					.queryParam("returnType", "xml")
-					.build()
-					.encode()
+					.build(true)
 					.toUri();
 			String body;
 			try {
@@ -78,6 +80,9 @@ public class SafemapPoliceFacilityClient implements SafetyFacilitySourceClient {
 				break;
 			}
 			pageNo++;
+		}
+		if (pageNo > maxPages) {
+			log.warn("Stopped fetching Safemap police safety facilities after reaching max page limit {}", maxPages);
 		}
 		return facilities;
 	}
