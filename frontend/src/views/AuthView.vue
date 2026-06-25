@@ -152,7 +152,6 @@ async function handleLogin() {
   errorMsg.value = ''
   try {
     // TODO: useAuthStore().login({ email, password }) 연결
-    console.log('login', email.value)
     router.push('/')
   } catch (e) {
     errorMsg.value = e?.response?.data?.message ?? '로그인에 실패했습니다.'
@@ -166,7 +165,6 @@ async function handleRegister() {
   errorMsg.value = ''
   try {
     // TODO: useAuthStore().register({ name, email, password }) 연결
-    console.log('register', name.value, email.value)
     switchMode('login')
   } catch (e) {
     errorMsg.value = e?.response?.data?.message ?? '회원가입에 실패했습니다.'

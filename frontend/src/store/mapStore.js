@@ -65,14 +65,7 @@ export default defineStore('map', {
     detailError: '',
     chatError: '',
     chatSessionId: null,
-    chatMessages: [
-      {
-        role: 'bot',
-        text: '계약서, 보증금 회수, 확정일자처럼 헷갈리는 전월세 법률 질문을 물어보세요.',
-        legalCards: [],
-        analysisCards: []
-      }
-    ],
+    chatMessages: [],
     lastFetchedAt: null,
     requestSeq: 0,
     detailRequestSeq: 0,
