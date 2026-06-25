@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -76,7 +77,8 @@ PROPERTY_CRITERIA_PROMPT = """\
 - max_deposit: 최대 보증금 (원 단위, 숫자만)
 - max_monthly_rent: 최대 월세 (원 단위, 숫자만)
 - max_price: 최대 매매가 (원 단위, 숫자만)
-- sort_by: "price_asc" (가장 싼, 저렴한, 싼 순, 최저가 등 저가 정렬 요청 시) | null (그 외)
+- sort_by: "price_asc" (가장 싼, 저렴한, 싼 순, 최저가 등 저가 정렬 요청 시) | "safety_desc" (안전한, 치안 좋은, 안전점수 높은 순, CCTV 많은 매물 요청 시) | null (그 외)
+- min_safety_score: 사용자가 안전점수 하한을 명시한 경우 해당 숫자 | null
 - limit: 사용자가 명시적으로 개수를 요청한 경우 해당 숫자 (예: "1개", "3개 보여줘") | null (그 외)
 
 JSON만 반환해. 설명 없이.\
@@ -164,6 +166,9 @@ class LLMClient:
             return None
 
     def extract_property_criteria(self, message: str) -> dict[str, Any]:
+        if not self.api_key or not self.model:
+            return fallback_property_criteria(message)
+
         prompt = PROPERTY_CRITERIA_PROMPT.format(message=message)
         try:
             response = self.http_post(
@@ -184,7 +189,7 @@ class LLMClient:
             parsed = json.loads(text)
             return parsed if isinstance(parsed, dict) else {}
         except (httpx.HTTPError, json.JSONDecodeError, KeyError, TypeError, ValueError):
-            return {}
+            return fallback_property_criteria(message)
 
     def generate_answer(self, state: AgentState) -> str:
         workers_called = state.get("workers_called", [])
@@ -321,6 +326,7 @@ class LLMClient:
             deposit = p.get("deposit")
             rent = p.get("monthly_rent")
             price = p.get("price")
+            safety_score = p.get("safety_score")
             if tx == "월세" and deposit is not None and rent is not None:
                 price_str = f"{int(deposit) // 10000:,}/{int(rent) // 10000:,}만원"
             elif tx == "전세" and deposit is not None:
@@ -329,7 +335,8 @@ class LLMClient:
                 price_str = f"매매 {int(price) // 10000:,}만원"
             else:
                 price_str = ""
-            tag = " · ".join(x for x in [pt, tx, price_str] if x)
+            safety_str = f"안전점수 {safety_score}점" if safety_score is not None else ""
+            tag = " · ".join(x for x in [pt, tx, price_str, safety_str] if x)
             lines.append(f"- {name} ({tag})")
 
         prop_summary = "\n".join(lines)
@@ -400,6 +407,49 @@ class LLMClient:
             return extract_chat_completion_text(response.json())
         except (httpx.HTTPError, KeyError, TypeError, ValueError):
             return None
+
+
+def fallback_property_criteria(message: str) -> dict[str, Any]:
+    normalized = (message or "").lower()
+    criteria: dict[str, Any] = {}
+
+    property_type_terms = {
+        "\uc6d0\ub8f8": "ONE_ROOM",
+        "\uc624\ud53c\uc2a4\ud154": "OFFICETEL",
+        "\ube4c\ub77c": "VILLA",
+        "\uc544\ud30c\ud2b8": "APARTMENT",
+        "\ub2e4\uc138\ub300": "MULTI_FAMILY",
+    }
+    for term, property_type in property_type_terms.items():
+        if term in normalized:
+            criteria["property_type"] = property_type
+            break
+
+    transaction_type_terms = {
+        "\uc6d4\uc138": "MONTHLY_RENT",
+        "\uc804\uc138": "JEONSE",
+        "\ub9e4\ub9e4": "SALE",
+    }
+    for term, transaction_type in transaction_type_terms.items():
+        if term in normalized:
+            criteria["transaction_type"] = transaction_type
+            break
+
+    safety_terms = ["\uc548\uc804", "\uce58\uc548", "cctv", "\ubc29\ubc94", "\ubc94\uc8c4"]
+    if any(term in normalized for term in safety_terms):
+        criteria["sort_by"] = "safety_desc"
+    elif any(term in normalized for term in ["\uc800\ub834", "\uc2fc", "\ucd5c\uc800\uac00"]):
+        criteria["sort_by"] = "price_asc"
+
+    min_safety_match = re.search(r"(\d{2,3})\s*\uc810\s*\uc774\uc0c1", normalized)
+    if min_safety_match:
+        criteria["min_safety_score"] = int(min_safety_match.group(1))
+
+    limit_match = re.search(r"(\d+)\s*(?:\uac1c|\uac74)", normalized)
+    if limit_match:
+        criteria["limit"] = int(limit_match.group(1))
+
+    return criteria
 
 
 def extract_chat_completion_text(payload: Any) -> str | None:

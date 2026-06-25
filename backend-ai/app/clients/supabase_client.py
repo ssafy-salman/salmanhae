@@ -77,11 +77,11 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
+                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
                 # IVFFlat 인덱스가 lists=100으로 설정돼 있으나 데이터 수가 적을 때
                 # 기본 probes=1이면 대부분의 클러스터를 건너뛰어 결과가 0개가 됨.
                 # probes를 lists 값과 동일하게 설정해 전체 인덱스를 탐색하도록 한다.
-                cursor.execute("set local ivfflat.probes = 100")
+                cursor.execute("set local ivfflat.probes = %s", (100,))
                 cursor.execute(sql, (vector_literal, vector_literal, top_k))
                 return list(cursor.fetchall())
 
@@ -133,26 +133,26 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
+                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
     def search_properties(self, criteria: dict[str, Any], limit: int = 20) -> list[dict[str, Any]]:
-        conditions = ["is_active = true"]
+        conditions = ["p.is_active = true"]
         params: list[Any] = []
 
         field_map = {
-            "sigungu": ("sigungu = %s", "sigungu"),
-            "dong": ("dong = %s", "dong"),
-            "property_type": ("property_type = %s", "property_type"),
-            "transaction_type": ("transaction_type = %s", "transaction_type"),
+            "sigungu": "p.sigungu = %s",
+            "dong": "p.dong = %s",
+            "property_type": "p.property_type = %s",
+            "transaction_type": "p.transaction_type = %s",
         }
         range_map = {
-            "max_deposit": "deposit <= %s",
-            "max_monthly_rent": "monthly_rent <= %s",
-            "max_price": "price <= %s",
+            "max_deposit": "p.deposit <= %s",
+            "max_monthly_rent": "p.monthly_rent <= %s",
+            "max_price": "p.price <= %s",
         }
 
-        for key, (condition, _) in field_map.items():
+        for key, condition in field_map.items():
             if criteria.get(key):
                 conditions.append(condition)
                 params.append(criteria[key])
@@ -162,24 +162,34 @@ class SupabaseVectorClient:
                 conditions.append(condition)
                 params.append(criteria[key])
 
+        min_safety_score = parse_int_criteria(criteria.get("min_safety_score"))
+        if min_safety_score is not None:
+            conditions.append("pss.safety_score >= %s")
+            params.append(min_safety_score)
+
         sort_by = criteria.get("sort_by")
         if sort_by == "price_asc":
             order_clause = """
-                CASE transaction_type
-                    WHEN 'SALE' THEN price
-                    WHEN 'JEONSE' THEN deposit
-                    WHEN 'MONTHLY_RENT' THEN monthly_rent
-                    ELSE COALESCE(price, deposit, monthly_rent)
+                CASE p.transaction_type
+                    WHEN 'SALE' THEN p.price
+                    WHEN 'JEONSE' THEN p.deposit
+                    WHEN 'MONTHLY_RENT' THEN p.monthly_rent
+                    ELSE COALESCE(p.price, p.deposit, p.monthly_rent)
                 END ASC NULLS LAST
             """
+        elif sort_by == "safety_desc":
+            order_clause = "pss.safety_score DESC NULLS LAST, p.created_at DESC"
         else:
-            order_clause = "created_at DESC"
+            order_clause = "p.created_at DESC"
 
         where_clause = " AND ".join(conditions)
         sql = f"""
-            SELECT id, title, building_name, address, property_type, transaction_type,
-                   deposit, monthly_rent, price, area_m2, floor, latitude, longitude
-            FROM public.properties
+            SELECT p.id, p.title, p.building_name, p.address, p.property_type, p.transaction_type,
+                   p.deposit, p.monthly_rent, p.price, p.area_m2, p.floor, p.latitude, p.longitude,
+                   pss.safety_score, pss.cctv_count_300m, pss.bell_count_300m,
+                   pss.light_count_300m, pss.police_count_500m
+            FROM public.properties p
+            LEFT JOIN public.property_score_stat pss ON pss.property_id = p.id
             WHERE {where_clause}
             ORDER BY {order_clause}
             LIMIT %s
@@ -192,7 +202,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
+                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
                 cursor.execute(sql, params)
                 return list(cursor.fetchall())
 
@@ -317,7 +327,7 @@ class SupabaseVectorClient:
             connect_timeout=self.connect_timeout_seconds,
         ) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"set local statement_timeout = {int(self.statement_timeout_ms)}")
+                cursor.execute("set local statement_timeout = %s", (int(self.statement_timeout_ms),))
                 for row_params in params:
                     cursor.execute(sql, row_params)
                     affected_rows += max(int(getattr(cursor, "rowcount", 1)), 0)
@@ -362,6 +372,15 @@ def parse_pgvector_value(value: Any) -> list[float]:
 def parse_float_value(value: Any) -> float | None:
     try:
         return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_int_criteria(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
     except (TypeError, ValueError):
         return None
 

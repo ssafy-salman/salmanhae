@@ -60,7 +60,7 @@
                 v-for="prop in msg.properties"
                 :key="prop.id"
                 class="property-card"
-                @click="store.selectProperty && store.selectProperty(prop)"
+                @click="store.selectProperty && store.selectProperty(prop.id)"
               >
                 <div class="property-card__head">
                   <div class="property-card__info">
@@ -70,9 +70,10 @@
                   </div>
                   <p class="property-card__price">{{ formatPropertyPrice(prop) }}</p>
                 </div>
-                <div v-if="prop.area_m2 || prop.floor" class="property-card__meta">
+                <div v-if="prop.area_m2 || prop.floor || hasSafetyScore(prop)" class="property-card__meta">
                   <span v-if="prop.area_m2">{{ prop.area_m2 }}㎡</span>
                   <span v-if="prop.floor">{{ prop.floor }}층</span>
+                  <span v-if="hasSafetyScore(prop)">안전점수 {{ prop.safety_score }}</span>
                 </div>
               </div>
             </div>
@@ -211,6 +212,7 @@ const txTypeLabels = { MONTHLY_RENT: '월세', JEONSE: '전세', SALE: '매매' 
 const propTypeLabel = (t) => propTypeLabels[t] || t || ''
 const txTypeLabel = (t) => txTypeLabels[t] || t || ''
 const toMan = (won) => Math.round(Number(won || 0) / 10000).toLocaleString()
+const hasSafetyScore = (prop) => prop?.safety_score !== null && prop?.safety_score !== undefined
 const formatPropertyPrice = (prop) => {
   const tx = prop.transaction_type
   if (tx === 'MONTHLY_RENT') return `${toMan(prop.deposit)}/${toMan(prop.monthly_rent)}만원`

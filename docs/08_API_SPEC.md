@@ -736,3 +736,32 @@ Backend AI `SAFETY_ANALYSIS` uses Spring Boot only:
 4. Generate a Korean answer that clearly shows the score and facility counts when present.
 
 If `selectedPropertyId` is missing, backend-ai returns a selection-required fallback instead of calling Spring. If Spring is unavailable, backend-ai returns a controlled fallback with `error = SPRING_API_UNAVAILABLE`.
+
+## F-4 Safety-Aware Property Search
+
+For chat property recommendations, backend-ai may include precomputed safety score fields from `property_score_stat` in each `properties[]` item:
+
+```json
+{
+  "id": 1,
+  "title": "Gwanak One Room",
+  "building_name": "Green Villa",
+  "address": "Seoul Gwanak-gu ...",
+  "property_type": "ONE_ROOM",
+  "transaction_type": "MONTHLY_RENT",
+  "deposit": 10000000,
+  "monthly_rent": 500000,
+  "price": null,
+  "area_m2": 22.5,
+  "floor": 3,
+  "latitude": 37.470123,
+  "longitude": 126.936456,
+  "safety_score": 91,
+  "cctv_count_300m": 12,
+  "bell_count_300m": 3,
+  "light_count_300m": 21,
+  "police_count_500m": 1
+}
+```
+
+When the extracted property-search criteria contains `sort_by = "safety_desc"`, backend-ai orders recommendations by `property_score_stat.safety_score DESC NULLS LAST`. If `min_safety_score` is present, backend-ai filters out rows below that stored score. This still uses stored DB values only; public safety APIs are not called during chat requests.

@@ -250,13 +250,17 @@ export default defineStore('map', {
     async fetchProperties(bounds = this.bounds) {
       await this.fetchViewport(bounds)
     },
-    async selectProperty(id) {
+    async selectProperty(propertyOrId) {
+      const id = propertyOrId && typeof propertyOrId === 'object' ? propertyOrId.id : propertyOrId
+      if (id === null || id === undefined || id === '') return
       const seq = ++this.detailRequestSeq
       this.selectedPropertyId = id
       this.selectedViewportItem = null
       this.detailError = ''
       this.transactionError = ''
-      this.selectedProperty = this.properties.find((property) => property.id === id) || null
+      this.selectedProperty =
+        this.properties.find((property) => property.id === id) ||
+        (propertyOrId && typeof propertyOrId === 'object' ? propertyOrId : null)
       this.selectedPropertyTransactions = []
       this.selectedPropertyTransactionsTotal = 0
       this.isDetailLoading = true
