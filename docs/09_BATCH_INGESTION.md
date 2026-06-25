@@ -228,7 +228,8 @@ Required keys must be supplied through environment variables or platform secret 
 
 | Environment variable | Used by |
 | --- | --- |
-| `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell and security light when endpoint URLs require a service key. |
+| `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell when endpoint URLs require a service key. |
+| `SECURITY_LIGHT_SERVICE_KEY` | Security light source when it uses a separately issued service key. |
 | `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source. |
 
 Verification checklist:

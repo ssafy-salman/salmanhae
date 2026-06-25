@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,6 +75,24 @@ class SafetyFacilitySourceClientParserTest {
 	}
 
 	@Test
+	void securityLightClientUsesDedicatedServiceKey() {
+		SafetyDataProperties properties = new SafetyDataProperties();
+		ReflectionTestUtils.setField(properties, "publicServiceKey", "emergency-key");
+		ReflectionTestUtils.setField(properties, "securityLightServiceKey", "security-light-key");
+		ReflectionTestUtils.setField(properties, "securityLightUrl", "https://www.safetydata.go.kr/V2/api/DSSP-IF-00083");
+		CapturingSecurityLightOpenApiClient client = new CapturingSecurityLightOpenApiClient(
+				properties,
+				RestClient.builder(),
+				new ObjectMapper()
+		);
+
+		client.fetchFacilities();
+
+		assertThat(client.capturedBaseUrl).isEqualTo("https://www.safetydata.go.kr/V2/api/DSSP-IF-00083");
+		assertThat(client.capturedServiceKey).isEqualTo("security-light-key");
+	}
+
+	@Test
 	void safemapPoliceXmlParserUsesIf0036SourceAndSkipsInvalidCoordinates() throws Exception {
 		List<NormalizedSafetyFacility> facilities =
 				safemapPoliceFacilityClient.parseFacilities(fixture("safemap_police.xml"));
@@ -90,5 +109,26 @@ class SafetyFacilitySourceClientParserTest {
 	private String fixture(String filename) throws Exception {
 		return new ClassPathResource("fixtures/safety/" + filename)
 				.getContentAsString(StandardCharsets.UTF_8);
+	}
+
+	private static class CapturingSecurityLightOpenApiClient extends SecurityLightOpenApiClient {
+
+		private String capturedBaseUrl;
+		private String capturedServiceKey;
+
+		CapturingSecurityLightOpenApiClient(
+				SafetyDataProperties properties,
+				RestClient.Builder restClientBuilder,
+				ObjectMapper objectMapper
+		) {
+			super(properties, restClientBuilder, objectMapper);
+		}
+
+		@Override
+		List<NormalizedSafetyFacility> fetchPagedJson(String baseUrl, String serviceKey) {
+			this.capturedBaseUrl = baseUrl;
+			this.capturedServiceKey = serviceKey;
+			return List.of();
+		}
 	}
 }

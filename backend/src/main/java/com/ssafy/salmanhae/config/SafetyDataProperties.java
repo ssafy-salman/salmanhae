@@ -16,6 +16,9 @@ public class SafetyDataProperties {
 	@Value("${safety.data.safemap-service-key:}")
 	private String safemapServiceKey;
 
+	@Value("${safety.data.security-light-service-key:}")
+	private String securityLightServiceKey;
+
 	@Value("${safety.data.cctv-url:}")
 	private String cctvUrl;
 
@@ -37,6 +40,10 @@ public class SafetyDataProperties {
 
 	public String safemapServiceKey() {
 		return firstNonBlank(safemapServiceKey, System.getenv("SAFEMAP_SERVICE_KEY"));
+	}
+
+	public String securityLightServiceKey() {
+		return firstNonBlank(securityLightServiceKey, System.getenv("SECURITY_LIGHT_SERVICE_KEY"));
 	}
 
 	public String cctvUrl() {

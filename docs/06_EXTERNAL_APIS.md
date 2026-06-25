@@ -135,7 +135,7 @@ instead of calling public APIs during user requests.
 | --- | --- | --- | --- | --- |
 | CCTV CSV | `CCTV` | `safety.data.cctv-url`, default `https://file.localdata.go.kr/file/cctv_info/info` | CSV | LocalData file export. Invalid or missing coordinates are skipped. |
 | Emergency bell OpenAPI | `EMERGENCY_BELL` | `safety.data.emergency-bell-url` | JSON | Endpoint is environment-specific; uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. |
-| Security light OpenAPI | `SECURITY_LIGHT` | `safety.data.security-light-url` | JSON | Endpoint is environment-specific; uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. |
+| Security light OpenAPI | `SECURITY_LIGHT` | `safety.data.security-light-url` | JSON | Endpoint is environment-specific; uses `safety.data.security-light-service-key` or `SECURITY_LIGHT_SERVICE_KEY`. |
 | SafetyMap police facility IF_0036 | `POLICE` | `safety.data.safemap-police-url`, default `https://www.safemap.go.kr/openapi2/IF_0036` | XML | Uses `safety.data.safemap-service-key` or `SAFEMAP_SERVICE_KEY`; `x` is longitude and `y` is latitude. |
 
 Common paging config: `safety.data.page-size` defaults to `1000`.
@@ -153,7 +153,8 @@ The F-4 MVP uses public safety APIs only in backend batch jobs. Runtime user req
 
 Operators must configure service keys as environment variables:
 
-- `PUBLIC_DATA_SERVICE_KEY` for public-data endpoints that require a service key.
+- `PUBLIC_DATA_SERVICE_KEY` for public-data endpoints such as emergency bell that require a service key.
+- `SECURITY_LIGHT_SERVICE_KEY` for the security light endpoint when it uses a separate issued key.
 - `SAFEMAP_SERVICE_KEY` for the SafetyMap police/security facility source.
 
 Do not expose these keys to the frontend. The frontend and backend-ai call Spring Boot APIs only. WMS-based safety layers are not part of the MVP stored-data flow.

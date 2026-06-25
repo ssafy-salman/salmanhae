@@ -29,7 +29,7 @@ public class SecurityLightOpenApiClient extends AbstractJsonSafetyFacilityOpenAp
 
 	@Override
 	public List<NormalizedSafetyFacility> fetchFacilities() {
-		return fetchPagedJson(properties.securityLightUrl(), properties.publicServiceKey());
+		return fetchPagedJson(properties.securityLightUrl(), properties.securityLightServiceKey());
 	}
 
 	@Override
