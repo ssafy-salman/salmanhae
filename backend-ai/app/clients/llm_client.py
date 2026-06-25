@@ -322,11 +322,11 @@ class LLMClient:
             rent = p.get("monthly_rent")
             price = p.get("price")
             if tx == "월세" and deposit is not None and rent is not None:
-                price_str = f"{int(deposit):,}/{int(rent):,}만원"
+                price_str = f"{int(deposit) // 10000:,}/{int(rent) // 10000:,}만원"
             elif tx == "전세" and deposit is not None:
-                price_str = f"전세 {int(deposit):,}만원"
+                price_str = f"전세 {int(deposit) // 10000:,}만원"
             elif tx == "매매" and price is not None:
-                price_str = f"매매 {int(price):,}만원"
+                price_str = f"매매 {int(price) // 10000:,}만원"
             else:
                 price_str = ""
             tag = " · ".join(x for x in [pt, tx, price_str] if x)

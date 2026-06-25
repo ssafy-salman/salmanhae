@@ -210,11 +210,12 @@ const propTypeLabels = {
 const txTypeLabels = { MONTHLY_RENT: '월세', JEONSE: '전세', SALE: '매매' }
 const propTypeLabel = (t) => propTypeLabels[t] || t || ''
 const txTypeLabel = (t) => txTypeLabels[t] || t || ''
+const toMan = (won) => Math.round(Number(won || 0) / 10000).toLocaleString()
 const formatPropertyPrice = (prop) => {
   const tx = prop.transaction_type
-  if (tx === 'MONTHLY_RENT') return `${Number(prop.deposit || 0).toLocaleString()}/${Number(prop.monthly_rent || 0).toLocaleString()}만`
-  if (tx === 'JEONSE') return `전세 ${Number(prop.deposit || 0).toLocaleString()}만`
-  if (tx === 'SALE') return `매매 ${Number(prop.price || 0).toLocaleString()}만`
+  if (tx === 'MONTHLY_RENT') return `${toMan(prop.deposit)}/${toMan(prop.monthly_rent)}만원`
+  if (tx === 'JEONSE') return `전세 ${toMan(prop.deposit)}만원`
+  if (tx === 'SALE') return `매매 ${toMan(prop.price)}만원`
   return ''
 }
 
