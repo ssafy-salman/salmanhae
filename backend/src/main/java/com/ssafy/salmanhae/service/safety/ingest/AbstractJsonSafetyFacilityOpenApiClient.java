@@ -1,6 +1,8 @@
 package com.ssafy.salmanhae.service.safety.ingest;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,16 +62,9 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 		List<NormalizedSafetyFacility> facilities = new ArrayList<>();
 		int pageNo = 1;
 		int totalCount = -1;
-		while (pageNo <= MAX_PAGES && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
-			URI uri = UriComponentsBuilder.fromUriString(baseUrl)
-					.queryParam("serviceKey", serviceKey)
-					.queryParam("pageNo", pageNo)
-					.queryParam("numOfRows", pageSize)
-					.queryParam("type", "json")
-					.queryParam("returnType", "json")
-					.build()
-					.encode()
-					.toUri();
+		int maxPages = Math.min(properties.maxPages(), MAX_PAGES);
+		while (pageNo <= maxPages && (totalCount < 0 || (long) (pageNo - 1) * pageSize < totalCount)) {
+			URI uri = pagedJsonUri(baseUrl, serviceKey, pageNo, pageSize);
 			String body;
 			try {
 				body = restClient.get().uri(uri).retrieve().body(String.class);
@@ -106,10 +101,25 @@ abstract class AbstractJsonSafetyFacilityOpenApiClient implements SafetyFacility
 			}
 			pageNo++;
 		}
-		if (pageNo > MAX_PAGES) {
-			log.warn("Stopped fetching {} safety facilities after reaching max page limit {}", payloadName, MAX_PAGES);
+		if (pageNo > maxPages) {
+			log.warn("Stopped fetching {} safety facilities after reaching max page limit {}", payloadName, maxPages);
 		}
 		return facilities;
+	}
+
+	URI pagedJsonUri(String baseUrl, String serviceKey, int pageNo, int pageSize) {
+		return UriComponentsBuilder.fromUriString(baseUrl)
+				.queryParam("serviceKey", encodedQueryParam(serviceKey))
+				.queryParam("pageNo", pageNo)
+				.queryParam("numOfRows", pageSize)
+				.queryParam("type", "json")
+				.queryParam("returnType", "json")
+				.build(true)
+				.toUri();
+	}
+
+	private String encodedQueryParam(String value) {
+		return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
 	}
 
 	public List<NormalizedSafetyFacility> parseFacilities(String json) {

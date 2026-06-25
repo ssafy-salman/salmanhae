@@ -136,9 +136,9 @@ instead of calling public APIs during user requests.
 | CCTV OpenAPI | `CCTV` | `safety.data.cctv-url`, default `https://apis.data.go.kr/1741000/cctv_info/info` | JSON | Uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. The `/info` endpoint exposes `WGS84_LAT` and `WGS84_LOT`; `numOfRows` is capped at 100. |
 | Emergency bell OpenAPI | `EMERGENCY_BELL` | `safety.data.emergency-bell-url` | JSON | Endpoint is environment-specific; uses `safety.data.public-service-key` or `PUBLIC_DATA_SERVICE_KEY`. The `/info` endpoint exposes `WGS84_LAT` and `WGS84_LOT`; `numOfRows` is capped at 100. |
 | Security light OpenAPI | `SECURITY_LIGHT` | `safety.data.security-light-url` | JSON | Endpoint is environment-specific; uses `safety.data.security-light-service-key` or `SECURITY_LIGHT_SERVICE_KEY`. `body[]` rows expose `XMAP_CRTS` and `YMAP_CRTS` in Web Mercator and are converted to WGS84 before storage. |
-| SafetyMap police facility IF_0036 | `POLICE` | `safety.data.safemap-police-url`, default `https://www.safemap.go.kr/openapi2/IF_0036` | XML | Uses `safety.data.safemap-service-key` or `SAFEMAP_SERVICE_KEY`; `x` is longitude and `y` is latitude. |
+| SafetyMap police facility IF_0036 | `POLICE` | `safety.data.safemap-police-url`, default `https://www.safemap.go.kr/openapi2/IF_0036` | XML | Disabled by default. Enable with `safety.data.safemap-police-enabled=true` only after the `SAFEMAP_SERVICE_KEY` is registered for IF_0036; `x` is longitude and `y` is latitude. |
 
-Common paging config: `safety.data.page-size` defaults to `1000`. Emergency bell requests are capped at `100` because the API rejects larger `numOfRows` values.
+Common paging config: `safety.data.page-size` defaults to `1000`, and `safety.data.max-pages` defaults to `1000`. Emergency bell and CCTV requests are capped at `100` because those APIs reject larger `numOfRows` values.
 
 ## F-4 Safety API Operations
 
@@ -163,5 +163,7 @@ Operators can override source endpoints and paging with non-secret environment v
 - `SAFETY_DATA_EMERGENCY_BELL_URL` should point at the actual emergency bell `/info` base URL without query parameters or `serviceKey`.
 - `SAFETY_DATA_SECURITY_LIGHT_URL` should be the security light base URL without query parameters or `serviceKey`.
 - `SAFETY_DATA_PAGE_SIZE=100` is recommended for the shared batch setting.
+- `SAFETY_DATA_MAX_PAGES` can be lowered for smoke tests or limited refreshes.
+- `SAFETY_DATA_SAFEMAP_POLICE_ENABLED=true` enables the Safemap IF_0036 source after a valid key is available.
 
 Do not expose these keys to the frontend. The frontend and backend-ai call Spring Boot APIs only. WMS-based safety layers are not part of the MVP stored-data flow.

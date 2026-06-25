@@ -231,10 +231,12 @@ Required keys must be supplied through environment variables or platform secret 
 | `PUBLIC_DATA_SERVICE_KEY` | Public data sources such as emergency bell when endpoint URLs require a service key. |
 | `SAFETY_DATA_CCTV_URL` | CCTV `/info` endpoint base URL without query parameters. Defaults to `https://apis.data.go.kr/1741000/cctv_info/info`. |
 | `SECURITY_LIGHT_SERVICE_KEY` | Security light source when it uses a separately issued service key. |
-| `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source. |
+| `SAFEMAP_SERVICE_KEY` | SafetyMap police/security facility XML source when `SAFETY_DATA_SAFEMAP_POLICE_ENABLED=true`. |
 | `SAFETY_DATA_EMERGENCY_BELL_URL` | Emergency bell `/info` endpoint base URL without query parameters. |
 | `SAFETY_DATA_SECURITY_LIGHT_URL` | Security light endpoint base URL without query parameters. |
 | `SAFETY_DATA_PAGE_SIZE` | Recommended `100` for production batch runs because emergency bell allows up to 100 rows per page. |
+| `SAFETY_DATA_MAX_PAGES` | Maximum pages to fetch per paged source. Lower this for smoke tests and limited refreshes. |
+| `SAFETY_DATA_SAFEMAP_POLICE_ENABLED` | Defaults to `false`; set `true` only after `SAFEMAP_SERVICE_KEY` is registered for IF_0036. |
 
 Verification checklist:
 
