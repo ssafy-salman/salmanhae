@@ -54,6 +54,27 @@ test('viewport summary selection remains for non-property viewport results', () 
   assert.equal(store.properties.length, 0)
 })
 
+test('selectViewportItem clears selected property transaction state', () => {
+  const store = createStore()
+  store.selectedPropertyId = 1
+  store.selectedProperty = { id: 1, title: '정동' }
+  store.selectedPropertyTransactions = [{ contractYearMonth: '2026-05', price: 610000000 }]
+  store.selectedPropertyTransactionsTotal = 1
+  store.transactionError = '이전 오류'
+  store.isTransactionsLoading = true
+
+  const selectedItem = { type: 'REGION_AVG', regionLevel: 'DONG', regionName: '정동' }
+  store.selectViewportItem(selectedItem)
+
+  assert.equal(store.selectedPropertyId, null)
+  assert.equal(store.selectedProperty, null)
+  assert.deepEqual(store.selectedPropertyTransactions, [])
+  assert.equal(store.selectedPropertyTransactionsTotal, 0)
+  assert.equal(store.transactionError, '')
+  assert.equal(store.isTransactionsLoading, false)
+  assert.deepEqual(store.selectedViewportItem, selectedItem)
+})
+
 test('setBounds keeps the last valid bounds when map reports a transient invalid range', () => {
   const store = createStore()
   const previousBounds = { ...store.bounds }

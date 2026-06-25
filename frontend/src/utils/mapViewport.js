@@ -52,7 +52,7 @@ export const propertyDisplayTitle = (property) => {
 
   if (cleanedTitle) return cleanedTitle
   if (fallback) return fallback
-  return property?.id ? `No. ${property.id}` : '이름 없음'
+  return property?.id ? `매물 ${property.id}` : '이름 없음'
 }
 
 export const targetZoomForViewportItem = (item, currentZoom = 0) => {

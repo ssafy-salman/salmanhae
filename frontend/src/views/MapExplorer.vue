@@ -1,6 +1,6 @@
 <template>
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <section class="relative h-[660px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-8">
+  <div class="grid grid-cols-1 gap-4 lg:min-h-[660px] lg:grid-cols-12">
+    <section class="relative h-[660px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-8 lg:h-[calc(100vh-132px)] lg:min-h-[660px]">
       <div class="absolute left-3 right-3 top-3 z-20 space-y-2">
         <form class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur md:flex-row md:items-center" @submit.prevent="refreshFromFilters">
           <label class="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -87,16 +87,15 @@
       </div>
     </section>
 
-    <aside class="flex h-[660px] flex-col gap-4 lg:col-span-4">
+    <aside class="flex h-[660px] flex-col gap-4 lg:col-span-4 lg:h-[calc(100vh-132px)] lg:min-h-[660px]">
       <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <p class="text-[11px] font-black uppercase text-brand-dark">F-1 Property Search</p>
             <h2 class="mt-1 text-lg font-black text-slate-900">지도 범위 매물</h2>
           </div>
           <SlidersHorizontal class="h-5 w-5 text-slate-400" aria-hidden="true" />
         </div>
-        <p class="mt-2 text-xs leading-5 text-slate-500">현재 지도 화면 안의 매물을 Spring Boot API에서 조회합니다.</p>
+        <p class="mt-2 text-xs leading-5 text-slate-500">현재 지도 화면 안의 매물을 조회합니다.</p>
       </section>
 
       <section class="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -177,7 +176,6 @@
         <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
           <div class="flex items-center gap-2">
             <span class="rounded-full bg-brand-light px-2 py-1 text-[10px] font-black text-brand-dark">{{ transactionLabel(store.selectedProperty.transactionType) }}</span>
-            <span class="text-xs font-bold text-slate-400">No. {{ store.selectedProperty.id }}</span>
           </div>
           <button class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" type="button" @click="store.closeProperty">
             <X class="h-4 w-4" aria-hidden="true" />
@@ -212,10 +210,6 @@
               <span>건물명</span>
               <b>{{ store.selectedProperty.buildingName || '-' }}</b>
             </div>
-            <div class="detail-stat">
-              <span>법정동 코드</span>
-              <b>{{ store.selectedProperty.legalDongCode || '-' }}</b>
-            </div>
           </div>
 
           <div v-if="store.detailError" class="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
@@ -227,12 +221,67 @@
             상세 정보를 불러오는 중입니다
           </div>
 
-          <div v-if="store.selectedProperty.description" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-black text-brand-dark">{{ transactionTrendLabel }}</p>
+                <h3 class="mt-1 text-base font-black text-slate-900">실거래가 추이</h3>
+              </div>
+              <span v-if="store.selectedPropertyTransactionsTotal" class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500">
+                최근 {{ store.selectedPropertyTransactionsTotal.toLocaleString() }}건
+              </span>
+            </div>
+
+            <div v-if="store.isTransactionsLoading" class="mt-4 flex items-center justify-center rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
+              <Loader2 class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              실거래가를 불러오는 중입니다
+            </div>
+
+            <div v-else-if="store.transactionError" class="mt-4 rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold leading-5 text-rose-700">
+              {{ store.transactionError }}
+            </div>
+
+            <div v-else-if="transactionTrend.points.length === 0" class="mt-4 rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
+              비교 가능한 최근 실거래가가 없습니다.
+            </div>
+
+            <div v-else class="mt-4 space-y-4">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <span class="text-[10px] font-black text-slate-400">평균</span>
+                  <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.averageAmount) }}</b>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <span class="text-[10px] font-black text-slate-400">최근 거래</span>
+                  <b class="mt-1 block text-sm text-slate-900">{{ formatWons(transactionTrend.latest?.amount) }}</b>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div
+                  v-for="transaction in transactionTrend.points"
+                  :key="`${transaction.contractYearMonth}-${transaction.amount}-${transaction.floor ?? 'floor'}`"
+                  class="space-y-1.5"
+                >
+                  <div class="flex items-center justify-between gap-3 text-xs font-bold">
+                    <span class="text-slate-500">{{ transaction.contractYearMonth }}</span>
+                    <span class="text-slate-900">{{ formatWons(transaction.amount) }}</span>
+                  </div>
+                  <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div class="h-full rounded-full bg-brand" :style="{ width: `${transaction.barWidth}%` }"></div>
+                  </div>
+                  <p class="text-[11px] font-semibold text-slate-400">{{ transactionMetaText(transaction) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="publicDescription" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div class="flex items-center gap-2">
               <Building2 class="h-4 w-4 text-slate-400" aria-hidden="true" />
               <h3 class="text-sm font-black text-slate-900">매물 메모</h3>
             </div>
-            <p class="mt-3 text-sm leading-6 text-slate-600">{{ store.selectedProperty.description }}</p>
+            <p class="mt-3 text-sm leading-6 text-slate-600">{{ publicDescription }}</p>
           </div>
         </div>
       </section>
@@ -254,6 +303,10 @@ import {
   X
 } from '@lucide/vue'
 import useMapStore from '../store/mapStore'
+import {
+  buildTransactionTrend,
+  trendLabelForTransactionType
+} from '../utils/transactionTrend'
 import { loadNaverMaps } from '../utils/naverMaps'
 import {
   VIEWPORT_MODES,
@@ -319,6 +372,19 @@ const emptyListText = computed(() => {
   }
 })
 
+const publicDescription = computed(() => {
+  const description = store.selectedProperty?.description?.trim()
+  if (!description) return ''
+  if (description.includes('MVP 더미') || description.includes('실거래가 건물 정보')) return ''
+  return description
+})
+
+const transactionTrend = computed(() => buildTransactionTrend(store.selectedPropertyTransactions))
+
+const transactionTrendLabel = computed(() => (
+  trendLabelForTransactionType(store.selectedProperty?.transactionType)
+))
+
 const displayTitle = (property) => propertyDisplayTitle(property)
 
 const transactionLabel = (type) => ({
@@ -380,6 +446,16 @@ const areaText = (property) => {
 const floorText = (property) => {
   const floor = property.floor ? `${property.floor}층` : '층수 미상'
   return property.totalFloor ? `${floor} / ${property.totalFloor}층` : floor
+}
+
+const transactionMetaText = (transaction) => {
+  const parts = []
+  if (transaction.areaM2) parts.push(areaText(transaction))
+  if (transaction.floor) parts.push(`${transaction.floor}층`)
+  if (transaction.transactionType === 'MONTHLY_RENT' && transaction.deposit) {
+    parts.push(`보증금 ${formatWons(transaction.deposit)}`)
+  }
+  return parts.join(' · ') || '상세 조건 미상'
 }
 
 const escapeHtml = (value) => String(value ?? '')
