@@ -1,6 +1,6 @@
 // 채팅 관련 state/action은 chatSessionStore로 이관됨
 import { defineStore } from 'pinia'
-import { fetchMapViewport, fetchPropertyDetail } from '../api/properties.js'
+import { fetchMapViewport, fetchPropertyDetail, fetchPropertyTransactions } from '../api/properties.js'
 import { isPropertyItem, VIEWPORT_MODES } from '../utils/mapViewport.js'
 
 const DEFAULT_BOUNDS = {
@@ -50,6 +50,8 @@ export default defineStore('map', {
     currentRegion: 'seoul',
     selectedPropertyId: null,
     selectedProperty: null,
+    selectedPropertyTransactions: [],
+    selectedPropertyTransactionsTotal: 0,
     selectedViewportItem: null,
     viewportMode: '',
     viewportItems: [],
@@ -69,8 +71,10 @@ export default defineStore('map', {
     },
     isLoading: false,
     isDetailLoading: false,
+    isTransactionsLoading: false,
     error: '',
     detailError: '',
+    transactionError: '',
     lastFetchedAt: null,
     requestSeq: 0,
     detailRequestSeq: 0
@@ -208,6 +212,10 @@ export default defineStore('map', {
         if (this.selectedPropertyId && !this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null
           this.selectedProperty = null
+          this.selectedPropertyTransactions = []
+          this.selectedPropertyTransactionsTotal = 0
+          this.transactionError = ''
+          this.isTransactionsLoading = false
         }
       } catch (error) {
         if (seq !== this.requestSeq) return
@@ -230,35 +238,61 @@ export default defineStore('map', {
       this.selectedPropertyId = id
       this.selectedViewportItem = null
       this.detailError = ''
+      this.transactionError = ''
       this.selectedProperty = this.properties.find((property) => property.id === id) || null
+      this.selectedPropertyTransactions = []
+      this.selectedPropertyTransactionsTotal = 0
       this.isDetailLoading = true
+      this.isTransactionsLoading = true
 
-      try {
-        const property = await fetchPropertyDetail(id)
-        if (seq !== this.detailRequestSeq || this.selectedPropertyId !== id) return
+      const [propertyResult, transactionsResult] = await Promise.allSettled([
+        fetchPropertyDetail(id),
+        fetchPropertyTransactions(id, { years: 3 })
+      ])
+
+      if (seq !== this.detailRequestSeq || this.selectedPropertyId !== id) return
+
+      if (propertyResult.status === 'fulfilled') {
+        const property = propertyResult.value
         this.selectedProperty = property
-      } catch (error) {
-        if (seq !== this.detailRequestSeq || this.selectedPropertyId !== id) return
+      } else {
+        const error = propertyResult.reason
         this.detailError = error.response?.data?.message || '매물 상세 정보를 불러오지 못했습니다.'
-      } finally {
-        if (seq === this.detailRequestSeq) {
-          this.isDetailLoading = false
-        }
       }
+
+      if (transactionsResult.status === 'fulfilled') {
+        const data = transactionsResult.value
+        this.selectedPropertyTransactions = data.items || []
+        this.selectedPropertyTransactionsTotal = data.totalCount ?? this.selectedPropertyTransactions.length
+      } else {
+        const error = transactionsResult.reason
+        this.transactionError = error.response?.data?.message || '실거래가 정보를 불러오지 못했습니다.'
+      }
+
+      this.isDetailLoading = false
+      this.isTransactionsLoading = false
     },
     closeProperty() {
       this.detailRequestSeq += 1
       this.selectedPropertyId = null
       this.selectedProperty = null
+      this.selectedPropertyTransactions = []
+      this.selectedPropertyTransactionsTotal = 0
       this.detailError = ''
+      this.transactionError = ''
       this.isDetailLoading = false
+      this.isTransactionsLoading = false
     },
     selectViewportItem(item) {
       this.detailRequestSeq += 1
       this.selectedPropertyId = null
       this.selectedProperty = null
+      this.selectedPropertyTransactions = []
+      this.selectedPropertyTransactionsTotal = 0
       this.detailError = ''
+      this.transactionError = ''
       this.isDetailLoading = false
+      this.isTransactionsLoading = false
       this.selectedViewportItem = item
     },
   }

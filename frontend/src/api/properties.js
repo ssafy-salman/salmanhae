@@ -23,3 +23,10 @@ export const fetchPropertyDetail = async (propertyId, client = http) => {
   const response = await client.get(`/api/v1/properties/${propertyId}`)
   return response.data.data
 }
+
+export const fetchPropertyTransactions = async (propertyId, params = {}, client = http) => {
+  const response = await client.get(`/api/v1/properties/${propertyId}/transactions`, {
+    params: cleanParams(params)
+  })
+  return response.data.data
+}

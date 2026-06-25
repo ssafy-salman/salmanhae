@@ -18,7 +18,7 @@
       </div>
     </header>
 
-    <main :class="['flex-1', !['Auth', 'Chatbot'].includes($route.name) && 'max-w-7xl w-full mx-auto p-4']">
+    <main :class="mainClass">
       <router-view />
     </main>
 
@@ -30,11 +30,18 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 import logoBlack from '@/assets/logo-black.png'
 import { useAuthStore } from '@/store/authStore.js'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+const mainClass = computed(() => {
+  if (['Auth', 'Chatbot'].includes(router.currentRoute.value.name)) return 'flex-1'
+  if (router.currentRoute.value.name === 'MapExplorer') return 'flex-1 w-full p-4 lg:px-6'
+  return 'flex-1 max-w-7xl w-full mx-auto p-4'
+})
 
 async function handleLogout() {
   await auth.logout()
