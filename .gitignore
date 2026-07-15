@@ -37,3 +37,7 @@ dist/
 # IDE / OS
 .DS_Store
 Thumbs.db
+
+# Local portfolio analysis artifacts
+portfolio-analysis.zip
+salmanhae-f1-molit-pipeline-20260624/
